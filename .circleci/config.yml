@@ -56,26 +56,15 @@ jobs:
             - ./venv
           key: v1-dependencies-{{ checksum "requirements.txt" }}
 
-#      - run:
-#          name: update git submodules
-#          command: |
-#            - git submodule update --init --recursive --remote
-
-      # run tests_LLT_optimizer!
       # https://pytest.org
       - run:
           name: run tests_vlm
           command: |
             . venv/bin/activate
             coverage run -m unittest discover -v ./tests_VLM/
-            #python -m unittest discover -v ./tests/
-            #codecov
             coverage report
             coverage html
 
-#      - store_artifacts:
-#          path: test-reports
-#          destination: test-reports
       - store_artifacts:
           path: htmlcov
 
