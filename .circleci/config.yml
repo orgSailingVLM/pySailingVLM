@@ -67,7 +67,7 @@ jobs:
           name: run tests_vlm
           command: |
             . venv/bin/activate
-            coverage run -m unittest discover -v ./sailingVLM/tests_VLM/
+            coverage run -m unittest discover -v ./tests_VLM/
             #python -m unittest discover -v ./tests/
             #codecov
 
