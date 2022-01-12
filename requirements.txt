@@ -1,0 +1,17 @@
+numpy  # BSD 3-Clause
+matplotlib==v3.4.3  # Python Software Foundation License (PSFL) -> BSD-style
+codecov  # APACHE 2.0 license
+scipy  # BSD 3-Clause license
+pytest  # MIT license
+pandas  # BSD 3-Clause license
+openpyxl  # MIT license
+Cython  # APACHE 2.0 license
+cvxpy # APACHE 2.0 license
+airfoils  # APACHE 2.0 license
+xlsxwriter # BSD 3-Clause license
+# styleframe # MIT license
+# xfoil
+jinja2 # BSD 3-Clause license
+
+PyQt5  # python to avoid blurry figures on Windows
+# pyqt # anaconda?

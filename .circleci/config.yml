@@ -1,0 +1,81 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+#
+version: 2.1
+jobs:
+  blaah:
+    executor: python/default
+    steps:
+      - checkout
+      - python/load-cache
+      - python/install-deps
+      - python/save-cache
+      - run:
+          command: ./manage.py test
+          name: Test
+
+  build-and-test:
+    docker:
+      # specify the version you desire here
+      # use `-browsers` prefix for selenium tests_LLT_optimizer, e.g. `3.6.1-browsers`
+      - image: circleci/python:3.8
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: "What branch am I on?"
+          command: echo ${CIRCLE_BRANCH}
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "requirements.txt" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+
+      - run:
+          name: install python dependencies
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements.txt
+            
+
+      - save_cache:
+          paths:
+            - ./venv
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
+
+#      - run:
+#          name: update git submodules
+#          command: |
+#            - git submodule update --init --recursive --remote
+
+      # run tests_LLT_optimizer!
+      # https://pytest.org
+      - run:
+          name: run tests_vlm
+          command: |
+            . venv/bin/activate
+            coverage run -m unittest discover -v ./sailingVLM/tests_VLM/
+            #python -m unittest discover -v ./tests/
+            #codecov
+
+      - store_artifacts:
+          path: test-reports
+          destination: test-reports
+
+workflows:
+  main:
+    jobs:
+      - build-and-test
