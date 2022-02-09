@@ -95,3 +95,6 @@ print(f"CL_expected {CL_expected} \t CD_ind_expected {CD_ind_expected}")
 print(f"CL_vlm      {CL_vlm     } \t CD_vlm          {CD_vlm}")
 print(f"\n\ntotal_F {str(total_F)}")
 print("=== END ===")
+
+
+# po dodaniu TrailingEdge wyniki powinny byc o okolo kilkanacsie procent inne

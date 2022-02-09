@@ -1,14 +1,16 @@
 import numpy as np
 
-
+# pomyslec nad jit by kod byl kompilowany
+# to mozna zrownoleglic jakos
 def assembly_sys_of_eq(V_app_infw, panels):
+    # lista paneli jest wolna - zmiejszamy ilosc wymiarow listy
     panels1D = panels.flatten()
     N = len(panels1D)
 
     A = np.zeros(shape=(N, N))  # Aerodynamic Influence Coefficient matrix
     RHS = np.zeros(shape=N)
     v_ind_coeff = np.full((N, N, 3), 0., dtype=float)
-
+    # i = jeden watek
     for i in range(0, N):
         panel_surf_normal = panels1D[i].get_normal_to_panel()
         ctr_p = panels1D[i].get_ctr_point_position()
@@ -16,6 +18,9 @@ def assembly_sys_of_eq(V_app_infw, panels):
 
         for j in range(0, N):
                 # velocity induced at i-th control point by j-th vortex
+                # tutaj mozna pomyslec zeby wywolac get_horse_shoe_induced_velocity lub get_vortex ... znajdujace sie w Panelu
+                # poza tym funkcja po kropce robi obliczenia cross, mozna cos zrobic py ta funkcja teraz sie tu liczyla szybciej
+                # na tab;icy zawierajacej linie pedu
                 v_ind_coeff[i][j] = panels1D[j].get_horse_shoe_induced_velocity(ctr_p, V_app_infw[j])
                 A[i][j] = np.dot(v_ind_coeff[i][j], panel_surf_normal)
 

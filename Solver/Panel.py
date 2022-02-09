@@ -256,6 +256,8 @@ class Panel(object):
         v = v_AB + v_BC + v_CD + v_DA
         return v
 
+##################### to jest podkowiasty do TrailingPanel czyli tego ostatniego
+# uzyte to jest w assembly
     def get_horse_shoe_induced_velocity(self, ctr_p, V_app_infw, gamma=1):
         [A, B, C, D] = self.get_vortex_ring_position()
         v = v_induced_by_horseshoe_vortex(ctr_p, B, C, V_app_infw, self.gamma_orientation)

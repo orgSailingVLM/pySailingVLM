@@ -95,7 +95,7 @@ def make_panels_from_mesh_chordwise(mesh):
 
     return np.array(panels)
 
-
+# tutaj to rozpisac
 def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> np.array([Panel]):
     panels = []
 
@@ -109,6 +109,7 @@ def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> np.array([Panel])
             pSW = mesh[i][j]
             pNW = mesh[i][j + 1]
             pNE = mesh[i + 1][j + 1]
+            # if panel jest ostatnim panelem to stworz obiekt typu TrailingEdgePanel
             panel = Panel(p1=pSE,
                           p2=pSW,
                           p3=pNW,
