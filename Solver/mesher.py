@@ -109,9 +109,8 @@ def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> np.array([Panel])
             pSW = mesh[i][j]
             pNW = mesh[i][j + 1]
             pNE = mesh[i + 1][j + 1]
-            # if panel jest ostatnim panelem to stworz obiekt typu TrailingEdgePanel
+            # if last panel -> make trailing panel
             if i == (n_lines - 2):
-                print("yes, n_lines - 2 = ", n_lines - 2)
                 panel = TrailingEdgePanel(p1=pSE,
                               p2=pSW,
                               p3=pNW,
@@ -126,7 +125,4 @@ def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> np.array([Panel])
                               gamma_orientation=gamma_orientation)
             panels[i].append(panel)
 
-    #print("panels len: ", len(panels))
-    #print("nlines: ", n_lines, "n_points_per_line", n_points_per_line )
-    #print(len(panels[0]))
     return np.array(panels)

@@ -262,8 +262,14 @@ class Panel(object):
         [A, B, C, D] = self.get_vortex_ring_position()
         v = v_induced_by_horseshoe_vortex(ctr_p, B, C, V_app_infw, self.gamma_orientation)
         return v
+
+
 # moje dziwne testy
+
+
+"""
     def get_induced_velocity(self, ctr_p, V_app_infw, gamma=1):
+        
         ctr_p = self.get_ctr_point_position()
         [A, B, C, D] = self.get_vortex_ring_position()
 
@@ -273,8 +279,9 @@ class Panel(object):
         v_DA = v_induced_by_finite_vortex_line(ctr_p, D, A, self.gamma_orientation)
 
         v = v_AB + v_BC + v_CD + v_DA
-        """
-        [A, B, C, D] = self.get_vortex_ring_position()
-        v = v_induced_by_horseshoe_vortex(ctr_p, B, C, V_app_infw, self.gamma_orientation)
-        """
+        
+        #[A, B, C, D] = self.get_vortex_ring_position()
+        #v = v_induced_by_horseshoe_vortex(ctr_p, B, C, V_app_infw, self.gamma_orientation)
+        
         return v
+"""

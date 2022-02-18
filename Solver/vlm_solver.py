@@ -19,29 +19,20 @@ def assembly_sys_of_eq(V_app_infw, panels):
         panel_surf_normal = panels1D[i].get_normal_to_panel()
         ctr_p = panels1D[i].get_ctr_point_position()
         RHS[i] = -np.dot(V_app_infw[i], panel_surf_normal)
-        #print(type(panels1D[i]))
 
         for j in range(0, N):
 
                 # velocity induced at i-th control point by j-th vortex
-                # tutaj mozna pomyslec zeby wywolac get_horse_shoe_induced_velocity lub get_vortex ... znajdujace sie w Panelu
                 # poza tym funkcja po kropce robi obliczenia cross, mozna cos zrobic py ta funkcja teraz sie tu liczyla szybciej
                 # na tab;icy zawierajacej linie pedu
-                #if j == N-1:
-                   # print("tutaj N=", N)
-                    #v_ind_coeff[i][j] = panels1D[j].get_horse_shoe_induced_velocity(ctr_p, V_app_infw[j])
-                #else:
-                #    v_ind_coeff[i][j] = panels1D[j].get_vortex_ring_induced_velocity()
-                # tak bylo
+
                 if isinstance(panels1D[i], TrailingEdgePanel):
-                    #print("ok")
                     v_ind_coeff[i][j] = panels1D[j].get_horse_shoe_induced_velocity(ctr_p, V_app_infw[j])
                 else:
+                    # z ta linia dziala
                     v_ind_coeff[i][j] = panels1D[j].get_horse_shoe_induced_velocity(ctr_p, V_app_infw[j])
+                    # z ta nie -> wychodzi macerz A o takich samych elementach -> wyznacznk jest zero :o
                     #v_ind_coeff[i][j] = panels1D[j].get_vortex_ring_induced_velocity()
-                    #test = panels1D[j].get_vortex_ring_induced_velocity()
-                    #print("DEZD: ", np.shape(test), "zawartosc: ", test)
-                #v_ind_coeff[i][j] = panels1D[j].get_induced_velocity(ctr_p, V_app_infw[j])
                 A[i][j] = np.dot(v_ind_coeff[i][j], panel_surf_normal)
 
     return A, RHS, v_ind_coeff  # np.array(v_ind_coeff)
@@ -51,7 +42,9 @@ def calc_circulation(V_app_ifnw, panels):
     # it is assumed that the freestream velocity is V [vx,0,vz], where vx > 0
 
     A, RHS, v_ind_coeff = assembly_sys_of_eq(V_app_ifnw, panels)
+    print("A")
     print(A)
+    print("RHS")
     print(RHS)
     print(np.shape(A), " ", np.shape(RHS))
     gamma_magnitude = np.linalg.solve(A, RHS)
