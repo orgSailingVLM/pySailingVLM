@@ -1,6 +1,6 @@
 import numpy as np
 from Solver.Panel import Panel
-
+from Solver.trailingedgepanel import TrailingEdgePanel
 
 def join_panels(panels1, panels2):
     joined_panels = []
@@ -110,11 +110,23 @@ def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> np.array([Panel])
             pNW = mesh[i][j + 1]
             pNE = mesh[i + 1][j + 1]
             # if panel jest ostatnim panelem to stworz obiekt typu TrailingEdgePanel
-            panel = Panel(p1=pSE,
-                          p2=pSW,
-                          p3=pNW,
-                          p4=pNE,
-                          gamma_orientation=gamma_orientation)
+            if i == (n_lines - 2):
+                print("yes, n_lines - 2 = ", n_lines - 2)
+                panel = TrailingEdgePanel(p1=pSE,
+                              p2=pSW,
+                              p3=pNW,
+                              p4=pNE,
+                              gamma_orientation=gamma_orientation)
+
+            else:
+                panel = Panel(p1=pSE,
+                              p2=pSW,
+                              p3=pNW,
+                              p4=pNE,
+                              gamma_orientation=gamma_orientation)
             panels[i].append(panel)
 
+    #print("panels len: ", len(panels))
+    #print("nlines: ", n_lines, "n_points_per_line", n_points_per_line )
+    #print(len(panels[0]))
     return np.array(panels)
