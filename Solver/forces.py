@@ -63,7 +63,7 @@ def calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho):
         cp = panels_1d[i].get_cp_position()
         for j in range(0, N):
             # velocity induced at i-th control point by j-th vortex
-            v_ind_coeff[i][j] = panels_1d[j].get_horse_shoe_induced_velocity(cp, V_app_infw[j])
+            v_ind_coeff[i][j] = panels_1d[j].get_induced_velocity(cp, V_app_infw[j])
 
     V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
     V_at_cp = V_app_infw + V_induced

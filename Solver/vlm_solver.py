@@ -21,19 +21,12 @@ def assembly_sys_of_eq(V_app_infw, panels):
         RHS[i] = -np.dot(V_app_infw[i], panel_surf_normal)
 
         for j in range(0, N):
-
                 # velocity induced at i-th control point by j-th vortex
                 # poza tym funkcja po kropce robi obliczenia cross, mozna cos zrobic py ta funkcja teraz sie tu liczyla szybciej
                 # na tab;icy zawierajacej linie pedu
 
-                if isinstance(panels1D[i], TrailingEdgePanel):
-                    v_ind_coeff[i][j] = panels1D[j].get_horse_shoe_induced_velocity(ctr_p, V_app_infw[j])
-                else:
-                    # z ta linia dziala
-                    v_ind_coeff[i][j] = panels1D[j].get_horse_shoe_induced_velocity(ctr_p, V_app_infw[j])
-                    # z ta nie -> wychodzi macerz A o takich samych elementach -> wyznacznk jest zero :o
-                    #v_ind_coeff[i][j] = panels1D[j].get_vortex_ring_induced_velocity()
-                A[i][j] = np.dot(v_ind_coeff[i][j], panel_surf_normal)
+                v_ind_coeff[i][j] = panels1D[j].get_induced_velocity(ctr_p, V_app_infw[j])
+                A[i][j] = np.dot(v_ind_coeff[i][j], panel_surf_normal)  # TODO: Czy ta macierz jest zalezy od 'znormalizowanej' predkosci (tzn tylko od jej kierunku a nie wartości)
 
     return A, RHS, v_ind_coeff  # np.array(v_ind_coeff)
 

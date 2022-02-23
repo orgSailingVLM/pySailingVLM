@@ -244,8 +244,11 @@ class Panel(object):
 
         return [A, B, C, D]
 
-    def get_vortex_ring_induced_velocity(self):
-        ctr_p = self.get_ctr_point_position()
+
+##################### to jest podkowiasty do TrailingPanel czyli tego ostatniego
+# uzyte to jest w assembly
+    def get_induced_velocity(self, ctr_p, V_app_infw):
+        # ctr_p = self.get_ctr_point_position()
         [A, B, C, D] = self.get_vortex_ring_position()
 
         v_AB = v_induced_by_finite_vortex_line(ctr_p, A, B, self.gamma_orientation)
@@ -254,13 +257,6 @@ class Panel(object):
         v_DA = v_induced_by_finite_vortex_line(ctr_p, D, A, self.gamma_orientation)
 
         v = v_AB + v_BC + v_CD + v_DA
-        return v
-
-##################### to jest podkowiasty do TrailingPanel czyli tego ostatniego
-# uzyte to jest w assembly
-    def get_horse_shoe_induced_velocity(self, ctr_p, V_app_infw, gamma=1):
-        [A, B, C, D] = self.get_vortex_ring_position()
-        v = v_induced_by_horseshoe_vortex(ctr_p, B, C, V_app_infw, self.gamma_orientation)
         return v
 
 

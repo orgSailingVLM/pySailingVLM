@@ -29,8 +29,9 @@ class TestForces(TestCase):
         # we are going to rotate the geometry
 
         ### MESH DENSITY ###
-        ns = 20  # number of panels (spanwise)
-        nc = 3  # number of panels (chordwise)
+        ns = 10  # number of panels (spanwise)
+        nc = 5 # number of panels (chordwise)  # TODO:
+
 
         panels, mesh = make_panels_from_le_te_points(
             [np.dot(Ry, le_SW),
@@ -71,6 +72,9 @@ class TestForces(TestCase):
 
         rel_err_CL = abs((CL_expected - CL_vlm) / CL_expected)
         rel_err_CD = abs((CD_ind_expected - CD_vlm) / CD_ind_expected)
+
+        print(f"CL_expected: {CL_expected:.4f} \t CL_vlm: {CL_vlm:.4f}")
+        print(f"CD_ind_expected: {CD_ind_expected:.4f} \t CL_vlm: {CD_vlm:.4f}")
         assert rel_err_CL < 0.01
         assert rel_err_CD < 0.18
 

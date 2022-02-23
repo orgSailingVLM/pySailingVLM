@@ -111,12 +111,12 @@ def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> np.array([Panel])
             pNE = mesh[i + 1][j + 1]
             # if last panel -> make trailing panel
             if i == (n_lines - 2):
-                panel = TrailingEdgePanel(p1=pSE,
+                panel = TrailingEdgePanel(
+                              p1=pSE,
                               p2=pSW,
                               p3=pNW,
                               p4=pNE,
                               gamma_orientation=gamma_orientation)
-
             else:
                 panel = Panel(p1=pSE,
                               p2=pSW,
