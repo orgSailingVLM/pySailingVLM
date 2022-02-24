@@ -32,7 +32,7 @@ from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
 ### WING DEFINITION ###
 #Parameters #
 chord = 1.  # chord length
-half_wing_span = 10. # wing span length
+half_wing_span = 100. # wing span length
 
 # Points defining wing (x,y,z) #
 le_NW = np.array([0., half_wing_span, 0.])      # leading edge North - West coordinate
@@ -46,8 +46,8 @@ Ry = rotation_matrix([0, 1, 0], np.deg2rad(AoA_deg))
 # we are going to rotate the geometry
 
 ### MESH DENSITY ###
-ns = 20     # number of panels (spanwise)
-nc = 5      # number of panels (chordwise)
+ns = 20    # number of panels (spanwise)
+nc = 1      # number of panels (chordwise)  # todo: make it work for more panels in chordwise direction
 
 panels, mesh = make_panels_from_le_te_points(
     [np.dot(Ry, le_SW),
@@ -61,18 +61,26 @@ rows, cols = panels.shape
 N = rows * cols
 
 ### FLIGHT CONDITIONS ###
-V = [10.0, 0.0, 0.0]
+V = 1*np.array([10.0, 0.0, 0.0])
 V_app_infw = np.array([V for i in range(N)])
 rho = 1.225  # fluid density [kg/m3]
 
 ### CALCULATIONS ###
 gamma_magnitude, v_ind_coeff = calc_circulation(V_app_infw, panels)
-V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
-V_app_fw = V_app_infw + V_induced
+V_induced_at_ctrl_p = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
+V_app_fw_at_ctrl_p = V_app_infw + V_induced_at_ctrl_p
+assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p, panels)
 
-assert is_no_flux_BC_satisfied(V_app_fw, panels)
+Fold = calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho=rho)
 
-F = calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho=rho)
+from Solver.forces import calc_force_wrapper_new
+
+Fnew = calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho)
+Fnew = Fnew.reshape(N, 3)
+# F = Fold
+F = Fnew
+
+print(f"\n\ndF {Fnew - Fold}")
 p = calc_pressure(F, panels)
 
 print("gamma_magnitude: \n")
@@ -94,6 +102,8 @@ print(f"\nAspect Ratio {AR}")
 print(f"CL_expected {CL_expected} \t CD_ind_expected {CD_ind_expected}")
 print(f"CL_vlm      {CL_vlm     } \t CD_vlm          {CD_vlm}")
 print(f"\n\ntotal_F {str(total_F)}")
+print(f"\n\ntotal_Fold {str(np.sum(Fold, axis=0))}")
+print(f"\n\ntotal_Fnew {str(np.sum(Fnew, axis=0))}")
 print("=== END ===")
 
 

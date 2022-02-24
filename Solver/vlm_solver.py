@@ -1,11 +1,12 @@
 import numpy as np
 from Solver.Panel import Panel
 from Solver.trailingedgepanel import TrailingEdgePanel
+
+
 # pomyslec nad jit by kod byl kompilowany
 # to mozna zrownoleglic jakos
 def assembly_sys_of_eq(V_app_infw, panels):
     # lista paneli jest wolna - zmiejszamy ilosc wymiarow listy
-    # w liscie jest teraz 100 paneli z czego 20 ostatnich jest trailingpanels
     panels1D = panels.flatten()
     N = len(panels1D)
 
@@ -13,7 +14,7 @@ def assembly_sys_of_eq(V_app_infw, panels):
     RHS = np.zeros(shape=N)
     v_ind_coeff = np.full((N, N, 3), 0., dtype=float)
     # i = jeden watek
-    # i - panel itrator
+    # i - panel iterator
     # j - vortex iterator
     for i in range(0, N):
         panel_surf_normal = panels1D[i].get_normal_to_panel()
@@ -21,12 +22,13 @@ def assembly_sys_of_eq(V_app_infw, panels):
         RHS[i] = -np.dot(V_app_infw[i], panel_surf_normal)
 
         for j in range(0, N):
-                # velocity induced at i-th control point by j-th vortex
-                # poza tym funkcja po kropce robi obliczenia cross, mozna cos zrobic py ta funkcja teraz sie tu liczyla szybciej
-                # na tab;icy zawierajacej linie pedu
+            # velocity induced at i-th control point by j-th vortex
+            # poza tym funkcja po kropce robi obliczenia cross, mozna cos zrobic py ta funkcja teraz sie tu liczyla szybciej
+            # na tablicy zawierajacej linie cyrkulacji
 
-                v_ind_coeff[i][j] = panels1D[j].get_induced_velocity(ctr_p, V_app_infw[j])
-                A[i][j] = np.dot(v_ind_coeff[i][j], panel_surf_normal)  # TODO: Czy ta macierz jest zalezy od 'znormalizowanej' predkosci (tzn tylko od jej kierunku a nie wartości)
+            v_ind_coeff[i][j] = panels1D[j].get_induced_velocity(ctr_p, V_app_infw[j])
+            A[i][j] = np.dot(v_ind_coeff[i][j], panel_surf_normal)
+            # macierz A zalezy od 'znormalizowanej' predkosci (tzn tylko od kierunku wiatru)
 
     return A, RHS, v_ind_coeff  # np.array(v_ind_coeff)
 

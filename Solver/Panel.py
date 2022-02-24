@@ -79,6 +79,9 @@ class Panel(object):
         # for the wing in x-y plane the normal is assumed to be z-axis-positive,
         # and circulation is assumed to be z-axis-negative
 
+        # TODO: check formula from Katz and Plotkin,
+        #  Fig 12.11 p 343, Chapter 12.3 Lifting-Surface Solution by Vortex Ring Elements
+        #  p2p4 x p1p3
         p1_p2 = self.p2 - self.p1
         p1_p4 = self.p4 - self.p1
 
@@ -244,11 +247,7 @@ class Panel(object):
 
         return [A, B, C, D]
 
-
-##################### to jest podkowiasty do TrailingPanel czyli tego ostatniego
-# uzyte to jest w assembly
     def get_induced_velocity(self, ctr_p, V_app_infw):
-        # ctr_p = self.get_ctr_point_position()
         [A, B, C, D] = self.get_vortex_ring_position()
 
         v_AB = v_induced_by_finite_vortex_line(ctr_p, A, B, self.gamma_orientation)
@@ -259,25 +258,3 @@ class Panel(object):
         v = v_AB + v_BC + v_CD + v_DA
         return v
 
-
-# moje dziwne testy
-
-
-"""
-    def get_induced_velocity(self, ctr_p, V_app_infw, gamma=1):
-        
-        ctr_p = self.get_ctr_point_position()
-        [A, B, C, D] = self.get_vortex_ring_position()
-
-        v_AB = v_induced_by_finite_vortex_line(ctr_p, A, B, self.gamma_orientation)
-        v_BC = v_induced_by_finite_vortex_line(ctr_p, B, C, self.gamma_orientation)
-        v_CD = v_induced_by_finite_vortex_line(ctr_p, C, D, self.gamma_orientation)
-        v_DA = v_induced_by_finite_vortex_line(ctr_p, D, A, self.gamma_orientation)
-
-        v = v_AB + v_BC + v_CD + v_DA
-        
-        #[A, B, C, D] = self.get_vortex_ring_position()
-        #v = v_induced_by_horseshoe_vortex(ctr_p, B, C, V_app_infw, self.gamma_orientation)
-        
-        return v
-"""
