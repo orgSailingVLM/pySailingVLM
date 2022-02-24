@@ -14,7 +14,7 @@ def prepare_inviscid_flow_results(V_app_fs, V_induced, gamma_magnitude, v_ind_co
                                   inletConditions: InletConditions,
                                   csys_transformations: CSYS_transformations):
     spans = np.array([p.get_span_vector() for p in sail_set.panels1d])
-    force_xyz = calc_force_inviscid_xyz(V_app_fs, gamma_magnitude, spans, inletConditions.rho)
+    force_xyz = calc_force_inviscid_xyz(V_app_fs, gamma_magnitude, spans, inletConditions.rho)  # TODO: consider calc_force_wrapper - V_app_fs with respect to ctrl_p
     inviscid_flow_results = InviscidFlowResults(gamma_magnitude, v_ind_coeff, V_induced, V_app_fs,
                                                 force_xyz, sail_set, csys_transformations)
     return inviscid_flow_results
