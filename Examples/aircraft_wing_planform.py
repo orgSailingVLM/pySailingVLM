@@ -5,6 +5,7 @@ from Solver.mesher import make_panels_from_le_te_points
 from Rotations.geometry_calc import rotation_matrix
 from Solver.coeff_formulas import get_CL_CD_free_wing
 from Solver.forces import calc_force_wrapper, calc_pressure
+from Solver.forces import calc_force_wrapper_new
 from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
 
 ### GEOMETRY DEFINITION ###
@@ -29,10 +30,12 @@ from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
  
 """
 
+np.set_printoptions(precision=3, suppress=True)
+
 ### WING DEFINITION ###
 #Parameters #
-chord = 1.  # chord length
-half_wing_span = 100. # wing span length
+chord = 1.              # chord length
+half_wing_span = 100.    # wing span length
 
 # Points defining wing (x,y,z) #
 le_NW = np.array([0., half_wing_span, 0.])      # leading edge North - West coordinate
@@ -41,13 +44,13 @@ le_SW = np.array([0., -half_wing_span, 0.])     # leading edge South - West coor
 te_NE = np.array([chord, half_wing_span, 0.])   # trailing edge North - East coordinate
 te_SE = np.array([chord, -half_wing_span, 0.])  # trailing edge South - East coordinate
 
-AoA_deg = 3.0 # Angle of attack [deg]
+AoA_deg = 3.0   # Angle of attack [deg]
 Ry = rotation_matrix([0, 1, 0], np.deg2rad(AoA_deg))
 # we are going to rotate the geometry
 
 ### MESH DENSITY ###
-ns = 20    # number of panels (spanwise)
-nc = 1      # number of panels (chordwise)  # todo: make it work for more panels in chordwise direction
+ns = 10    # number of panels (spanwise)
+nc = 5   # number of panels (chordwise)
 
 panels, mesh = make_panels_from_le_te_points(
     [np.dot(Ry, le_SW),
@@ -73,14 +76,12 @@ assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p, panels)
 
 Fold = calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho=rho)
 
-from Solver.forces import calc_force_wrapper_new
 
-Fnew = calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho)
-Fnew = Fnew.reshape(N, 3)
-# F = Fold
-F = Fnew
 
-print(f"\n\ndF {Fnew - Fold}")
+# V_app_infw.reshape(ns,nc,3)
+F = calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho)
+F = F.reshape(N, 3)
+
 p = calc_pressure(F, panels)
 
 print("gamma_magnitude: \n")
@@ -99,11 +100,11 @@ CL_vlm = total_F[2] / q
 CD_vlm = total_F[0] / q
 
 print(f"\nAspect Ratio {AR}")
-print(f"CL_expected {CL_expected} \t CD_ind_expected {CD_ind_expected}")
-print(f"CL_vlm      {CL_vlm     } \t CD_vlm          {CD_vlm}")
+print(f"CL_expected {CL_expected:.6f} \t CD_ind_expected {CD_ind_expected:.6f}")
+print(f"CL_vlm      {CL_vlm:.6f}  \t CD_vlm          {CD_vlm:.6f}")
+
 print(f"\n\ntotal_F {str(total_F)}")
-print(f"\n\ntotal_Fold {str(np.sum(Fold, axis=0))}")
-print(f"\n\ntotal_Fnew {str(np.sum(Fnew, axis=0))}")
+print(f"total_Fold {str(np.sum(Fold, axis=0))}")
 print("=== END ===")
 
 

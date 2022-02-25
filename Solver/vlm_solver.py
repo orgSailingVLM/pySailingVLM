@@ -1,6 +1,6 @@
 import numpy as np
 from Solver.Panel import Panel
-from Solver.trailingedgepanel import TrailingEdgePanel
+from Solver.TrailingEdgePanel import TrailingEdgePanel
 
 
 # pomyslec nad jit by kod byl kompilowany
@@ -37,11 +37,11 @@ def calc_circulation(V_app_ifnw, panels):
     # it is assumed that the freestream velocity is V [vx,0,vz], where vx > 0
 
     A, RHS, v_ind_coeff = assembly_sys_of_eq(V_app_ifnw, panels)
-    print("A")
-    print(A)
-    print("RHS")
-    print(RHS)
-    print(np.shape(A), " ", np.shape(RHS))
+    # print("A")
+    # print(A)
+    # print("RHS")
+    # print(RHS)
+    # print(np.shape(A), " ", np.shape(RHS))
     gamma_magnitude = np.linalg.solve(A, RHS)
 
     return gamma_magnitude, v_ind_coeff

@@ -6,15 +6,21 @@ from Rotations.CSYS_transformations import CSYS_transformations
 from YachtGeometry.SailGeometry import SailSet
 
 from Inlet.InletConditions import InletConditions
-from Solver.forces import calc_force_inviscid_xyz
+from Solver.forces import calc_force_inviscid_xyz, calc_force_wrapper_new
 
 
 def prepare_inviscid_flow_results(V_app_fs, V_induced, gamma_magnitude, v_ind_coeff,
                                   sail_set: SailSet,
                                   inletConditions: InletConditions,
                                   csys_transformations: CSYS_transformations):
+
     spans = np.array([p.get_span_vector() for p in sail_set.panels1d])
-    force_xyz = calc_force_inviscid_xyz(V_app_fs, gamma_magnitude, spans, inletConditions.rho) # TODO: propably this shall also be calc_force_wrapper - V_app_fs with respect to cp
+    # TODO: this shall be like in calc_force_wrapper:
+    #  - V_app_fs with respect to cp
+    #  - calculate dGamma as there are more panels in chordwise direction
+
+    force_xyz = calc_force_inviscid_xyz(V_app_fs, gamma_magnitude, spans, inletConditions.rho)  # be carefull V_app_fs shall be calculated with respect to cp
+
     inviscid_flow_results = InviscidFlowResults(gamma_magnitude, v_ind_coeff, V_induced, V_app_fs,
                                                 force_xyz, sail_set, csys_transformations)
     return inviscid_flow_results

@@ -1,6 +1,7 @@
 import numpy as np
 from Solver.Panel import Panel
-from Solver.trailingedgepanel import TrailingEdgePanel
+from Solver.TrailingEdgePanel import TrailingEdgePanel
+
 
 def join_panels(panels1, panels2):
     joined_panels = []

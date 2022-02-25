@@ -79,14 +79,12 @@ class Panel(object):
         # for the wing in x-y plane the normal is assumed to be z-axis-positive,
         # and circulation is assumed to be z-axis-negative
 
-        # TODO: check formula from Katz and Plotkin,
+        # formula from Katz and Plotkin,
         #  Fig 12.11 p 343, Chapter 12.3 Lifting-Surface Solution by Vortex Ring Elements
-        #  p2p4 x p1p3
-        p1_p2 = self.p2 - self.p1
-        p1_p4 = self.p4 - self.p1
-
-        # n = np.cross(p1_p2, p1_p4)
-        n = np.cross(p1_p4, p1_p2)
+        p2_p4 = self.p4 - self.p2
+        p1_p3 = self.p3 - self.p1
+        n = np.cross(p2_p4, p1_p3)
+        # n = np.cross(p1_p3, p2_p4)
         n = normalize(n)
         return n
 
@@ -113,7 +111,7 @@ class Panel(object):
         [A, B, C, D] = self.get_vortex_ring_position()
         bc = C - B
         bc *= self.gamma_orientation
-        return bc
+        return np.array(bc)
 
     def get_panel_span_at_cp(self):
         # this is length of vortex line going through centre of pressure

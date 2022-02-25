@@ -64,7 +64,7 @@ def calc_V_at_cp(V_app_infw, gamma_magnitude, panels):
 
     V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
     V_at_cp = V_app_infw + V_induced
-    return V_at_cp
+    return V_at_cp, V_induced
 
 
 def calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho):
@@ -75,33 +75,48 @@ def calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho):
     :param rho: air density
     :return: force
     """
-
     panels_1d = panels.flatten()
     N = len(panels_1d)
-    V_at_cp = calc_V_at_cp(V_app_infw, gamma_magnitude, panels)
+    V_at_cp, V_induced = calc_V_at_cp(V_app_infw, gamma_magnitude, panels)
 
     force = np.full((N, 3), 0., dtype=float)
     for i in range(0, N):
-        [A, B, C, D] = panels_1d[i].get_vortex_ring_position()
-        bc = C - B
-        gamma = bc * gamma_magnitude[i]
-
-
-        from numpy.testing import assert_almost_equal
-        gamma_new = panels_1d[i].get_span_vector() * gamma_magnitude[i]  # this form is shorter
-        assert_almost_equal(gamma, gamma_new)  # TODO: add a unit test for a spanwise wing
-
+        gamma = panels_1d[i].get_span_vector() * gamma_magnitude[i]  # this form is shorter
         force[i] = rho * np.cross(V_at_cp[i], gamma)
 
     return force
+
+def calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels):
+    """
+    :param V_app_infw: apparent wind
+    :param gamma_magnitude: vector with circulations
+    :param panels:
+    :return: Wind at cp = apparent wind + wind_induced_at_cp
+    """
+    panels_1d = panels.flatten()
+    N = len(panels_1d)
+    v_ind_coeff = np.full((N, N, 3), 0., dtype=float)
+
+    for i in range(0, N):
+        cp = panels_1d[i].get_cp_position()
+        for j in range(0, N):
+            # velocity induced at i-th control point by j-th vortex
+            v_ind_coeff[i][j] = panels_1d[j].get_induced_velocity(cp, V_app_infw[j])
+
+    V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
+    # V_induced_re = V_induced.reshape(N, 3)
+    V_at_cp = V_app_infw + V_induced
+    return V_at_cp, V_induced
 
 
 def calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho):
     # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     # f. Secondary Computations: Pressures, Loads, Velocities, Etc
     #Eq (12.25)
-    V_at_cp = calc_V_at_cp(V_app_infw, gamma_magnitude, panels)
 
+    V_at_cp, V_induced = calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels)
+
+    V_at_cp_re = V_at_cp.reshape(panels.shape[0], panels.shape[1], 3)
     gamma_re = gamma_magnitude.reshape(panels.shape)
     force_re_xyz = np.full((panels.shape[0], panels.shape[1], 3), 0., dtype=float)
     for i in range(0, panels.shape[0]):
@@ -111,7 +126,7 @@ def calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho):
             else:
                 gamma = panels[i, j].get_span_vector() * (gamma_re[i, j]-gamma_re[i-1, j])
 
-            force_re_xyz[i, j, :] = rho * np.cross(V_at_cp[j], gamma) # todo: V_at_cp shall have dimensions (panels.shape[0],panels.shape[1],3)!!!
+            force_re_xyz[i, j, :] = rho * np.cross(V_at_cp_re[i, j], gamma)
 
     return force_re_xyz
 
