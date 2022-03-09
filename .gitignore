@@ -131,3 +131,4 @@ dmypy.json
 Examples/results_example_*
 tests_VLM/results_example_*
 .idea
+/Examples/results_example_jib_and_mainsail_vlm/*
