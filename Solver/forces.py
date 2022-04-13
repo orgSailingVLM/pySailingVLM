@@ -2,14 +2,6 @@ import numpy as np
 from Solver.vlm_solver import calc_induced_velocity
 
 
-def calc_force_inviscid_xyz(V_app_fs_at_cp, gamma_magnitude, span_vectors, rho):
-    N = len(gamma_magnitude)
-    force_xyz = np.full((N, 3), 0., dtype=float)
-    for i in range(0, N):
-        gamma = span_vectors[i] * gamma_magnitude[i]
-        force_xyz[i] = rho * np.cross(V_app_fs_at_cp[i], gamma)
-    return force_xyz
-
 
 def calc_moment_arm_in_shifted_csys(cp_points, v_from_old_2_new_csys):
     dx, dy, dz = v_from_old_2_new_csys
@@ -61,12 +53,21 @@ def calc_V_at_cp(V_app_infw, gamma_magnitude, panels):
             # velocity induced at i-th control point by j-th vortex
             v_ind_coeff[i][j] = panels_1d[j].get_induced_velocity(cp, V_app_infw[j])
 
-    V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
-    V_at_cp = V_app_infw + V_induced
-    return V_at_cp, V_induced
+    V_induced_at_cp = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
+    V_app_fs_at_cp = V_app_infw + V_induced_at_cp
+    return V_app_fs_at_cp, V_induced_at_cp
 
 
-def calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho):
+def calc_force_LLT_xyz(V_app_fs_at_cp, gamma_magnitude, span_vectors, rho):
+    N = len(gamma_magnitude)
+    force_xyz = np.full((N, 3), 0., dtype=float)
+    for i in range(0, N):
+        gamma = span_vectors[i] * gamma_magnitude[i]
+        force_xyz[i] = rho * np.cross(V_app_fs_at_cp[i], gamma)
+    return force_xyz
+
+
+def calc_force_VLM_wrapper(V_app_infw, gamma_magnitude, panels, rho):
     """
     Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     f. Secondary Computations: Pressures, Loads, Velocities, Etc
@@ -79,9 +80,9 @@ def calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho):
     :return: force
     """
 
-    V_at_cp, V_induced = calc_V_at_cp(V_app_infw, gamma_magnitude, panels)
+    V_app_fs_at_cp, V_induced_at_cp = calc_V_at_cp(V_app_infw, gamma_magnitude, panels)
 
-    V_at_cp_re = V_at_cp.reshape(panels.shape[0], panels.shape[1], 3)
+    V_app_fs_at_cp_re = V_app_fs_at_cp.reshape(panels.shape[0], panels.shape[1], 3)
     gamma_re = gamma_magnitude.reshape(panels.shape)
     force_re_xyz = np.full((panels.shape[0], panels.shape[1], 3), 0., dtype=float)
     for i in range(0, panels.shape[0]):
@@ -91,9 +92,9 @@ def calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho):
             else:
                 gamma = panels[i, j].get_span_vector() * (gamma_re[i, j]-gamma_re[i-1, j])
 
-            force_re_xyz[i, j, :] = rho * np.cross(V_at_cp_re[i, j], gamma)
+            force_re_xyz[i, j, :] = rho * np.cross(V_app_fs_at_cp_re[i, j], gamma)
 
-    return force_re_xyz
+    return force_re_xyz, V_app_fs_at_cp, V_induced_at_cp
 
 
 def calc_pressure(force, panels):
@@ -104,8 +105,8 @@ def calc_pressure(force, panels):
     for i in range(n):
         area = panels_1d[i].get_panel_area()
         n = panels_1d[i].get_normal_to_panel()
-        p[i] = np.dot(force[i], n) / area
-
+        p[i] = np.dot(force[i], n) / area # todo: fix sign
+        # p[i] = np.linalg.norm(force[i], axis=0)/ area  # this make a difference (due to induced drag)
     return p
 
 

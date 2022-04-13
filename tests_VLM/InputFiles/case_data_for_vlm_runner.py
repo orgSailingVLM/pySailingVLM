@@ -11,6 +11,7 @@ output_dir_name = os.path.join("../results_example_jib_and_mainsail", time_stamp
 
 # SOLVER SETTINGS
 n_spanwise = 25  # No of control points (above the water) per sail, recommended: 50
+n_chordwise = 1  # No of control points (above the water) per sail
 # AoA_0lift_iterations = 10 # recommended range [10-20] note that running 1 iteration produce a shape without AoA_0lift constraint
 # AoA_0lift_max_change_per_iteration_deg = 0.05  # [deg] recommended range [0.1 - 0.01]
 # wind_sub_iterations = 3  # recommended value 3 - enough to converge CL and Heeling moment constrains

@@ -23,6 +23,11 @@ class BaseGeometry:
     def panels1d(self):
         pass
 
+    @property
+    @abstractmethod
+    def panels(self):
+        pass
+
     @abstractmethod
     def extract_data_above_water(self, data):
         pass
@@ -47,12 +52,12 @@ class BaseGeometry:
 class SailGeometry(BaseGeometry):
     def __init__(self, head_mounting: np.array, tack_mounting: np.array,
                  csys_transformations: CSYS_transformations,
-                 n_spanwise=10, chords=None,
+                 n_spanwise=10, n_chordwise=1, chords=None,
                  initial_sail_twist_deg=None, name=None, LLT_twist = None
                  ):
 
         self.__n_spanwise = n_spanwise  # number of panels (span-wise) - above the water
-        self.__n_chordwise = 1  # number of panels (chord-wise) - in LLT there is line instead of panels
+        self.__n_chordwise = n_chordwise  # number of panels (chord-wise) - in LLT there is line instead of panels
         self.name = name
 
         self.csys_transformations = csys_transformations
@@ -150,8 +155,10 @@ class SailGeometry(BaseGeometry):
                 [le_SW_underwater, te_SE_underwater, le_NW_underwater, te_NE_underwater],
                 [self.__n_chordwise, self.__n_spanwise], gamma_orientation=-1)
 
-        self.__all_panels = np.concatenate((panels_mirror.flatten(), panels.flatten()))
-        self.__panels1D = self.__all_panels.flatten()
+        # https://stackoverflow.com/questions/33356442/when-should-i-use-hstack-vstack-vs-append-vs-concatenate-vs-column-stack
+        # self.__all_panels = np.concatenate((panels_mirror.flatten(), panels.flatten())) # todo remove after refactoring
+        self.__panels = np.hstack((panels_mirror, panels))
+        self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
 
     def rotate_chord_around_le(self, axis, chords_vec, sail_twist_deg_vec):
@@ -184,6 +191,10 @@ class SailGeometry(BaseGeometry):
     def panels1d(self) -> np.array([Panel]):
         return self.__panels1D
 
+    @property
+    def panels(self) -> np.array([Panel]):
+        return self.__panels
+
     def extract_data_above_water(self, data):
         N = len(self.panels1d)
         underwater_part = int(N/2)
@@ -194,13 +205,22 @@ class SailGeometry(BaseGeometry):
 class SailSet(BaseGeometry):
     def __init__(self, sails: List[SailGeometry]):
         self.sails = sails
-        self.__all_panels = np.concatenate([sail.panels1d for sail in self.sails])
-        self.__panels1D = self.__all_panels.flatten()
+        # self.__all_panels = np.concatenate([sail.panels1d for sail in self.sails]) # todo: remove after refactoring
+        # self.__panels1D = self.__all_panels.flatten() # todo: remove after refactoring
+
+        # https://stackoverflow.com/questions/33356442/when-should-i-use-hstack-vstack-vs-append-vs-concatenate-vs-column-stack
+        self.__panels = np.hstack([sail.panels for sail in self.sails])
+        # self.__panels1D = np.concatenate([sail.panels1d for sail in self.sails]).flatten()
+        self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
 
     @property
     def panels1d(self):
         return self.__panels1D
+
+    @property
+    def panels(self) -> np.array([Panel]):
+        return self.__panels
 
     @property
     def spans(self):

@@ -14,7 +14,7 @@ from Solver.PanelsPlotter import display_panels_xyz_and_winds
 from Solver.vlm_solver import is_no_flux_BC_satisfied
 
 from Solver.vlm_solver import calc_circulation
-from ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results
+from ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_LLT
 from Solver.vlm_solver import calculate_app_fs
 
 
@@ -39,8 +39,8 @@ csys_transformations = CSYS_transformations(
     heel_deg, leeway_deg,
     v_from_original_xyz_2_reference_csys_xyz=reference_level_for_moments)
 
-sail_factory = SailFactory(n_spanwise=n_spanwise, csys_transformations=csys_transformations, rake_deg=rake_deg,
-                           sheer_above_waterline=sheer_above_waterline)
+sail_factory = SailFactory(csys_transformations=csys_transformations, n_spanwise=n_spanwise, n_chordwise=n_chordwise,
+                           rake_deg=rake_deg, sheer_above_waterline=sheer_above_waterline)
 
 jib_geometry = sail_factory.make_jib(
     jib_luff=jib_luff,
@@ -72,19 +72,44 @@ inlet_condition = InletConditions(wind, rho=rho, panels1D=sail_set.panels1d)
 
 hull = HullGeometry(sheer_above_waterline, foretriangle_base, csys_transformations, center_of_lateral_resistance_upright)
 
-gamma_magnitude, v_ind_coeff = calc_circulation(inlet_condition.V_app_infs, sail_set.panels1d)
-V_induced, V_app_fs = calculate_app_fs(inlet_condition, v_ind_coeff, gamma_magnitude)
-assert is_no_flux_BC_satisfied(V_app_fs, sail_set.panels1d)
+gamma_magnitude, v_ind_coeff = calc_circulation(inlet_condition.V_app_infs, sail_set.panels)
+V_induced_at_ctrl_p, V_app_fs_at_ctrl_p = calculate_app_fs(inlet_condition, v_ind_coeff, gamma_magnitude)
 
-# TODO: this shall be like in calc_force_wrapper:
-#  - V_app_fs with respect to cp
-#  - calculate dGamma as there are more panels in chordwise direction
-inviscid_flow_results = prepare_inviscid_flow_results(
-    V_app_fs, V_induced, gamma_magnitude, v_ind_coeff,
-    sail_set, inlet_condition, csys_transformations)
+assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, sail_set.panels)
+
+#########################################
+# the old BAD way (ctr_p instead of cp)  - remove
+# from ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_LLT
+# inviscid_flow_results = prepare_inviscid_flow_results_LLT(
+#     V_app_fs_at_ctrl_p, V_induced_at_ctrl_p, gamma_magnitude, v_ind_coeff,
+#     sail_set, inlet_condition, csys_transformations)
+
+
+#########################################
+# the old 1D way  - remove after refactoring
+# from Solver.forces import calc_force_LLT_xyz, calc_V_at_cp
+# spans = np.array([p.get_span_vector() for p in sail_set.panels1d])
+# __V_app_fs_at_cp, __V_induced_at_cp = calc_V_at_cp(inlet_condition.V_app_infs, gamma_magnitude, sail_set.panels1d)
+# force_xyz_LLT = calc_force_LLT_xyz(__V_app_fs_at_cp, gamma_magnitude, spans, inlet_condition.rho)  # be carefull V_app_fs shall be calculated with respect to cp
+########################################
+# the new way
+from ResultsContainers.InviscidFlowResults import InviscidFlowResults
+from Solver.forces import calc_force_VLM_wrapper, calc_pressure
+# # TODO: in calc_force_wrapper:
+# #  it seems that calculation of dGamma for more than one panel in chordwise direction works fine (but one shall check it)
+
+force_xyz3d, V_app_fs_at_cp, V_induced_at_cp = calc_force_VLM_wrapper(inlet_condition.V_app_infs, gamma_magnitude, sail_set.panels, inlet_condition.rho)
+force_xyz = force_xyz3d.reshape(len(sail_set.panels1d), 3)
+pressure = calc_pressure(force_xyz, sail_set.panels)
+pressure3d = pressure.reshape(sail_set.panels.shape)
+
+inviscid_flow_results = InviscidFlowResults(gamma_magnitude, pressure, V_induced_at_cp, V_app_fs_at_cp,
+                                            force_xyz, sail_set, csys_transformations)
+
 
 inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
 
+print("Preparing visualization.")
 display_panels_xyz_and_winds(sail_set.panels1d, inlet_condition, inviscid_flow_results, hull)
 
 #
@@ -96,7 +121,8 @@ print(f"-------------------------------------------------------------")
 print(f"Notice:\n"
       f"\tThe forces [N] and moments [Nm] are without profile drag.\n"
       f"\tThe the _COG_ CSYS is aligned in the direction of the yacht movement (course over ground).\n"
-      f"\tThe the _COW_ CSYS is aligned along the centerline of the yacht (course over water).\n")
+      f"\tThe the _COW_ CSYS is aligned along the centerline of the yacht (course over water).\n"
+      f"\tNumber of panels (sail set with mirror): {sail_set.panels.shape}")
 
 print(df_integrals)
 

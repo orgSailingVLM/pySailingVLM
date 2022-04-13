@@ -4,8 +4,8 @@ from Solver.vlm_solver import calc_circulation
 from Solver.mesher import make_panels_from_le_te_points
 from Rotations.geometry_calc import rotation_matrix
 from Solver.coeff_formulas import get_CL_CD_free_wing
-from Solver.forces import calc_force_wrapper, calc_pressure
-from Solver.forces import calc_force_wrapper
+from Solver.forces import calc_pressure
+from Solver.forces import calc_force_VLM_wrapper
 from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
 
 ### GEOMETRY DEFINITION ###
@@ -69,13 +69,13 @@ V_app_infw = np.array([V for i in range(N)])
 rho = 1.225  # fluid density [kg/m3]
 
 ### CALCULATIONS ###
-gamma_magnitude, v_ind_coeff = calc_circulation(V_app_infw, panels)
-V_induced_at_ctrl_p = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
+gamma_magnitude, v_ind_coeff_at_ctr_p = calc_circulation(V_app_infw, panels)
+V_induced_at_ctrl_p = calc_induced_velocity(v_ind_coeff_at_ctr_p, gamma_magnitude)
 V_app_fw_at_ctrl_p = V_app_infw + V_induced_at_ctrl_p
 assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p, panels)
 
 
-F = calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho)
+F, _, _ = calc_force_VLM_wrapper(V_app_infw, gamma_magnitude, panels, rho)
 F = F.reshape(N, 3)
 
 p = calc_pressure(F, panels)
@@ -100,7 +100,6 @@ print(f"CL_expected {CL_expected:.6f} \t CD_ind_expected {CD_ind_expected:.6f}")
 print(f"CL_vlm      {CL_vlm:.6f}  \t CD_vlm          {CD_vlm:.6f}")
 
 print(f"\n\ntotal_F {str(total_F)}")
-print(f"total_Fold {str(np.sum(Fold, axis=0))}")
 print("=== END ===")
 
 
