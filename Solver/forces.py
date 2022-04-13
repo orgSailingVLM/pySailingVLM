@@ -8,7 +8,6 @@ def calc_force_inviscid_xyz(V_app_fs_at_cp, gamma_magnitude, span_vectors, rho):
     for i in range(0, N):
         gamma = span_vectors[i] * gamma_magnitude[i]
         force_xyz[i] = rho * np.cross(V_app_fs_at_cp[i], gamma)
-
     return force_xyz
 
 
@@ -69,52 +68,18 @@ def calc_V_at_cp(V_app_infw, gamma_magnitude, panels):
 
 def calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho):
     """
-    force = rho* (V_app_fw_at_cp x gamma)
+    Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
+    f. Secondary Computations: Pressures, Loads, Velocities, Etc
+    Eq (12.25)
+
+    force = rho* (V_app_fw_at_cp x gamma*span)
     :param V_app_infw: apparent wind
     :param gamma_magnitude: vector with circulations
     :param rho: air density
     :return: force
     """
-    panels_1d = panels.flatten()
-    N = len(panels_1d)
+
     V_at_cp, V_induced = calc_V_at_cp(V_app_infw, gamma_magnitude, panels)
-
-    force = np.full((N, 3), 0., dtype=float)
-    for i in range(0, N):
-        gamma = panels_1d[i].get_span_vector() * gamma_magnitude[i]  # this form is shorter
-        force[i] = rho * np.cross(V_at_cp[i], gamma)
-
-    return force
-
-def calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels):
-    """
-    :param V_app_infw: apparent wind
-    :param gamma_magnitude: vector with circulations
-    :param panels:
-    :return: Wind at cp = apparent wind + wind_induced_at_cp
-    """
-    panels_1d = panels.flatten()
-    N = len(panels_1d)
-    v_ind_coeff = np.full((N, N, 3), 0., dtype=float)
-
-    for i in range(0, N):
-        cp = panels_1d[i].get_cp_position()
-        for j in range(0, N):
-            # velocity induced at i-th control point by j-th vortex
-            v_ind_coeff[i][j] = panels_1d[j].get_induced_velocity(cp, V_app_infw[j])
-
-    V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
-    # V_induced_re = V_induced.reshape(N, 3)
-    V_at_cp = V_app_infw + V_induced
-    return V_at_cp, V_induced
-
-
-def calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho):
-    # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
-    # f. Secondary Computations: Pressures, Loads, Velocities, Etc
-    #Eq (12.25)
-
-    V_at_cp, V_induced = calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels)
 
     V_at_cp_re = V_at_cp.reshape(panels.shape[0], panels.shape[1], 3)
     gamma_re = gamma_magnitude.reshape(panels.shape)

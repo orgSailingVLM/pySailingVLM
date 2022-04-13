@@ -76,6 +76,9 @@ gamma_magnitude, v_ind_coeff = calc_circulation(inlet_condition.V_app_infs, sail
 V_induced, V_app_fs = calculate_app_fs(inlet_condition, v_ind_coeff, gamma_magnitude)
 assert is_no_flux_BC_satisfied(V_app_fs, sail_set.panels1d)
 
+# TODO: this shall be like in calc_force_wrapper:
+#  - V_app_fs with respect to cp
+#  - calculate dGamma as there are more panels in chordwise direction
 inviscid_flow_results = prepare_inviscid_flow_results(
     V_app_fs, V_induced, gamma_magnitude, v_ind_coeff,
     sail_set, inlet_condition, csys_transformations)
