@@ -2,15 +2,6 @@ import numpy as np
 from Solver.vlm_solver import calc_induced_velocity
 
 
-def calc_force_inviscid_xyz(V_app_fs_at_cp, gamma_magnitude, span_vectors, rho):
-    N = len(gamma_magnitude)
-    force_xyz = np.full((N, 3), 0., dtype=float)
-    for i in range(0, N):
-        gamma = span_vectors[i] * gamma_magnitude[i]
-        force_xyz[i] = rho * np.cross(V_app_fs_at_cp[i], gamma)
-
-    return force_xyz
-
 
 def calc_moment_arm_in_shifted_csys(cp_points, v_from_old_2_new_csys):
     dx, dy, dz = v_from_old_2_new_csys
@@ -45,50 +36,80 @@ def extract_above_water_quantities(quantities, cp_points):
     return above_water_quantities, total_above_water_quantities
 
 
-def calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho):
-
+def calc_V_at_cp(V_app_infw, gamma_magnitude, panels):
     """
-    force = rho* (V_app_fw_at_cp x gamma)
-    :param V: apparent wind finite sail (including all induced velocities) at control point
-    :param gamma_magnitude: vector
-    :param rho: 
-    :return: 
+    :param V_app_infw: apparent wind
+    :param gamma_magnitude: vector with circulations
+    :param panels:
+    :return: Wind at cp = apparent wind + wind_induced_at_cp
     """
-
     panels_1d = panels.flatten()
     N = len(panels_1d)
     v_ind_coeff = np.full((N, N, 3), 0., dtype=float)
 
     for i in range(0, N):
+        if i % 10 == 0:
+            print(f"assembling v_ind_coeff matrix at cp {i}/{N}")
+
         cp = panels_1d[i].get_cp_position()
         for j in range(0, N):
             # velocity induced at i-th control point by j-th vortex
-            v_ind_coeff[i][j] = panels_1d[j].get_horse_shoe_induced_velocity(cp, V_app_infw[j])
+            v_ind_coeff[i][j] = panels_1d[j].get_induced_velocity(cp, V_app_infw[j])
 
-    V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
-    V_at_cp = V_app_infw + V_induced
+    V_induced_at_cp = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
+    V_app_fs_at_cp = V_app_infw + V_induced_at_cp
+    return V_app_fs_at_cp, V_induced_at_cp
 
-    force = np.full((N, 3), 0., dtype=float)
+
+def calc_force_LLT_xyz(V_app_fs_at_cp, gamma_magnitude, span_vectors, rho):
+    N = len(gamma_magnitude)
+    force_xyz = np.full((N, 3), 0., dtype=float)
     for i in range(0, N):
-        [A, B, C, D] = panels_1d[i].get_vortex_ring_position()
-        bc = C - B
-        gamma = bc * gamma_magnitude[i]
-        force[i] = rho * np.cross(V_at_cp[i], gamma)
+        gamma = span_vectors[i] * gamma_magnitude[i]
+        force_xyz[i] = rho * np.cross(V_app_fs_at_cp[i], gamma)
+    return force_xyz
 
-    return force
+
+def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
+    """
+    Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
+    f. Secondary Computations: Pressures, Loads, Velocities, Etc
+    Eq (12.25)
+
+    force = rho* (V_app_fw_at_cp x gamma*span)
+    :param V_app_infw: apparent wind
+    :param gamma_magnitude: vector with circulations
+    :param rho: air density
+    :return: force
+    """
+
+    V_app_fs_at_cp, V_induced_at_cp = calc_V_at_cp(V_app_infw, gamma_magnitude, panels)
+
+    V_app_fs_at_cp_re = V_app_fs_at_cp.reshape(panels.shape[0], panels.shape[1], 3)
+    gamma_re = gamma_magnitude.reshape(panels.shape)
+    force_re_xyz = np.full((panels.shape[0], panels.shape[1], 3), 0., dtype=float)
+    for i in range(0, panels.shape[0]):
+        for j in range(0, panels.shape[1]):
+            if i == 0:  # leading edge only
+                gamma = panels[i, j].get_span_vector() * gamma_re[i, j]
+            else:
+                gamma = panels[i, j].get_span_vector() * (gamma_re[i, j]-gamma_re[i-1, j])
+
+            force_re_xyz[i, j, :] = rho * np.cross(V_app_fs_at_cp_re[i, j], gamma)
+
+    return force_re_xyz, V_app_fs_at_cp, V_induced_at_cp
 
 
 def calc_pressure(force, panels):
     panels_1d = panels.flatten()
-
     n = len(panels_1d)
     p = np.zeros(shape=n)
 
     for i in range(n):
         area = panels_1d[i].get_panel_area()
         n = panels_1d[i].get_normal_to_panel()
-        p[i] = np.dot(force[i], n) / area
-
+        p[i] = np.dot(force[i], n) / area  # todo: fix sign
+        # p[i] = np.linalg.norm(force[i], axis=0)/ area  # this make a difference (due to induced drag)
     return p
 
 

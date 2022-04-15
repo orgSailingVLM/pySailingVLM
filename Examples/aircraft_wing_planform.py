@@ -4,7 +4,8 @@ from Solver.vlm_solver import calc_circulation
 from Solver.mesher import make_panels_from_le_te_points
 from Rotations.geometry_calc import rotation_matrix
 from Solver.coeff_formulas import get_CL_CD_free_wing
-from Solver.forces import calc_force_wrapper, calc_pressure
+from Solver.forces import calc_pressure
+from Solver.forces import calc_force_VLM_xyz
 from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
 
 ### GEOMETRY DEFINITION ###
@@ -29,10 +30,12 @@ from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
  
 """
 
+np.set_printoptions(precision=3, suppress=True)
+
 ### WING DEFINITION ###
 #Parameters #
-chord = 1.  # chord length
-half_wing_span = 10. # wing span length
+chord = 1.              # chord length
+half_wing_span = 100.    # wing span length
 
 # Points defining wing (x,y,z) #
 le_NW = np.array([0., half_wing_span, 0.])      # leading edge North - West coordinate
@@ -41,13 +44,13 @@ le_SW = np.array([0., -half_wing_span, 0.])     # leading edge South - West coor
 te_NE = np.array([chord, half_wing_span, 0.])   # trailing edge North - East coordinate
 te_SE = np.array([chord, -half_wing_span, 0.])  # trailing edge South - East coordinate
 
-AoA_deg = 3.0 # Angle of attack [deg]
+AoA_deg = 3.0   # Angle of attack [deg]
 Ry = rotation_matrix([0, 1, 0], np.deg2rad(AoA_deg))
 # we are going to rotate the geometry
 
 ### MESH DENSITY ###
-ns = 20     # number of panels (spanwise)
-nc = 5      # number of panels (chordwise)
+ns = 10    # number of panels (spanwise)
+nc = 5   # number of panels (chordwise)
 
 panels, mesh = make_panels_from_le_te_points(
     [np.dot(Ry, le_SW),
@@ -61,18 +64,20 @@ rows, cols = panels.shape
 N = rows * cols
 
 ### FLIGHT CONDITIONS ###
-V = [10.0, 0.0, 0.0]
+V = 1*np.array([10.0, 0.0, 0.0])
 V_app_infw = np.array([V for i in range(N)])
 rho = 1.225  # fluid density [kg/m3]
 
 ### CALCULATIONS ###
-gamma_magnitude, v_ind_coeff = calc_circulation(V_app_infw, panels)
-V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
-V_app_fw = V_app_infw + V_induced
+gamma_magnitude, v_ind_coeff_at_ctr_p = calc_circulation(V_app_infw, panels)
+V_induced_at_ctrl_p = calc_induced_velocity(v_ind_coeff_at_ctr_p, gamma_magnitude)
+V_app_fw_at_ctrl_p = V_app_infw + V_induced_at_ctrl_p
+assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p, panels)
 
-assert is_no_flux_BC_satisfied(V_app_fw, panels)
 
-F = calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho=rho)
+F, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho)
+F = F.reshape(N, 3)
+
 p = calc_pressure(F, panels)
 
 print("gamma_magnitude: \n")
@@ -91,7 +96,11 @@ CL_vlm = total_F[2] / q
 CD_vlm = total_F[0] / q
 
 print(f"\nAspect Ratio {AR}")
-print(f"CL_expected {CL_expected} \t CD_ind_expected {CD_ind_expected}")
-print(f"CL_vlm      {CL_vlm     } \t CD_vlm          {CD_vlm}")
+print(f"CL_expected {CL_expected:.6f} \t CD_ind_expected {CD_ind_expected:.6f}")
+print(f"CL_vlm      {CL_vlm:.6f}  \t CD_vlm          {CD_vlm:.6f}")
+
 print(f"\n\ntotal_F {str(total_F)}")
 print("=== END ===")
+
+
+# po dodaniu TrailingEdge wyniki powinny byc o okolo kilkanacsie procent inne

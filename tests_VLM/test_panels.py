@@ -60,7 +60,6 @@ class TestPanels(TestCase):
         expected_cp2 = [1., 3.375, 0]
         assert_almost_equal(expected_cp2, cp2)
 
-
     def test_get_vortex_ring_position(self):
         vortex_ring_position = self.panel.get_vortex_ring_position()
         expected_vortex_riing_position = [[12.5, 0., 0.],
@@ -71,7 +70,9 @@ class TestPanels(TestCase):
         assert_almost_equal(expected_vortex_riing_position, vortex_ring_position)
 
     def test_get_vortex_ring_induced_velocity(self):
-        v_ind = self.panel.get_vortex_ring_induced_velocity()
+        ctr_p = self.panel.get_ctr_point_position()
+        dummy_velocity = None
+        v_ind = self.panel.get_induced_velocity(ctr_p, dummy_velocity)
         v_ind_expected = [0, 0, -0.09003163161571061]
 
         assert_almost_equal(v_ind, v_ind_expected)

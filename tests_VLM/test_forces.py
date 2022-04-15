@@ -4,50 +4,71 @@ from numpy.testing import assert_almost_equal
 from Solver.vlm_solver import calc_circulation
 from Solver.mesher import make_panels_from_le_te_points
 from Solver.coeff_formulas import get_CL_CD_free_wing
-from Solver.forces import calc_force_wrapper, calc_pressure, determine_vector_from_its_dot_and_cross_product
+from Solver.forces import calc_force_VLM_xyz, calc_pressure, determine_vector_from_its_dot_and_cross_product
+from Solver.forces import calc_force_VLM_xyz
 from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
 from Rotations.geometry_calc import rotation_matrix
 from unittest import TestCase
 from numpy.linalg import norm
 
 class TestForces(TestCase):
-    def test_CL(self):
+    def setUp(self):
         ### WING DEFINITION ###
         # Parameters #
         chord = 1.  # chord length
-        half_wing_span = 10.  # wing span length
+        half_wing_span = 100.  # wing span length
 
         # Points defining wing (x,y,z) #
-        le_NW = np.array([0., half_wing_span, 0.])  # leading edge North - West coordinate
-        le_SW = np.array([0., -half_wing_span, 0.])  # leading edge South - West coordinate
+        self.le_NW = np.array([0., half_wing_span, 0.])  # leading edge North - West coordinate
+        self.le_SW = np.array([0., -half_wing_span, 0.])  # leading edge South - West coordinate
 
-        te_NE = np.array([chord, half_wing_span, 0.])  # trailing edge North - East coordinate
-        te_SE = np.array([chord, -half_wing_span, 0.])  # trailing edge South - East coordinate
+        self.te_NE = np.array([chord, half_wing_span, 0.])  # trailing edge North - East coordinate
+        self.te_SE = np.array([chord, -half_wing_span, 0.])  # trailing edge South - East coordinate
 
         AoA_deg = 3.0  # Angle of attack [deg]
-        Ry = rotation_matrix([0, 1, 0], np.deg2rad(AoA_deg))
-        # we are going to rotate the geometry
+        self.Ry = rotation_matrix([0, 1, 0], np.deg2rad(AoA_deg))
 
-        ### MESH DENSITY ###
-        ns = 20  # number of panels (spanwise)
-        nc = 3  # number of panels (chordwise)
 
+        # reference values - to compare with book coeff_formulas
+        self.AR = 2 * half_wing_span / chord
+        self.S = 2 * half_wing_span * chord
+        self.CL_expected, self.CD_ind_expected = get_CL_CD_free_wing(self.AR, AoA_deg)
+
+        ### FLIGHT CONDITIONS ###
+        self.V = [10.0, 0.0, 0.0]
+
+        self.rho = 1.225  # fluid density [kg/m3]
+
+    def get_geom(self, ns, nc):
         panels, mesh = make_panels_from_le_te_points(
-            [np.dot(Ry, le_SW),
-             np.dot(Ry, te_SE),
-             np.dot(Ry, le_NW),
-             np.dot(Ry, te_NE)],
+            [np.dot(self.Ry, self.le_SW),
+             np.dot(self.Ry, self.te_SE),
+             np.dot(self.Ry, self.le_NW),
+             np.dot(self.Ry, self.te_NE)],
             [nc, ns],
             gamma_orientation=1)
 
-        rows, cols = panels.shape
-        N = rows * cols
+        return panels, mesh
 
-        ### FLIGHT CONDITIONS ###
-        V = [10.0, 0.0, 0.0]
-        V_app_infw = np.array([V for i in range(N)])
-        rho = 1.225  # fluid density [kg/m3]
+    def get_CL_CD_from_F(self, F):
+        total_F = np.sum(F, axis=0)
+        q = 0.5 * self.rho * (np.linalg.norm(self.V) ** 2) * self.S
+        CL_vlm = total_F[2] / q
+        CD_vlm = total_F[0] / q
 
+        return CL_vlm, CD_vlm
+
+    def test_CL_CD_spanwise_only(self):
+        ### ARRANGE ###
+        ### MESH DENSITY ###
+        ns = 20  # number of panels (spanwise)
+        nc = 1   # number of panels (chordwise)
+        N = ns * nc
+
+        panels, mesh = self.get_geom(ns, nc)
+        V_app_infw = np.array([self.V for _ in range(N)])
+
+        ### ACT ###
         ### CALCULATIONS ###
         gamma_magnitude, v_ind_coeff = calc_circulation(V_app_infw, panels)
         V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
@@ -55,24 +76,48 @@ class TestForces(TestCase):
 
         assert is_no_flux_BC_satisfied(V_app_fw, panels)
 
-        F = calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho=rho)
-        p = calc_pressure(F, panels)
+        F, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
+        F = F.reshape(N, 3)
+        ### compare vlm with book coeff_formulas ###
+        CL_vlm, CD_vlm = self.get_CL_CD_from_F(F)
+
+        # rel_err_CL = abs((self.CL_expected - CL_vlm) / self.CL_expected)
+        # rel_err_CD = abs((self.CD_ind_expected - CD_vlm) / self.CD_ind_expected)
+        # print(f"CL_expected: {self.CL_expected:.4f} \t CL_vlm: {CL_vlm:.4f}")
+        # print(f"CD_ind_expected: {self.CD_ind_expected:.4f} \t CL_vlm: {CD_vlm:.4f}")
+
+        ### ASSSERT ###
+        assert_almost_equal(CL_vlm, 0.32477746534138485)
+        assert_almost_equal(CD_vlm, 0.00020242110304907)
+
+    def test_CL_CD_spanwise_and_chordwise(self):
+        ### ARRANGE ###
+        ### MESH DENSITY ###
+        ns = 20  # number of panels (spanwise)
+        nc = 3  # number of panels (chordwise)
+        N = ns*nc
+
+        panels, mesh = self.get_geom(ns, nc)
+        V_app_infw = np.array([self.V for _ in range(N)])
+
+        ### ACT ###
+        ### CALCULATIONS ###
+        gamma_magnitude, v_ind_coeff = calc_circulation(V_app_infw, panels)
+        V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
+        V_app_fw = V_app_infw + V_induced
+
+        assert is_no_flux_BC_satisfied(V_app_fw, panels)
+
+        F, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
+        F = F.reshape(N, 3)
 
         ### compare vlm with book coeff_formulas ###
-        # reference values - to compare with book coeff_formulas
-        AR = 2 * half_wing_span / chord
-        S = 2 * half_wing_span * chord
-        CL_expected, CD_ind_expected = get_CL_CD_free_wing(AR, AoA_deg)
+        CL_vlm, CD_vlm = self.get_CL_CD_from_F(F)
 
-        total_F = np.sum(F, axis=0)
-        q = 0.5 * rho * (np.linalg.norm(V) ** 2) * S
-        CL_vlm = total_F[2] / q
-        CD_vlm = total_F[0] / q
+        ### ASSSERT ###
+        assert_almost_equal(CL_vlm, 0.3247765909739283)
+        assert_almost_equal(CD_vlm, 0.0002024171446522)
 
-        rel_err_CL = abs((CL_expected - CL_vlm) / CL_expected)
-        rel_err_CD = abs((CD_ind_expected - CD_vlm) / CD_ind_expected)
-        assert rel_err_CL < 0.01
-        assert rel_err_CD < 0.18
 
     def test_determine_vector_from_its_dot_and_cross_product(self):
         F = np.array([[-5.69486970e+00, 1.89981982e+02, -7.51769175e+01],
