@@ -48,6 +48,9 @@ def calc_V_at_cp(V_app_infw, gamma_magnitude, panels):
     v_ind_coeff = np.full((N, N, 3), 0., dtype=float)
 
     for i in range(0, N):
+        if i % 10 == 0:
+            print(f"assembling v_ind_coeff matrix at cp {i}/{N}")
+
         cp = panels_1d[i].get_cp_position()
         for j in range(0, N):
             # velocity induced at i-th control point by j-th vortex
@@ -67,7 +70,7 @@ def calc_force_LLT_xyz(V_app_fs_at_cp, gamma_magnitude, span_vectors, rho):
     return force_xyz
 
 
-def calc_force_VLM_wrapper(V_app_infw, gamma_magnitude, panels, rho):
+def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
     """
     Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     f. Secondary Computations: Pressures, Loads, Velocities, Etc
@@ -105,7 +108,7 @@ def calc_pressure(force, panels):
     for i in range(n):
         area = panels_1d[i].get_panel_area()
         n = panels_1d[i].get_normal_to_panel()
-        p[i] = np.dot(force[i], n) / area # todo: fix sign
+        p[i] = np.dot(force[i], n) / area  # todo: fix sign
         # p[i] = np.linalg.norm(force[i], axis=0)/ area  # this make a difference (due to induced drag)
     return p
 

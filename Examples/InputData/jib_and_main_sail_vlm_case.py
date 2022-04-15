@@ -24,7 +24,7 @@ leeway_deg = 5.    # [deg]
 heel_deg = 10.     # [deg]
 SOG_yacht = 4.63   # [m/s] yacht speed - speed over ground (leeway is a separate variable)
 tws_ref = 4.63   # [m/s] true wind speed
-alpha_true_wind_deg = 40.   # [deg] true wind angle (with reference to course over ground) => Course Wind Angle to the boat track = true wind angle to centerline + Leeway
+alpha_true_wind_deg = 50.   # [deg] true wind angle (with reference to course over ground) => Course Wind Angle to the boat track = true wind angle to centerline + Leeway
 reference_water_level_for_wind_profile = -0.  # [m] this is an attempt to mimick the deck effect
 # by lowering the sheer_above_waterline
 # while keeping the wind profile as in original geometry
@@ -51,18 +51,6 @@ main_sail_centerline_twist_deg = 12. * main_sail_girths + 7
 jib_girths = np.array([0.00, 1./4, 1./2, 3./4, 1.00])
 jib_chords = np.array([3.80, 2.98, 2.15, 1.33, 0.5]) - 0.4
 jib_centerline_twist_deg = 15. * jib_girths + 5
-
-# OPTIMIZATION CONSTRAINTS (INEQUALITY)
-main_sail_CLmax = 1. * np.array([1.25, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25])
-main_sail_CLmin = 0. * np.array([0.325, 0.58, 0.55, 0.4, 0.3, 0.2, 0.1])
-main_sail_AoA_0lift_deg_min = -15.0 * np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-
-jib_CLmax = 1. * np.array([1.0, 1.2, 1.2, 1.0, 0.8])
-jib_CLmin = 0. * np.array([1.0, 1.0, 1.0, 1.0, 1.0])
-jib_AoA_0lift_deg_min = -15.0 * np.array([1.0, 1.0, 1.0, 1.0, 1.0])
-
-# OPTIMIZATION CONSTRAINTS (EQUALITY)
-imposed_heeling_moment = -12500  # [Nm]
 
 # REFERENCE CSYS
 # The origin of the default CSYS is located @ waterline level and aft face of the mast

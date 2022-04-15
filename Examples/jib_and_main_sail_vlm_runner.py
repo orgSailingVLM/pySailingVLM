@@ -14,10 +14,12 @@ from Solver.PanelsPlotter import display_panels_xyz_and_winds
 from Solver.vlm_solver import is_no_flux_BC_satisfied
 
 from Solver.vlm_solver import calc_circulation
-from ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_LLT
+from ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_vlm
 from Solver.vlm_solver import calculate_app_fs
+from ResultsContainers.InviscidFlowResults import InviscidFlowResults
+from Solver.forces import calc_force_VLM_xyz, calc_pressure
 
-
+# from InputData.jib_and_main_sail_vlm_case_backflow import *
 from InputData.jib_and_main_sail_vlm_case import *
 
 # np.set_printoptions(precision=3, suppress=True)
@@ -25,15 +27,6 @@ from InputData.jib_and_main_sail_vlm_case import *
 start = timeit.default_timer()
 
 interpolator = Interpolator(interpolation_type)
-
-# ms_data_to_intepolate = [main_sail_chords, 1.01 * main_sail_CLmax, 1.01 * main_sail_CLmin,
-#                          main_sail_centerline_twist_deg, 1.01 * main_sail_AoA_0lift_deg_min]
-# jib_data_to_interpolate = [jib_chords, 1.01 * jib_CLmax, 1.01 * jib_CLmin, jib_centerline_twist_deg,
-#                            1.01 * jib_AoA_0lift_deg_min]
-#
-# sailset_chord_sections, sailset_CL_max_sections, sailset_CL_min_sections, sailset_twist_centerline_deg_sections, sailset_AoA_0lift_deg_min = \
-#     interpolator.interpolate_data_for_sections(
-#         ms_data_to_intepolate, jib_data_to_interpolate, main_sail_girths, jib_girths, n_spanwise)
 
 csys_transformations = CSYS_transformations(
     heel_deg, leeway_deg,
@@ -77,44 +70,13 @@ V_induced_at_ctrl_p, V_app_fs_at_ctrl_p = calculate_app_fs(inlet_condition, v_in
 
 assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, sail_set.panels)
 
-#########################################
-# the old BAD way (ctr_p instead of cp)  - remove
-# from ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_LLT
-# inviscid_flow_results = prepare_inviscid_flow_results_LLT(
-#     V_app_fs_at_ctrl_p, V_induced_at_ctrl_p, gamma_magnitude, v_ind_coeff,
-#     sail_set, inlet_condition, csys_transformations)
-
-
-#########################################
-# the old 1D way  - remove after refactoring
-# from Solver.forces import calc_force_LLT_xyz, calc_V_at_cp
-# spans = np.array([p.get_span_vector() for p in sail_set.panels1d])
-# __V_app_fs_at_cp, __V_induced_at_cp = calc_V_at_cp(inlet_condition.V_app_infs, gamma_magnitude, sail_set.panels1d)
-# force_xyz_LLT = calc_force_LLT_xyz(__V_app_fs_at_cp, gamma_magnitude, spans, inlet_condition.rho)  # be carefull V_app_fs shall be calculated with respect to cp
-########################################
-# the new way
-from ResultsContainers.InviscidFlowResults import InviscidFlowResults
-from Solver.forces import calc_force_VLM_wrapper, calc_pressure
-# # TODO: in calc_force_wrapper:
-# #  it seems that calculation of dGamma for more than one panel in chordwise direction works fine (but one shall check it)
-
-force_xyz3d, V_app_fs_at_cp, V_induced_at_cp = calc_force_VLM_wrapper(inlet_condition.V_app_infs, gamma_magnitude, sail_set.panels, inlet_condition.rho)
-force_xyz = force_xyz3d.reshape(len(sail_set.panels1d), 3)
-pressure = calc_pressure(force_xyz, sail_set.panels)
-pressure3d = pressure.reshape(sail_set.panels.shape)
-
-inviscid_flow_results = InviscidFlowResults(gamma_magnitude, pressure, V_induced_at_cp, V_app_fs_at_cp,
-                                            force_xyz, sail_set, csys_transformations)
-
-
+inviscid_flow_results = prepare_inviscid_flow_results_vlm(gamma_magnitude, sail_set, inlet_condition, csys_transformations)
 inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
 
 print("Preparing visualization.")
 display_panels_xyz_and_winds(sail_set.panels1d, inlet_condition, inviscid_flow_results, hull)
 
-#
 df_components, df_integrals, df_inlet_IC = save_results_to_file(inviscid_flow_results, None, inlet_condition, sail_set, output_dir_name)
-# make_subplot_CL_twist(section_shape_results, sail_set, constraints, cl_tweaker, output_dir_name)
 shutil.copy(os.path.join(case_dir, case_name), os.path.join(output_dir_name, case_name))
 
 print(f"-------------------------------------------------------------")

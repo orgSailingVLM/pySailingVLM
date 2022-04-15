@@ -38,11 +38,11 @@ def _prepare_geometry_data_to_display(panels1d):
 
     return le_mid_points, cp_points, ctr_points, te_midpoints
 
-#todo: add pressure
-def display_panels_xyz(panels1d, pressure=None):
+
+def display_panels_xyz(panels1d, pressure):
     fig = plt.figure(figsize=(12, 12))
     ax = plt.axes(projection='3d')
-    ax.set_title('Initial location of: \n Leading Edge, Lifting Line, Control Points and Trailing Edge')
+    # ax.set_title('Initial location of: \n Leading Edge, Lifting Line, Control Points and Trailing Edge')
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
@@ -63,7 +63,6 @@ def display_panels_xyz(panels1d, pressure=None):
 
     # Data for a three-dimensional line
     le_mid_points, cp_points, ctr_points, te_mid_points = _prepare_geometry_data_to_display(panels1d)
-
     # ax.scatter3D(le_mid_points[:, 0], le_mid_points[:, 1], le_mid_points[:, 2], c=le_mid_points[:, 2], marker="<", cmap='Greys')
     # ax.scatter3D(cp_points[:, 0], cp_points[:, 1], cp_points[:, 2], c=cp_points[:, 2], marker="o", cmap='Greens', s=2)  # s stands for size
     # ax.scatter3D(ctr_points[:, 0], ctr_points[:, 1], ctr_points[:, 2], c=ctr_points[:, 2], marker="x", cmap='Blues')
@@ -151,6 +150,25 @@ def display_CE_CLR(ax,
     plot_vector(clr, -F)
 
 
+def display_forces_xyz(ax, panels1d, inviscid_flow_results: InviscidFlowResults):
+    scale = 0.2*np.mean(inviscid_flow_results.F_xyz_total)  # ~0.2 gives nice plot
+    F_length = np.linalg.norm(inviscid_flow_results.F_xyz, axis=1)
+    F_max = max(F_length)
+
+    def plot_vector(origin, length):
+        vx = np.array([origin[0], origin[0] + length[0]])
+        vy = np.array([origin[1], origin[1] + length[1]])
+        vz = np.array([origin[2], origin[2] + length[2]])
+        arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color='gray', alpha=0.75)
+        ax.add_artist(arrow)
+        ax.scatter3D(origin[0], origin[1], origin[2], c='black', marker="o")
+
+    cp_points = np.array([panel.get_cp_position() for panel in panels1d])
+    for F, cp in zip(inviscid_flow_results.F_xyz, cp_points):
+        F_normalized = scale*F/F_max
+        plot_vector(cp, F_normalized)
+
+
 def display_panels_xyz_and_winds(panels1d,
                                  inlet_condition: InletConditions,
                                  inviscid_flow_results: InviscidFlowResults,
@@ -159,12 +177,13 @@ def display_panels_xyz_and_winds(panels1d,
 
                                  ):
     ax, cp_points, water_size = display_panels_xyz(panels1d, inviscid_flow_results.pressure)
-    ax.set_title('Lifting Line (green), Leading Edge & Trailing Edge (gray) \n'
+    ax.set_title('Panels colored by pressure \n'
                  'Winds: True (green), Apparent (blue), Apparent + Induced (red) \n'
                  'Centre of Effort & Center of Lateral Resistance (black)')
 
     display_hull(ax, hull)
     display_winds(ax, cp_points, water_size, inlet_condition, inviscid_flow_results)
+    # display_forces_xyz(ax, panels1d, inviscid_flow_results)
     display_CE_CLR(ax, inviscid_flow_results, hull)
     if show_plot:
         plt.show()

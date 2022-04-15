@@ -6,10 +6,10 @@ from Rotations.CSYS_transformations import CSYS_transformations
 from YachtGeometry.SailGeometry import SailSet
 
 from Inlet.InletConditions import InletConditions
-from Solver.forces import calc_force_LLT_xyz, calc_force_VLM_wrapper
+from Solver.forces import calc_force_LLT_xyz, calc_force_VLM_xyz
 
 
-def prepare_inviscid_flow_results_LLT(V_app_fs_at_cp, V_induced, gamma_magnitude,
+def prepare_inviscid_flow_results_llt(V_app_fs_at_cp, V_induced, gamma_magnitude,
                                       sail_set: SailSet,
                                       inletConditions: InletConditions,
                                       csys_transformations: CSYS_transformations):
@@ -19,6 +19,22 @@ def prepare_inviscid_flow_results_LLT(V_app_fs_at_cp, V_induced, gamma_magnitude
 
     pressure = calc_pressure(force_xyz, sail_set.panels1d)
     inviscid_flow_results = InviscidFlowResults(gamma_magnitude, pressure, V_induced, V_app_fs_at_cp,
+                                                force_xyz, sail_set, csys_transformations)
+    return inviscid_flow_results
+
+
+def prepare_inviscid_flow_results_vlm(gamma_magnitude,
+                                      sail_set: SailSet,
+                                      inlet_condition: InletConditions,
+                                      csys_transformations: CSYS_transformations):
+
+    force_xyz3d, V_app_fs_at_cp, V_induced_at_cp = calc_force_VLM_xyz(inlet_condition.V_app_infs, gamma_magnitude,
+                                                                      sail_set.panels, inlet_condition.rho)
+    force_xyz = force_xyz3d.reshape(len(sail_set.panels1d), 3)
+    pressure = calc_pressure(force_xyz, sail_set.panels)
+    pressure3d = pressure.reshape(sail_set.panels.shape)
+
+    inviscid_flow_results = InviscidFlowResults(gamma_magnitude, pressure, V_induced_at_cp, V_app_fs_at_cp,
                                                 force_xyz, sail_set, csys_transformations)
     return inviscid_flow_results
 

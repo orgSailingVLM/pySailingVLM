@@ -13,7 +13,7 @@ from Solver.PanelsPlotter import display_panels_xyz_and_winds
 from Solver.vlm_solver import is_no_flux_BC_satisfied
 
 from Solver.vlm_solver import calc_circulation
-from ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_LLT
+from ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_llt
 from Solver.vlm_solver import calculate_app_fs
 
 import pandas as pd
@@ -70,7 +70,7 @@ class TestVLM_Solver(TestCase):
         V_induced, V_app_fs = calculate_app_fs(self.inlet_condition, v_ind_coeff, gamma_magnitude)
         assert is_no_flux_BC_satisfied(V_app_fs, self.sail_set.panels1d)
 
-        inviscid_flow_results = prepare_inviscid_flow_results_LLT(V_app_fs, V_induced, gamma_magnitude,
+        inviscid_flow_results = prepare_inviscid_flow_results_llt(V_app_fs, V_induced, gamma_magnitude,
                                                                   self.sail_set, self.inlet_condition,
                                                                   self.csys_transformations)
 
@@ -88,19 +88,19 @@ class TestVLM_Solver(TestCase):
         #       f"\tThe the _COW_ CSYS is aligned along the centerline of the yacht (course over water).\n")
         #
 
-        # df_components.to_csv('expected_df_components.csv')
-        # df_integrals.to_csv('expected_df_integrals.csv', index=False)
-        # df_inlet_IC.to_csv('expected_df_inlet_IC.csv')
+        df_components.to_csv('expected_df_components.csv')
+        df_integrals.to_csv('expected_df_integrals.csv', index=False)
+        df_inlet_IC.to_csv('expected_df_inlet_IC.csv')
 
-        expected_df_components = pd.read_csv(os.path.join(case_dir, 'InputFiles/expected_df_components.csv'))
+        expected_df_components = pd.read_csv(os.path.join(case_dir, 'expected_df_components.csv'))
         expected_df_components.set_index('Unnamed: 0', inplace=True)  # the mirror part is not stored, thus half of the indices are cut off
         expected_df_components.index.name = None
         assert_frame_equal(df_components, expected_df_components)
 
-        expected_df_integrals = pd.read_csv(os.path.join(case_dir, 'InputFiles/expected_df_integrals.csv'))
+        expected_df_integrals = pd.read_csv(os.path.join(case_dir, 'expected_df_integrals.csv'))
         assert_frame_equal(df_integrals, expected_df_integrals)
 
-        expected_df_inlet_ic = pd.read_csv(os.path.join(case_dir, 'InputFiles/expected_df_inlet_IC.csv'))
+        expected_df_inlet_ic = pd.read_csv(os.path.join(case_dir, 'expected_df_inlet_IC.csv'))
         expected_df_inlet_ic.set_index('Unnamed: 0', inplace=True)  # the mirror part is not stored, thus half of the indices are cut off
         expected_df_inlet_ic.index.name = None
         assert_frame_equal(df_inlet_IC, expected_df_inlet_ic)
