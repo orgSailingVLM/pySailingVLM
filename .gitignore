@@ -128,7 +128,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-Examples/results_example_*
-tests_VLM/results_example_*
+sailingVLM/Examples/results_example_*
+sailingVLM/tests_VLM/results_example_*
 .idea
-/Examples/results_example_jib_and_mainsail_vlm/*
+sailingVLM//Examples/results_example_jib_and_mainsail_vlm/*
+
+sailingVLM/tests_VLM/.pytest_cache
