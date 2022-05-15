@@ -1,3 +1,4 @@
+from enum import unique
 import numpy as np
 from typing import Tuple
 from numpy.linalg import norm
@@ -5,22 +6,27 @@ from numpy.linalg import norm
 
 class Panels:
 
-    def __init__(self, M: int, N: int) -> None:
+    def __init__(self, M: int, N: int, mesh) -> None:
 
-        np.set_printoptions(precision=3, suppress=True)
-        self.M = 4
+        #np.set_printoptions(precision=3, suppress=True)
+        self.M = M
         # num of rows
-        self.N = 3
+        self.N = N
 
         ### FLIGHT CONDITIONS ###
         V = 1 * np.array([10.0, 0.0, 0.0])
         V_app_infw = np.array([V for i in range(self.M * self.N)])
 
         # panels contain 12 panels, each has 4 vortices: p1, p2, p3, p4
-        self.panels = np.load('sailingVLM/NewApproach/points.npy')
-
+        self.panels0 = np.load('sailingVLM/NewApproach/points.npy')
+        
+        self.panels = mesh
+        #self.panels = np.flip(self.panels, 0)
+        #test000 = self.panels - self.panels0  
         self.normals, self.collocation_points, self.center_of_pressure, self.rings = self.calculate_normals_collocations_cps_rings(self.panels)
-        self.coefs, self.RHS = self.get_influence_coefficients(self.collocation_points, self.rings, self.normals, self.M, self.N, V_app_infw)
+        #self.coefs, self.RHS, self.wind_coefs = self.get_influence_coefficients(self.collocation_points, self.rings, self.normals, self.M, self.N, V_app_infw)
+
+        self.coefs, self.RHS, self.wind_coefs, self.trailing_rings = self.get_influence_coefficients_spanwise(self.collocation_points, self.rings, self.normals, self.M, self.N, V_app_infw)
 
         # gamma wyszła nieco inna, ale to wplyw innego chyba spsosbu liczenia koncowych paneli
         self.big_gamma = self.solve_eq(self.coefs, self.RHS)
@@ -114,9 +120,9 @@ class Panels:
         |
         C ------------------ +oo
         """
-        sub1 = self.vortex_infinite_line(p, B, V_app_infw, gamma)
+        sub1 = self.vortex_infinite_line(p, C, V_app_infw, gamma)
         sub2 = self.vortex_line(p, B, C, gamma)
-        sub3 = self.vortex_infinite_line(p, C, V_app_infw, -1.0 * gamma)
+        sub3 = self.vortex_infinite_line(p, B, V_app_infw, -1.0 * gamma)
         q_ind = sub1 + sub2 + sub3
         return q_ind
 
@@ -130,14 +136,14 @@ class Panels:
 
         q_ind = sub1 + sub2 + sub3 + sub4
         return q_ind
-
+    # to jest dla chordwise czyli dla ostatnich w pionie paneli
     def get_influence_coefficients(self, collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
         m = collocation_points.shape[0]
 
         RHS = [-np.dot(V_app_infw[i], normals[i]) for i in range(normals.shape[0])]
         coefs = np.zeros((m, m))
-
+        wind_coefs = np.zeros((m, m, 3))
         for i, point in enumerate(collocation_points):
 
             # loop over other vortices
@@ -151,12 +157,51 @@ class Panels:
                 # poprawka na trailing edge
                 # todo: zrobic to w drugim, oddzielnym ifie
                 if j >= len(collocation_points) - N:
-                    a += self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
+                    a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
+                    #a = self.vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j])
                 b = np.dot(a, normals[i].reshape(3, 1))
+                wind_coefs[i, j] = a
                 coefs[i, j] = b
         RHS = np.asarray(RHS)
-        return coefs, RHS
+        
+        return coefs, RHS, wind_coefs
+    def get_influence_coefficients_spanwise(self, collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
+        m = collocation_points.shape[0]
+
+        RHS = [-np.dot(V_app_infw[i], normals[i]) for i in range(normals.shape[0])]
+        coefs = np.zeros((m, m))
+        wind_coefs = np.zeros((m, m, 3))
+        trailing_rings = []
+        for i, point in enumerate(collocation_points):
+
+            # loop over other vortices
+            for j, ring in enumerate(rings):
+                A = ring[0]
+                B = ring[1]
+                C = ring[2]
+                D = ring[3]
+                a = self.vortex_ring(point, A, B, C, D)
+
+                # poprawka na trailing edge
+                # todo: zrobic to w drugim, oddzielnym ifie
+                if j >= len(collocation_points) - M:
+                    #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
+                    a = self.vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j])
+                b = np.dot(a, normals[i].reshape(3, 1))
+                wind_coefs[i, j] = a
+                coefs[i, j] = b
+        RHS = np.asarray(RHS)
+        
+        for j, ring in enumerate(rings):
+            if j >= len(collocation_points) - M:
+                A = ring[0]
+                B = ring[1]
+                C = ring[2]
+                D = ring[3]
+                trailing_rings.append([A, B, C, D])
+                    
+        return coefs, RHS, wind_coefs, trailing_rings
     def solve_eq(self, coefs: np.ndarray, RHS: np.ndarray):
         big_gamma = np.linalg.solve(coefs, RHS)
         return big_gamma

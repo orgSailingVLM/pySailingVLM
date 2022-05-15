@@ -45,8 +45,8 @@ def make_panels_from_le_te_points(points, grid_size, gamma_orientation):
     north_line = discrete_segment(le_NW, te_NE, nc)
 
     mesh = make_point_mesh(south_line, north_line, ns)
-    panels = make_panels_from_mesh_spanwise(mesh, gamma_orientation)
-    return panels, mesh
+    panels, new_approach_panels = make_panels_from_mesh_spanwise(mesh, gamma_orientation)
+    return panels, mesh, new_approach_panels
 
 
 def discrete_segment(p1, p2, n):
@@ -99,10 +99,10 @@ def make_panels_from_mesh_chordwise(mesh):
 # tutaj to rozpisac
 def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> np.array([Panel]):
     panels = []
-
+    new_approach_panels = []
     n_lines = mesh.shape[0]
     n_points_per_line = mesh.shape[1]
-
+    
     for i in range(n_lines - 1):
         panels.append([])
         for j in range(n_points_per_line - 1):
@@ -111,6 +111,7 @@ def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> np.array([Panel])
             pNW = mesh[i][j + 1]
             pNE = mesh[i + 1][j + 1]
             # if last panel -> make trailing panel
+            
             if i == (n_lines - 2):
                 panel = TrailingEdgePanel(
                               p1=pSE,
@@ -125,5 +126,6 @@ def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> np.array([Panel])
                               p4=pNE,
                               gamma_orientation=gamma_orientation)
             panels[i].append(panel)
-
-    return np.array(panels)
+            new_approach_panels.append([pSE, pSW, pNW, pNE])
+            
+    return np.array(panels), np.asarray(new_approach_panels)

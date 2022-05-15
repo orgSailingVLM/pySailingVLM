@@ -7,6 +7,10 @@ from sailingVLM.Solver.coeff_formulas import get_CL_CD_free_wing
 from sailingVLM.Solver.forces import calc_force_wrapper, calc_pressure
 from sailingVLM.Solver.forces import calc_force_wrapper_new
 from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
+from sailingVLM.NewApproach import panels
+
+p = panels.Panels(3, 4)
+
 
 ### GEOMETRY DEFINITION ###
 
@@ -84,7 +88,7 @@ gamma_magnitude, v_ind_coeff, A = calc_circulation(V_app_infw, panels)
 V_induced_at_ctrl_p = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
 V_app_fw_at_ctrl_p = V_app_infw + V_induced_at_ctrl_p
 assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p, panels)
-
+xxxx = A - p.coefs
 Fold = calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho=rho)
 
 

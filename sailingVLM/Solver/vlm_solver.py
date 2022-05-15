@@ -25,7 +25,7 @@ def assembly_sys_of_eq(V_app_infw, panels):
             # velocity induced at i-th control point by j-th vortex
             # poza tym funkcja po kropce robi obliczenia cross, mozna cos zrobic py ta funkcja teraz sie tu liczyla szybciej
             # na tablicy zawierajacej linie cyrkulacji
-
+    
             v_ind_coeff[i][j] = panels1D[j].get_induced_velocity(ctr_p, V_app_infw[j])
             A[i][j] = np.dot(v_ind_coeff[i][j], panel_surf_normal)
             # macierz A zalezy od 'znormalizowanej' predkosci (tzn tylko od kierunku wiatru)
