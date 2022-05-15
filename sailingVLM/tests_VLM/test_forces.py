@@ -40,7 +40,7 @@ class TestForces(TestCase):
         self.rho = 1.225  # fluid density [kg/m3]
 
     def get_geom(self,ns,nc):
-        panels, mesh = make_panels_from_le_te_points(
+        panels, mesh, _ = make_panels_from_le_te_points(
             [np.dot(self.Ry, self.le_SW),
              np.dot(self.Ry, self.te_SE),
              np.dot(self.Ry, self.le_NW),

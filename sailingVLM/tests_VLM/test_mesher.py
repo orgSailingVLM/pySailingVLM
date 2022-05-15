@@ -79,7 +79,7 @@ class TestMesher(TestCase):
         assert np.allclose(mesh[0], expected_mesh0)
 
     def test_make_panels_from_points_span_and_chord_wise(self):
-        panels_le_te, mesh_le_te = make_panels_from_le_te_points(
+        panels_le_te, mesh_le_te, new_approach_panels = make_panels_from_le_te_points(
             [self.le_sw, self.te_se,
              self.le_nw, self.te_ne],
             [self.nc, self.ns],
@@ -103,7 +103,7 @@ class TestMesher(TestCase):
         assert np.allclose(expected_points37, panels_c[3, 7].get_points())
 
     def test_make_panels_from_points(self):
-        panels, _ = make_panels_from_le_te_points(
+        panels, _, _ = make_panels_from_le_te_points(
             [self.le_sw, self.te_se,
              self.le_nw, self.te_ne],
             [self.nc, self.ns],
@@ -120,7 +120,7 @@ class TestMesher(TestCase):
         assert np.allclose(panels[0][3].p4, expected_panel.p4)
 
     def test_dimensions(self):
-        panels, _ = make_panels_from_le_te_points(
+        panels, _, _ = make_panels_from_le_te_points(
             [self.le_sw, self.te_se,
              self.le_nw, self.te_ne],
             [self.nc, self.ns],

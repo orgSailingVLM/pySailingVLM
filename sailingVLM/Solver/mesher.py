@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Tuple
 from sailingVLM.Solver.Panel import Panel
 from sailingVLM.Solver.TrailingEdgePanel import TrailingEdgePanel
 
@@ -28,7 +29,7 @@ def make_panels_from_le_points_and_chords(le_points, grid_size, chords_vec, gamm
     mesh = make_point_mesh(le_line, te_line, n_chordwise)
     # panels = make_panels_from_mesh_chordwise(mesh)
     mesh = np.swapaxes(mesh, 0, 1)
-    panels = make_panels_from_mesh_spanwise(mesh, gamma_orientation)
+    panels, new_approach_panels = make_panels_from_mesh_spanwise(mesh, gamma_orientation)
     return panels, mesh
 
 
@@ -97,7 +98,7 @@ def make_panels_from_mesh_chordwise(mesh):
     return np.array(panels)
 
 # tutaj to rozpisac
-def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> np.array([Panel]):
+def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> Tuple[np.array, np.ndarray]:
     panels = []
     new_approach_panels = []
     n_lines = mesh.shape[0]

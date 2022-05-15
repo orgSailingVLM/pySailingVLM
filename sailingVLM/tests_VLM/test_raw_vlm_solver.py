@@ -30,7 +30,7 @@ class TestVLM_Solver(TestCase):
         ns = 3  # number of panels (spanwise)
         nc = 1  # number of panels (chordwise)
 
-        self.panels, _ = make_panels_from_le_te_points(
+        self.panels, _, _ = make_panels_from_le_te_points(
             [le_root_coord, te_root_coord, le_tip_coord, te_tip_coord],
             [nc, ns], gamma_orientation=1)
 
