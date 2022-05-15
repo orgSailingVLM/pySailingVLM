@@ -18,7 +18,6 @@ class Panels:
         V_app_infw = np.array([V for i in range(self.M * self.N)])
 
         # panels contain 12 panels, each has 4 vortices: p1, p2, p3, p4
-        self.panels0 = np.load('sailingVLM/NewApproach/points.npy')
         
         self.panels = mesh
         #self.panels = np.flip(self.panels, 0)
