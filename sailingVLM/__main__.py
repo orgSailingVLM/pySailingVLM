@@ -115,6 +115,12 @@ NN = rows
 
 p = vlm.Panels(MM, NN, new_approach_panels)
 
+V_induced_at_ctrl_p2 = p.calc_induced_velocity(p.wind_coefs, p.big_gamma)
+V_app_fw_at_ctrl_p2 = V_app_infw + V_induced_at_ctrl_p2
+
+# funkcja do przerobienia
+#assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p2, panels)
+
 xxxx = A - p.coefs
 
 # sprawdzenie czy ringi sa te same

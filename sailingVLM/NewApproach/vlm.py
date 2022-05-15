@@ -144,6 +144,8 @@ class Panels:
         sub3 = self.vortex_infinite_line(p, B, V_app_infw, -1.0 * gamma)
         q_ind = sub1 + sub3
         return q_ind
+    
+    
     # to jest dla chordwise czyli dla ostatnich w pionie paneli
     def get_influence_coefficients(self, collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
@@ -213,3 +215,35 @@ class Panels:
     def solve_eq(self, coefs: np.ndarray, RHS: np.ndarray):
         big_gamma = np.linalg.solve(coefs, RHS)
         return big_gamma
+    
+    def calc_induced_velocity(self, v_ind_coeff, gamma_magnitude):
+        N = len(gamma_magnitude)
+        V_induced = np.zeros((N, 3))
+        for i in range(N):
+            for j in range(N):
+                V_induced[i] += v_ind_coeff[i][j] * gamma_magnitude[j]
+
+        return V_induced
+
+    # do poprawki
+    def is_no_flux_BC_satisfied(self, V_app_fw, panels):
+
+        N = len(panels)
+        flux_through_panel = np.zeros(shape=N)
+        panels_area = np.zeros(shape=N)
+
+        for i in range(0, N):
+            panel_surf_normal = panels[i].get_normal_to_panel()
+            panels_area[i] = panels[i].get_panel_area()
+            flux_through_panel[i] = -np.dot(V_app_fw[i], panel_surf_normal)
+
+        for area in panels_area:
+            if np.isnan(area) or area < 1E-14:
+                raise ValueError("Solution error, panel_area is suspicious")
+
+        for flux in flux_through_panel:
+            if abs(flux) > 1E-12 or np.isnan(flux):
+                raise ValueError("Solution error, there shall be no flow through panel!")
+
+        return True
+
