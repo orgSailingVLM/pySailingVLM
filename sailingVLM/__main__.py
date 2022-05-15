@@ -118,6 +118,7 @@ p = vlm.Panels(MM, NN, new_approach_panels)
 xxxx = A - p.coefs
 
 # sprawdzenie czy ringi sa te same
+# to jest okej
 test = p.wind_coefs - v_ind_coeff
 
 print("cos")
