@@ -21,7 +21,8 @@ class Panels:
         
         self.panels = mesh
         #self.panels = np.flip(self.panels, 0)
-        #test000 = self.panels - self.panels0  
+        #test000 = self.panels - self.panels0
+        self.areas = self.get_panels_area(self.panels, self.N, self.M) 
         self.normals, self.collocation_points, self.center_of_pressure, self.rings = self.calculate_normals_collocations_cps_rings(self.panels)
         #self.coefs, self.RHS, self.wind_coefs = self.get_influence_coefficients(self.collocation_points, self.rings, self.normals, self.M, self.N, V_app_infw)
 
@@ -225,13 +226,37 @@ class Panels:
 
         return V_induced
 
+    @staticmethod
+    def get_panels_area(panels: np.ndarray, N: int, M: int)-> np.ndarray:
+        
+        m = N * M
+        areas = np.zeros(m, dtype=float)
+        sh = panels.shape[0]
+        for i in range(0, sh):
+           
+            p = [panels[i, 0], panels[i, 1], panels[i, 2], panels[i, 3]]
+            path = []
+            for j in range(len(p) - 1):
+                step = p[j + 1] - p[j]
+                path.append(step)
+
+            area = 0
+            for k in range(len(path) - 1):
+                s = np.cross(path[k], path[k + 1])
+                s = np.linalg.norm(s)
+                area += 0.5 * s
+            areas[i] = area   
+
+        return areas
+    
     # do poprawki
     def is_no_flux_BC_satisfied(self, V_app_fw, panels):
 
-        N = len(panels)
+        N = panels.shape[0]
         flux_through_panel = np.zeros(shape=N)
         panels_area = np.zeros(shape=N)
 
+        # dla kazdego panelu
         for i in range(0, N):
             panel_surf_normal = panels[i].get_normal_to_panel()
             panels_area[i] = panels[i].get_panel_area()

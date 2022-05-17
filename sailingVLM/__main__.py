@@ -21,7 +21,7 @@ from sailingVLM.NewApproach.mesher import my_make_panels_from_le_te_points
 ### GEOMETRY DEFINITION ###
 
 
-np.set_printoptions(precision=3, suppress=True)
+np.set_printoptions(precision=10, suppress=True)
 
 ### WING DEFINITION ###
 #Parameters #
@@ -58,6 +58,11 @@ panels, mesh, new_approach_panels = make_panels_from_le_te_points(
     [nc, ns],
     gamma_orientation=1)
 
+a = []
+for element in panels:
+    for panel in element:
+        a.append(panel.get_panel_area())
+        
 rows, cols = panels.shape
 N = rows * cols
 
