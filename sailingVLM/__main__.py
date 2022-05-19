@@ -15,6 +15,8 @@ from sailingVLM.Solver.Panel import Panel
 from sailingVLM.Solver.TrailingEdgePanel import TrailingEdgePanel
 
 from sailingVLM.NewApproach.mesher import my_make_panels_from_le_te_points
+from numpy.testing import assert_almost_equal
+
 ############### porownanie #############
 
 
@@ -58,11 +60,19 @@ panels, mesh, new_approach_panels = make_panels_from_le_te_points(
     [nc, ns],
     gamma_orientation=1)
 
-a = []
+center_of_pressure_good = []
+rings_good = []
+normals_good = []
 for element in panels:
     for panel in element:
-        a.append(panel.get_panel_area())
+        center_of_pressure_good.append(panel.get_cp_position())
+        rings_good.append(panel.get_vortex_ring_position())
+        normals_good.append(panel.get_normal_to_panel())
         
+center_of_pressure_good = np.array(center_of_pressure_good)
+rings_good = np.array(rings_good) 
+normals_good = np.array(normals_good)
+
 rows, cols = panels.shape
 N = rows * cols
 
@@ -116,21 +126,46 @@ print("M: {} N: {}".format(cols, rows))
 
 MM = cols
 NN = rows
+pp = vlm.Panels(MM, NN, new_approach_panels)
 
-
-p = vlm.Panels(MM, NN, new_approach_panels)
-
-V_induced_at_ctrl_p2 = p.calc_induced_velocity(p.wind_coefs, p.big_gamma)
+V_induced_at_ctrl_p2 = pp.calc_induced_velocity(pp.wind_coefs, pp.big_gamma)
 V_app_fw_at_ctrl_p2 = V_app_infw + V_induced_at_ctrl_p2
 
-# funkcja do przerobienia
-#assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p2, panels)
 
-xxxx = A - p.coefs
-
+xxxx = A - pp.coefs
 # sprawdzenie czy ringi sa te same
 # to jest okej
-test = p.wind_coefs - v_ind_coeff
+test1 = pp.wind_coefs - v_ind_coeff
+test2 = V_app_fw_at_ctrl_p2 - V_app_fw_at_ctrl_p
 
-print("cos")
+assert pp.is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p2, pp.panels, pp.areas, pp.normals)
+
+#####
+# testy
+# ok
+test3 = pp.center_of_pressure - center_of_pressure_good
+assert_almost_equal(center_of_pressure_good, pp.center_of_pressure)
+assert_almost_equal(rings_good, pp.rings)
+assert_almost_equal(gamma_magnitude, pp.big_gamma)
+assert_almost_equal(v_ind_coeff, pp.wind_coefs)
+assert_almost_equal(normals_good, pp.normals)
+
+# /home/zuzanna/Documents/icm/praca/sailingVLM/sailingVLM/NewApproach/vlm.py:98: RuntimeWarning: invalid value encountered in true_divide
+# q_ind = r1_cross_r2 / np.square(np.linalg.norm(r1_cross_r2))
+# ponizej odwzorowany blad dla 
+"""
+pp.metoda_testowa(pp.center_of_pressure, pp.rings, pp.normals, pp.M, pp.N, V_app_infw)
+
+
+# powstaje cross równy wektorowi zerowemu :o
+A = pp.rings[0, 0]
+B = pp.rings[0, 1]
+C = pp.rings[0, 2]
+D = pp.rings[0, 3]
+a = pp.vortex_ring(pp.center_of_pressure[0], A, B, C, D)
+            
+#####
+# tu cos szwankuje 
+F2 = pp.calc_force_wrapper_new(V_app_infw, pp.big_gamma, pp.panels, rho, pp.center_of_pressure, pp.rings,pp.M, p.N, pp.normals)
+"""
 

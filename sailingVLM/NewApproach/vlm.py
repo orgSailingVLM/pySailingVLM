@@ -136,7 +136,7 @@ class Panels:
 
         q_ind = sub1 + sub2 + sub3 + sub4
         return q_ind
-    
+    # do kontynuacji myslenia w tym kierunku
     def get_vortex_wake_induced_downwash(self, p: np.array, B: np.array, C: np.array, V_app_infw: np.ndarray,
                         gamma: float = 1.0) -> np.array:
         # fig. 12.4
@@ -213,16 +213,51 @@ class Panels:
                 trailing_rings.append([A, B, C, D])
                     
         return coefs, RHS, wind_coefs, trailing_rings
+    
+    def metoda_testowa(self, points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+
+        m = points.shape[0]
+
+        #RHS = [-np.dot(V_app_infw[i], normals[i]) for i in range(normals.shape[0])]
+        #coefs = np.zeros((m, m))
+        wind_coefs = np.zeros((m, m, 3))
+        #trailing_rings = []
+        for i, point in enumerate(points):
+
+            # loop over other vortices
+            for j, ring in enumerate(rings):
+                A = ring[0]
+                B = ring[1]
+                C = ring[2]
+                D = ring[3]
+                a = self.vortex_ring(point, A, B, C, D)
+
+                # poprawka na trailing edge
+                # todo: zrobic to w drugim, oddzielnym ifie
+                if j >= len(points) - M:
+                    #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
+                    a = self.vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j])
+                b = np.dot(a, normals[i].reshape(3, 1))
+                wind_coefs[i, j] = a
+                #coefs[i, j] = b
+        #RHS = np.asarray(RHS)
+        
+        
+        return  wind_coefs
+    
+    
     def solve_eq(self, coefs: np.ndarray, RHS: np.ndarray):
         big_gamma = np.linalg.solve(coefs, RHS)
         return big_gamma
     
     def calc_induced_velocity(self, v_ind_coeff, gamma_magnitude):
-        N = len(gamma_magnitude)
+        N = gamma_magnitude.shape[0]
+        
+        t2 = len(gamma_magnitude)
         V_induced = np.zeros((N, 3))
         for i in range(N):
             for j in range(N):
-                V_induced[i] += v_ind_coeff[i][j] * gamma_magnitude[j]
+                V_induced[i] += v_ind_coeff[i,j] * gamma_magnitude[j]
 
         return V_induced
 
@@ -249,20 +284,19 @@ class Panels:
 
         return areas
     
-    # do poprawki
-    def is_no_flux_BC_satisfied(self, V_app_fw, panels):
+    def is_no_flux_BC_satisfied(self, V_app_fw, panels, areas, normals):
 
         N = panels.shape[0]
         flux_through_panel = np.zeros(shape=N)
-        panels_area = np.zeros(shape=N)
+        #panels_area = np.zeros(shape=N)
 
         # dla kazdego panelu
         for i in range(0, N):
-            panel_surf_normal = panels[i].get_normal_to_panel()
-            panels_area[i] = panels[i].get_panel_area()
-            flux_through_panel[i] = -np.dot(V_app_fw[i], panel_surf_normal)
+            #panel_surf_normal = panels[i].get_normal_to_panel()
+            #panels_area[i] = panels[i].get_panel_area()
+            flux_through_panel[i] = -np.dot(V_app_fw[i], normals[i])
 
-        for area in panels_area:
+        for area in areas:
             if np.isnan(area) or area < 1E-14:
                 raise ValueError("Solution error, panel_area is suspicious")
 
@@ -271,4 +305,74 @@ class Panels:
                 raise ValueError("Solution error, there shall be no flow through panel!")
 
         return True
+
+    # czesc kodu sie powtarza, zrobic osobna funkcje
+    def calc_V_at_cp_new(self, V_app_infw, gamma_magnitude, panels, center_of_pressure, rings, M, N, normals):
+            
+           # :param V_app_infw: apparent wind
+           # :param gamma_magnitude: vector with circulations
+           # :param panels:
+           # :return: Wind at cp = apparent wind + wind_induced_at_cp
+            
+            #panels_1d = panels.flatten()
+            #N = panels.shape[0]
+            #v_ind_coeff = np.full((N, N, 3), 0., dtype=float)
+            #######
+            m = M * N
+            coefs = np.zeros((m, m))
+            wind_coefs = np.zeros((m, m, 3))
+            for i, point in enumerate(center_of_pressure):
+
+                # loop over other vortices
+                for j, ring in enumerate(rings):
+                    A = ring[0]
+                    B = ring[1]
+                    C = ring[2]
+                    D = ring[3]
+                    a = self.vortex_ring(point, A, B, C, D)
+
+                    # poprawka na trailing edge
+                    # todo: zrobic to w drugim, oddzielnym ifie
+                    if j >= len(center_of_pressure) - M:
+                        #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
+                        a = self.vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j])
+                    b = np.dot(a, normals[i].reshape(3, 1))
+                    # v_ind_coeff to jest u mnie wind_coefs
+                    wind_coefs[i, j] = a
+                    coefs[i, j] = b
+                
+            #######
+           
+            V_induced = self.calc_induced_velocity(wind_coefs, gamma_magnitude)
+            # V_induced_re = V_induced.reshape(N, 3)
+            V_at_cp = V_app_infw + V_induced
+            return V_at_cp, V_induced
+    # poprawic
+    def get_span_vector(self):
+        [A, B, C, D] = self.get_vortex_ring_position()
+        bc = C - B
+        bc *= self.gamma_orientation
+        return np.array(bc)
+
+    #poprawic
+    def calc_force_wrapper_new(self, V_app_infw, gamma_magnitude, panels, rho,  center_of_pressure, rings, M, N, normals):
+        # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
+        # f. Secondary Computations: Pressures, Loads, Velocities, Etc
+        #Eq (12.25)
+
+        V_at_cp, V_induced = self.calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels, center_of_pressure, rings, M, N, normals)
+
+        V_at_cp_re = V_at_cp.reshape(panels.shape[0], panels.shape[1], 3)
+        gamma_re = gamma_magnitude.reshape(panels.shape)
+        force_re_xyz = np.full((panels.shape[0], panels.shape[1], 3), 0., dtype=float)
+        for i in range(0, panels.shape[0]):
+            for j in range(0, panels.shape[1]):
+                if i == 0:  # leading edge only
+                    gamma = panels[i, j].get_span_vector() * gamma_re[i, j]
+                else:
+                    gamma = panels[i, j].get_span_vector() * (gamma_re[i, j]-gamma_re[i-1, j])
+
+                force_re_xyz[i, j, :] = rho * np.cross(V_at_cp_re[i, j], gamma)
+
+        return force_re_xyz
 
