@@ -6,13 +6,13 @@ from numpy.linalg import norm
 
 class Panels:
 
-    def __init__(self, M: int, N: int, mesh) -> None:
+    def __init__(self, M: int, N: int, mesh, gamma_orientation : float = 1) -> None:
 
         #np.set_printoptions(precision=3, suppress=True)
         self.M = M
         # num of rows
         self.N = N
-
+        self.gamma_orientation = gamma_orientation
         ### FLIGHT CONDITIONS ###
         V = 1 * np.array([10.0, 0.0, 0.0])
         V_app_infw = np.array([V for i in range(self.M * self.N)])
@@ -21,9 +21,9 @@ class Panels:
         
         self.panels = mesh
         #self.panels = np.flip(self.panels, 0)
-        #test000 = self.panels - self.panels0
+        #test000 = self.panels - self.panels0s
         self.areas = self.get_panels_area(self.panels, self.N, self.M) 
-        self.normals, self.collocation_points, self.center_of_pressure, self.rings = self.calculate_normals_collocations_cps_rings(self.panels)
+        self.normals, self.collocation_points, self.center_of_pressure, self.rings, self.span_vectors = self.calculate_normals_collocations_cps_rings_spans(self.panels)
         #self.coefs, self.RHS, self.wind_coefs = self.get_influence_coefficients(self.collocation_points, self.rings, self.normals, self.M, self.N, V_app_infw)
 
         self.coefs, self.RHS, self.wind_coefs, self.trailing_rings = self.get_influence_coefficients_spanwise(self.collocation_points, self.rings, self.normals, self.M, self.N, V_app_infw)
@@ -37,9 +37,10 @@ class Panels:
     def get_trailing_edge_mid_points(self, p1: np.ndarray, p4: np.ndarray) -> np.ndarray:
         return (p4 + p1) / 2.
 
-    def calculate_normals_collocations_cps_rings(self, panels: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    def calculate_normals_collocations_cps_rings_spans(self, panels: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         K = panels.shape[0]
         ns = np.zeros((K, 3))
+        span_vectors = np.zeros((K, 3))
         collocation_points = np.zeros((K, 3))
         center_of_pressure = np.zeros((K, 3))
         rings = np.zeros(shape=panels.shape)
@@ -68,13 +69,20 @@ class Panels:
             D = p4 + p3_p4 / 4.
 
             rings[idx] = np.array([A, B, C, D])
+            
+            # span vectors
+            bc = C - B
+            bc *= self.gamma_orientation
+            span_vectors[idx] = bc
+            #####
+                
             n = np.cross(vect_A, vect_B)
             n = n / np.linalg.norm(n)
 
             ns[idx] = n
 
-        return ns, collocation_points, center_of_pressure, rings
-
+        return ns, collocation_points, center_of_pressure, rings, span_vectors
+    """
     def check_singular_condition(self, r1: np.array, r2: np.array) -> bool:
         # strona 254 punkt 3.
         n1 = np.linalg.norm(r1)
@@ -83,6 +91,11 @@ class Panels:
         if (n1 or n2 or n3) < 1e-9:
             return True
         return False
+    """    
+    def is_in_vortex_core(self, vector_list):
+        for vec in vector_list:
+            if norm(vec) < 1e-9:
+                return True
 
     def vortex_line(self, p: np.array, p1: np.array, p2: np.array, gamma: float = 1.0) -> np.array:
         # strona 254
@@ -91,10 +104,11 @@ class Panels:
         r2 = np.array(p - p2)
 
         r1_cross_r2 = np.cross(r1, r2)
-
+        
         q_ind = np.array([0, 0, 0])
-
-        if not self.check_singular_condition(r1, r2):
+        if self.is_in_vortex_core([r1, r2, r1_cross_r2]):
+            return [0.0, 0.0, 0.0]
+        else:
             q_ind = r1_cross_r2 / np.square(np.linalg.norm(r1_cross_r2))
             q_ind *= np.dot(r0, (r1 / np.linalg.norm(r1) - r2 / np.linalg.norm(r2)))
             q_ind *= gamma / (4 * np.pi)
@@ -194,6 +208,7 @@ class Panels:
                 D = ring[3]
                 a = self.vortex_ring(point, A, B, C, D)
 
+                
                 # poprawka na trailing edge
                 # todo: zrobic to w drugim, oddzielnym ifie
                 if j >= len(collocation_points) - M:
@@ -334,6 +349,7 @@ class Panels:
                     # poprawka na trailing edge
                     # todo: zrobic to w drugim, oddzielnym ifie
                     if j >= len(center_of_pressure) - M:
+                        
                         #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
                         a = self.vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j])
                     b = np.dot(a, normals[i].reshape(3, 1))
@@ -347,32 +363,39 @@ class Panels:
             # V_induced_re = V_induced.reshape(N, 3)
             V_at_cp = V_app_infw + V_induced
             return V_at_cp, V_induced
-    # poprawic
-    def get_span_vector(self):
-        [A, B, C, D] = self.get_vortex_ring_position()
-        bc = C - B
-        bc *= self.gamma_orientation
-        return np.array(bc)
 
     #poprawic
-    def calc_force_wrapper_new(self, V_app_infw, gamma_magnitude, panels, rho,  center_of_pressure, rings, M, N, normals):
+    def calc_force_wrapper_new(self, V_app_infw, gamma_magnitude, panels, rho,  center_of_pressure, rings, M, N, normals, span_vectors):
         # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
         # f. Secondary Computations: Pressures, Loads, Velocities, Etc
         #Eq (12.25)
 
         V_at_cp, V_induced = self.calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels, center_of_pressure, rings, M, N, normals)
 
-        V_at_cp_re = V_at_cp.reshape(panels.shape[0], panels.shape[1], 3)
-        gamma_re = gamma_magnitude.reshape(panels.shape)
-        force_re_xyz = np.full((panels.shape[0], panels.shape[1], 3), 0., dtype=float)
-        for i in range(0, panels.shape[0]):
-            for j in range(0, panels.shape[1]):
-                if i == 0:  # leading edge only
-                    gamma = panels[i, j].get_span_vector() * gamma_re[i, j]
-                else:
-                    gamma = panels[i, j].get_span_vector() * (gamma_re[i, j]-gamma_re[i-1, j])
+        print("a")
+        K = M * N
+        force_xyz = np.zeros((K, 3))
 
-                force_re_xyz[i, j, :] = rho * np.cross(V_at_cp_re[i, j], gamma)
+        for i in range(K):
+            # for spanwise only!
+            # if panel is leading edge
+            gamma = 0.0
+            if i < M:
+                gamma = span_vectors[i] * gamma_magnitude[i]
+            else:
+                gamma = span_vectors[i] * (gamma_magnitude[i] - gamma_magnitude[i-M])
+            force_xyz[i] = rho * np.cross(V_at_cp[i], gamma)
 
-        return force_re_xyz
 
+        return force_xyz
+
+
+
+    def calc_pressure(self, forces, normals, areas, N , M):
+        K = N*M
+        p = np.zeros(shape=K)
+
+        for i in range(K):
+            p[i] = np.dot(forces[i], normals[i]) / areas[i]
+
+        return p

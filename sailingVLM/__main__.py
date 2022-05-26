@@ -132,40 +132,28 @@ V_induced_at_ctrl_p2 = pp.calc_induced_velocity(pp.wind_coefs, pp.big_gamma)
 V_app_fw_at_ctrl_p2 = V_app_infw + V_induced_at_ctrl_p2
 
 
-xxxx = A - pp.coefs
-# sprawdzenie czy ringi sa te same
-# to jest okej
-test1 = pp.wind_coefs - v_ind_coeff
-test2 = V_app_fw_at_ctrl_p2 - V_app_fw_at_ctrl_p
 
 assert pp.is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p2, pp.panels, pp.areas, pp.normals)
 
-#####
-# testy
-# ok
-test3 = pp.center_of_pressure - center_of_pressure_good
 assert_almost_equal(center_of_pressure_good, pp.center_of_pressure)
 assert_almost_equal(rings_good, pp.rings)
 assert_almost_equal(gamma_magnitude, pp.big_gamma)
 assert_almost_equal(v_ind_coeff, pp.wind_coefs)
 assert_almost_equal(normals_good, pp.normals)
 
-# /home/zuzanna/Documents/icm/praca/sailingVLM/sailingVLM/NewApproach/vlm.py:98: RuntimeWarning: invalid value encountered in true_divide
-# q_ind = r1_cross_r2 / np.square(np.linalg.norm(r1_cross_r2))
-# ponizej odwzorowany blad dla 
-"""
-pp.metoda_testowa(pp.center_of_pressure, pp.rings, pp.normals, pp.M, pp.N, V_app_infw)
+
+F2 = pp.calc_force_wrapper_new(V_app_infw, pp.big_gamma, pp.panels, rho, pp.center_of_pressure, pp.rings,pp.M, pp.N, pp.normals, pp.span_vectors)
+assert_almost_equal(F, F2)
+
+my_pressure = pp.calc_pressure(F2, pp.normals,pp.areas, pp.N, pp.M)
+assert_almost_equal(p, my_pressure)
+print("ggg")
 
 
-# powstaje cross równy wektorowi zerowemu :o
-A = pp.rings[0, 0]
-B = pp.rings[0, 1]
-C = pp.rings[0, 2]
-D = pp.rings[0, 3]
-a = pp.vortex_ring(pp.center_of_pressure[0], A, B, C, D)
-            
-#####
-# tu cos szwankuje 
-F2 = pp.calc_force_wrapper_new(V_app_infw, pp.big_gamma, pp.panels, rho, pp.center_of_pressure, pp.rings,pp.M, p.N, pp.normals)
-"""
+total_F2 = np.sum(F, axis=0)
+q = 0.5 * rho * (np.linalg.norm(V) ** 2) * S
+CL_vlm2 = total_F2[2] / q
+CD_vlm2 = total_F2[0] / q
 
+assert_almost_equal(CL_vlm, CL_vlm2)
+assert_almost_equal(CD_vlm, CD_vlm2)

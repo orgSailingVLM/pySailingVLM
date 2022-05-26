@@ -119,6 +119,7 @@ def calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho):
     V_at_cp_re = V_at_cp.reshape(panels.shape[0], panels.shape[1], 3)
     gamma_re = gamma_magnitude.reshape(panels.shape)
     force_re_xyz = np.full((panels.shape[0], panels.shape[1], 3), 0., dtype=float)
+
     for i in range(0, panels.shape[0]):
         for j in range(0, panels.shape[1]):
             if i == 0:  # leading edge only
@@ -131,7 +132,7 @@ def calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho):
     return force_re_xyz
 
 
-def calc_pressure(force, panels):
+def  calc_pressure(force, panels):
     panels_1d = panels.flatten()
     n = len(panels_1d)
     p = np.zeros(shape=n)
