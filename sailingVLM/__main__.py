@@ -17,8 +17,8 @@ from sailingVLM.Solver.TrailingEdgePanel import TrailingEdgePanel
 from sailingVLM.NewApproach.mesher import my_make_panels_from_le_te_points
 from numpy.testing import assert_almost_equal
 
-############### porownanie #############
-
+############### NOWE #############
+from sailingVLM.NewApproach.vlm import Vlm
 
 ### GEOMETRY DEFINITION ###
 
@@ -89,8 +89,6 @@ assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p, panels)
 
 Fold = calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho=rho)
 
-
-
 # V_app_infw.reshape(ns,nc,3)
 F = calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho)
 F = F.reshape(N, 3)
@@ -124,36 +122,21 @@ print("=== END ===")
 
 print("M: {} N: {}".format(cols, rows))
 
-MM = cols
-NN = rows
-pp = vlm.Panels(MM, NN, new_approach_panels)
 
-V_induced_at_ctrl_p2 = pp.calc_induced_velocity(pp.wind_coefs, pp.big_gamma)
-V_app_fw_at_ctrl_p2 = V_app_infw + V_induced_at_ctrl_p2
+my_vlm = Vlm(chord=chord, half_wing_span=half_wing_span, AoA_deg=AoA_deg, M=cols, N=rows, rho=rho, gamma_orientation=1.0, V=V)
 
 
 
-assert pp.is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p2, pp.panels, pp.areas, pp.normals)
+assert_almost_equal(center_of_pressure_good, my_vlm.center_of_pressure)
+assert_almost_equal(rings_good, my_vlm.rings)
+assert_almost_equal(gamma_magnitude, my_vlm.big_gamma)
+assert_almost_equal(v_ind_coeff, my_vlm.wind_coefs)
+assert_almost_equal(normals_good, my_vlm.normals)
+assert_almost_equal(F, my_vlm.F)
 
-assert_almost_equal(center_of_pressure_good, pp.center_of_pressure)
-assert_almost_equal(rings_good, pp.rings)
-assert_almost_equal(gamma_magnitude, pp.big_gamma)
-assert_almost_equal(v_ind_coeff, pp.wind_coefs)
-assert_almost_equal(normals_good, pp.normals)
+assert_almost_equal(p, my_vlm.pressure)
+assert_almost_equal(CL_vlm, my_vlm.CL)
+assert_almost_equal(CD_vlm, my_vlm.CD)
 
-
-F2 = pp.calc_force_wrapper_new(V_app_infw, pp.big_gamma, pp.panels, rho, pp.center_of_pressure, pp.rings,pp.M, pp.N, pp.normals, pp.span_vectors)
-assert_almost_equal(F, F2)
-
-my_pressure = pp.calc_pressure(F2, pp.normals,pp.areas, pp.N, pp.M)
-assert_almost_equal(p, my_pressure)
-print("ggg")
-
-
-total_F2 = np.sum(F, axis=0)
-q = 0.5 * rho * (np.linalg.norm(V) ** 2) * S
-CL_vlm2 = total_F2[2] / q
-CD_vlm2 = total_F2[0] / q
-
-assert_almost_equal(CL_vlm, CL_vlm2)
-assert_almost_equal(CD_vlm, CD_vlm2)
+assert_almost_equal(CL_expected, my_vlm.CL_expected)
+assert_almost_equal(CD_ind_expected, my_vlm.CD_ind_expected)
