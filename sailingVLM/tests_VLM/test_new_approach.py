@@ -105,8 +105,8 @@ class TestNewApproach(TestCase):
         assert_almost_equal(F, my_vlm.F)
 
         assert_almost_equal(p, my_vlm.pressure)
-        assert_almost_equal(CL_vlm, my_vlm.CL)
-        assert_almost_equal(CD_vlm, my_vlm.CD)
+        assert_almost_equal(CL_vlm, my_vlm.CL_vlm)
+        assert_almost_equal(CD_vlm, my_vlm.CD_vlm)
 
         assert_almost_equal(CL_expected, my_vlm.CL_expected)
         assert_almost_equal(CD_ind_expected, my_vlm.CD_ind_expected)

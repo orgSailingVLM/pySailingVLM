@@ -47,8 +47,8 @@ class Vlm:
     S : float  = field(init=False)
     CL_expected : float = field(init=False)
     CD_ind_expected : float = field(init=False)
-    CL : float = field(init=False)
-    CD : float = field(init=False)
+    CL_vlm : float = field(init=False)
+    CD_vlm : float = field(init=False)
     
     def __post_init__(self):
         
@@ -71,7 +71,7 @@ class Vlm:
         self.S = 2 * self.half_wing_span * self.chord
         self.CL_expected, self.CD_ind_expected = get_CL_CD_free_wing(self.AR, self.AoA_deg)
         
-        self.CL, self.CD = get_vlm_CL_CD_free_wing(self.F, self.V, self.rho, self.S)
+        self.CL_vlm, self.CD_vlm = get_vlm_CL_CD_free_wing(self.F, self.V, self.rho, self.S)
         
         
 
