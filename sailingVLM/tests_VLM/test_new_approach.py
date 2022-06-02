@@ -12,7 +12,6 @@ from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_v
 from sailingVLM.NewApproach.vlm import Vlm
 
 
-
 class TestNewApproach(TestCase):
     
     def test_compare_old_and_new_approach(self):
@@ -36,7 +35,7 @@ class TestNewApproach(TestCase):
         # we are going to rotate the geometry
 
         ### MESH DENSITY ###
-        ns = 10    # number of panels (spanwise)
+        ns =  10   # number of panels (spanwise)
         nc = 5   # number of panels (chordwise)
 
         panels, _, _ = make_panels_from_le_te_points(

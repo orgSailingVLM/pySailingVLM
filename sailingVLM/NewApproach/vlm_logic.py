@@ -145,7 +145,7 @@ def get_influence_coefficients(self, collocation_points: np.ndarray, rings: np.n
     
     return coefs, RHS, wind_coefs
 
-def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
     m = collocation_points.shape[0]
 
@@ -290,7 +290,6 @@ def calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho, center_of_p
 
     V_at_cp, V_induced = calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels, center_of_pressure, rings, M, N, normals)
 
-    print("a")
     K = M * N
     force_xyz = np.zeros((K, 3))
 
