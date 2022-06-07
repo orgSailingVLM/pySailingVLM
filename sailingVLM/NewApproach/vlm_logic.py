@@ -114,37 +114,6 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
     q_ind = sub1 + sub2 + sub3 + sub4
     return q_ind
 
-# to jest dla chordwise czyli dla ostatnich w pionie paneli
-# sprawdzic czy bedzie dzialac
-def get_influence_coefficients(self, collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-
-    m = collocation_points.shape[0]
-
-    RHS = [-np.dot(V_app_infw[i], normals[i]) for i in range(normals.shape[0])]
-    coefs = np.zeros((m, m))
-    wind_coefs = np.zeros((m, m, 3))
-    for i, point in enumerate(collocation_points):
-
-        # loop over other vortices
-        for j, ring in enumerate(rings):
-            A = ring[0]
-            B = ring[1]
-            C = ring[2]
-            D = ring[3]
-            a = self.vortex_ring(point, A, B, C, D)
-
-            # poprawka na trailing edge
-            # todo: zrobic to w drugim, oddzielnym ifie
-            if j >= len(collocation_points) - N:
-                a = vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
-                #a = self.vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j])
-            b = np.dot(a, normals[i].reshape(3, 1))
-            wind_coefs[i, j] = a
-            coefs[i, j] = b
-    RHS = np.asarray(RHS)
-    
-    return coefs, RHS, wind_coefs
-
 def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
     m = collocation_points.shape[0]
