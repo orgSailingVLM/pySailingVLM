@@ -136,8 +136,8 @@ def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: n
             # todo: zrobic to w drugim, oddzielnym ifie
             if i >= len(collocation_points) - M:
                 #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
-                a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j])
-            b = np.dot(a, normals[i].reshape(3, 1))
+                a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[i])
+            b = np.dot(a, normals[j].reshape(3, 1))
             wind_coefs[j, i] = a
             coefs[j, i] = b
     RHS = np.asarray(RHS)
@@ -214,16 +214,6 @@ def is_no_flux_BC_satisfied(V_app_fw, panels, areas, normals):
 
 # czesc kodu sie powtarza, zrobic osobna funkcje
 def calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels, center_of_pressure, rings, M, N, normals):
-        
-        # :param V_app_infw: apparent wind
-        # :param gamma_magnitude: vector with circulations
-        # :param panels:
-        # :return: Wind at cp = apparent wind + wind_induced_at_cp
-        
-        #panels_1d = panels.flatten()
-        #N = panels.shape[0]
-        #v_ind_coeff = np.full((N, N, 3), 0., dtype=float)
-        #######
         m = M * N
         coefs = np.zeros((m, m))
         wind_coefs = np.zeros((m, m, 3))
@@ -251,7 +241,7 @@ def calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels, center_of_pressure, ri
         V_at_cp = V_app_infw + V_induced
         return V_at_cp, V_induced
 
-#poprawic
+
 def calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho, center_of_pressure, rings, M, N, normals, span_vectors):
     # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     # f. Secondary Computations: Pressures, Loads, Velocities, Etc
@@ -343,7 +333,6 @@ def create_panels(half_wing_span : float, chord : float, AoA_deg : float, M : in
     te_SE = np.array([chord, -half_wing_span, 0.])  # trailing edge South - East coordinate
 
     Ry = rotation_matrix([0, 1, 0], np.deg2rad(AoA_deg))
-
 
     ### MESH DENSITY ###
     # sprawdzci czy nie jest odrotnie M i N

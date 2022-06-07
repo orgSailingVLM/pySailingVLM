@@ -7,20 +7,17 @@ from sailingVLM.NewApproach.vlm_logic import calculate_normals_collocations_cps_
                                             vortex_horseshoe, \
                                             is_in_vortex_core, \
                                             vortex_ring, \
-                                            get_influence_coefficients, \
                                             get_influence_coefficients_spanwise, \
                                             solve_eq, \
                                             calc_induced_velocity, \
                                             get_panels_area, \
                                             is_no_flux_BC_satisfied, \
-                                            calc_V_at_cp_new, \
                                             calc_force_wrapper_new, \
                                             calc_pressure, \
                                             get_vlm_CL_CD_free_wing, \
-                                            make_panels_from_mesh_spanwise_new, \
                                             make_panels_from_le_te_points_new, \
                                             create_panels
-
+from sailingVLM.Solver.coeff_formulas import get_CL_CD_free_wing
 
 class TestVlmLogic(TestCase):
     def setUp(self):
@@ -40,6 +37,7 @@ class TestVlmLogic(TestCase):
                                 [12.5, 10.0, 0.0]]])
         self.spans = np.array([[0.0, 10.0, 0.0]]) * self.gamma_orientation
         self.V = 1 * np.array([10.0, 0.0, 0.0])
+        self.rho = 1.225
     
     def test_calculate_normals_collocations_cps_rings_spans(self):
         normals, collocations, cps, rings, spans = calculate_normals_collocations_cps_rings_spans(self.panels, self.gamma_orientation)
@@ -117,8 +115,117 @@ class TestVlmLogic(TestCase):
 
         assert_almost_equal(v_ind, v_ind_expected)
     
-    """
-    def test_get_influence_coefficients_spanwise(self):
+    
+    def test_get_influence_and_magnitude_coefficients_spanwise(self):
+        # wg testow z wersji pierwotnej kodu
+        panels = np.array([[[  2.        , -10.        ,   0.        ],
+                            [  0.        , -10.        ,   0.        ],
+                            [  0.        ,  -3.33333333,   0.        ],
+                            [  2.        ,  -3.33333333,   0.        ]],
+
+                        [[  2.        ,  -3.33333333,   0.        ],
+                            [  0.        ,  -3.33333333,   0.        ],
+                            [  0.        ,   3.33333333,   0.        ],
+                            [  2.        ,   3.33333333,   0.        ]],
+
+                        [[  2.        ,   3.33333333,   0.        ],
+                            [  0.        ,   3.33333333,   0.        ],
+                            [  0.        ,  10.        ,   0.        ],
+                            [  2.        ,  10.        ,   0.        ]]])
         
-        coefs, RHS, wind_coefs, trailing_rings = get_influence_coefficients_spanwise(self.collocations, self.rings, self.normals, self.M, self.N, self.V )
-    """
+        normals, collocations, cps, rings, spans = calculate_normals_collocations_cps_rings_spans(panels, self.gamma_orientation)
+        
+        M = 3  # number of panels (spanwise)
+        N = 1
+        V = 1 * np.array([10.0, 0.0, -1])  # [m/s] wind speed
+        V_free_stream = np.array([V for i in range(N * M)])
+        
+        
+        coefs, RHS, wind_coefs, trailing_rings = get_influence_coefficients_spanwise(collocations, rings, normals, M, N, V_free_stream )
+        gamma_magnitude = solve_eq(coefs, RHS)
+        areas = get_panels_area(panels, N, M)
+        
+
+        gamma_expected = [-5.26437093, -5.61425005, -5.26437093]
+        assert_almost_equal(gamma_magnitude, gamma_expected)
+        
+        V_induced = calc_induced_velocity(wind_coefs, gamma_magnitude)
+        V_app_fs = V_free_stream + V_induced
+        assert is_no_flux_BC_satisfied(V_app_fs, panels, areas, normals)
+
+        with self.assertRaises(ValueError) as context:
+            V_broken = 1e10 * V_app_fs
+            is_no_flux_BC_satisfied(V_broken, panels, areas, normals)
+
+        self.assertTrue("Solution error, there shall be no flow through panel!" in context.exception.args[0])
+        
+    def test_make_panels_from_points_span(self):
+        c_root = 4.0  # root chord length
+        c_tip = 2.0  # tip chord length
+        wing_span = 16  # wing span length
+
+        # Points defining wing
+
+        te_se = np.array([c_root, 0, 0])
+        le_sw = np.array([0, 0, 0])
+
+        le_nw = np.array([0, wing_span, 0])
+        te_ne = np.array([c_tip, wing_span, 0])
+
+        # MESH DENSITY
+        ns = 10  # number of panels spanwise
+        nc = 5  # number of panels chordwise
+
+        
+        new_approach_panels = make_panels_from_le_te_points_new(
+            [le_sw, te_se,
+             le_nw, te_ne],
+            [nc, ns],
+            gamma_orientation=1)
+
+        chords = np.linspace(c_root, c_tip, num=ns+1, endpoint=True)
+        chords_vec = np.array([chords, np.zeros(len(chords)), np.zeros(len(chords))])
+        chords_vec = chords_vec.transpose()
+        
+
+        expected_points = (np.array([0.8, 0., 0.]), np.array([0., 0., 0.]), np.array([0., 1.6, 0.]), np.array([0.76, 1.6, 0.]))
+
+        assert np.allclose(expected_points, new_approach_panels[0])
+
+        expected_points37 = (np.array([2.08, 11.2, 0.]), np.array([1.56, 11.2,  0.]), np.array([1.44, 12.8, 0.]), np.array([1.92, 12.8,  0.]))
+        assert np.allclose(expected_points37, new_approach_panels[37])
+
+    def test_get_vlm_CL_CD_free_wing(self):
+        ### MESH DENSITY ###
+        M = 20  # number of panels (spanwise)
+        N = 1   # number of panels (chordwise)
+        chord  = 1.              # chord length
+        half_wing_span = 100
+        AoA_deg = 3.0   # Angle of attack [deg]
+    
+        panels = create_panels(half_wing_span, chord, AoA_deg, M, N)
+        normals, collocations, cps, rings, spans = calculate_normals_collocations_cps_rings_spans(panels, self.gamma_orientation)
+        V_app_infw = np.array([self.V for i in range(M * N)])
+        coefs, RHS, wind_coefs, trailing_rings = get_influence_coefficients_spanwise(collocations, rings, normals, M, N, V_app_infw)
+        gamma_magnitude = solve_eq(coefs, RHS)
+        areas = get_panels_area(panels, N, M)
+        
+        V_induced = calc_induced_velocity(wind_coefs, gamma_magnitude)
+        V_app_fw = V_app_infw + V_induced
+
+        assert is_no_flux_BC_satisfied(V_app_fw, panels, areas, normals)
+
+        F = calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, self.rho, cps, rings, M, N, normals, spans)
+        
+        p = calc_pressure(F, normals, areas, N, M)
+
+        S = 2 * half_wing_span * chord
+        AR = 2 * half_wing_span / chord
+
+        CL_expected, CD_exptected = get_CL_CD_free_wing(AR, AoA_deg)
+
+        CL_vlm, CD_vlm = get_vlm_CL_CD_free_wing(F, self.V, self.rho, S)
+
+        assert_almost_equal(CL_vlm, CL_expected, decimal=3)
+        assert_almost_equal(CD_vlm, CD_exptected, decimal=3)
+

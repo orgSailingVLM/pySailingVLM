@@ -55,7 +55,7 @@ class TestVLM_Solver(TestCase):
 
         gamma_expected = [-5.26437093, -5.61425005, -5.26437093]
         assert_almost_equal(gamma_magnitude, gamma_expected)
-
+        
         V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
         V_app_fs = V_free_stream + V_induced
         assert is_no_flux_BC_satisfied(V_app_fs, self.panels)
