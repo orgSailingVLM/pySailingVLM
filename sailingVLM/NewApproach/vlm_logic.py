@@ -153,24 +153,24 @@ def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: n
     coefs = np.zeros((m, m))
     wind_coefs = np.zeros((m, m, 3))
     trailing_rings = []
-    for i, point in enumerate(collocation_points):
-
-        # loop over other vortices
-        for j, ring in enumerate(rings):
-            A = ring[0]
-            B = ring[1]
-            C = ring[2]
-            D = ring[3]
+    # loop over other vortices
+    for i, ring in enumerate(rings):
+        A = ring[0]
+        B = ring[1]
+        C = ring[2]
+        D = ring[3]
+        # loop over points
+        for j, point in enumerate(collocation_points):
+           
             a = vortex_ring(point, A, B, C, D)
-
             # poprawka na trailing edge
             # todo: zrobic to w drugim, oddzielnym ifie
-            if j >= len(collocation_points) - M:
+            if i >= len(collocation_points) - M:
                 #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
                 a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j])
             b = np.dot(a, normals[i].reshape(3, 1))
-            wind_coefs[i, j] = a
-            coefs[i, j] = b
+            wind_coefs[j, i] = a
+            coefs[j, i] = b
     RHS = np.asarray(RHS)
     
     for j, ring in enumerate(rings):
@@ -328,21 +328,24 @@ def get_vlm_CL_CD_free_wing(F: np.ndarray, V: np.array, rho : float, S : float) 
 ################ mesher #################
 # sprawdzic typy!
 def make_panels_from_mesh_spanwise_new(mesh, gamma_orientation : float) -> np.array:
-
-    new_approach_panels = []
     n_lines = mesh.shape[0]
     n_points_per_line = mesh.shape[1]
+    M = n_points_per_line - 1
+    N = n_lines - 1
     
-    for i in range(n_lines - 1):
-        for j in range(n_points_per_line - 1):
+    new_approach_panels = np.zeros((N * M, 4, 3))
+
+    counter = 0
+    for i in range(N):
+        for j in range(M):
             pSE = mesh[i + 1][j]
             pSW = mesh[i][j]
             pNW = mesh[i][j + 1]
             pNE = mesh[i + 1][j + 1]
+            new_approach_panels[counter] = [pSE, pSW, pNW, pNE] 
 
-            new_approach_panels.append([pSE, pSW, pNW, pNE])
-            
-    return  np.asarray(new_approach_panels)
+            counter += 1
+    return  new_approach_panels
 
 
 
