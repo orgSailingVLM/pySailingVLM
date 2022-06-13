@@ -56,6 +56,7 @@ def calculate_normals_collocations_cps_rings_spans(panels: np.ndarray, gamma_ori
     return ns, collocation_points, center_of_pressure, rings, span_vectors
  
 def is_in_vortex_core(vector_list):
+    #todo: polepszyc to
     for vec in vector_list:
         if norm(vec) < 1e-9:
             return True
@@ -117,7 +118,7 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
 def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
     m = collocation_points.shape[0]
-
+    # wektoryzacja -> patrz mail
     RHS = [-np.dot(V_app_infw[i], normals[i]) for i in range(normals.shape[0])]
     coefs = np.zeros((m, m))
     wind_coefs = np.zeros((m, m, 3))
@@ -134,6 +135,7 @@ def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: n
             a = vortex_ring(point, A, B, C, D)
             # poprawka na trailing edge
             # todo: zrobic to w drugim, oddzielnym ifie
+            # poziomo od 0 do n-1, reszta odzielnie
             if i >= len(collocation_points) - M:
                 #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
                 a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[i])
@@ -142,6 +144,7 @@ def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: n
             coefs[j, i] = b
     RHS = np.asarray(RHS)
     
+    #todo: do wywalenia?
     for j, ring in enumerate(rings):
         if j >= len(collocation_points) - M:
             A = ring[0]

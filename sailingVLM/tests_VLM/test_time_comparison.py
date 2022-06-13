@@ -14,7 +14,7 @@ class TimeComparison(TestCase):
         self.ns = 10    # number of panels (spanwise)
         self.nc = 5     # number of panels (chordwise)
         self.gamma_orientation = 1.0
-        pass
+
         
     def test_old_approach(self):
         from sailingVLM.Solver.vlm_solver import calc_circulation
