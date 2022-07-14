@@ -1,6 +1,4 @@
 from unittest import TestCase
-
-from attr import s
 import numpy as np
 class TimeComparison(TestCase):
     
