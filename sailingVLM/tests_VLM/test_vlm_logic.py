@@ -142,7 +142,7 @@ class TestVlmLogic(TestCase):
         V = 1 * np.array([10.0, 0.0, -1])  # [m/s] wind speed
         V_free_stream = np.array([V for i in range(N * M)])
 
-        coefs, RHS, wind_coefs, _ = get_influence_coefficients_spanwise(collocations, rings, normals, M, N, V_free_stream )
+        coefs, RHS, wind_coefs = get_influence_coefficients_spanwise(collocations, rings, normals, M, N, V_free_stream )
         gamma_magnitude = solve_eq(coefs, RHS)
         areas = get_panels_area(panels, N, M)
 
@@ -205,7 +205,7 @@ class TestVlmLogic(TestCase):
         panels = create_panels(half_wing_span, chord, AoA_deg, M, N)
         normals, collocations, cps, rings, spans = calculate_normals_collocations_cps_rings_spans(panels, self.gamma_orientation)
         V_app_infw = np.array([self.V for i in range(M * N)])
-        coefs, RHS, wind_coefs, _ = get_influence_coefficients_spanwise(collocations, rings, normals, M, N, V_app_infw)
+        coefs, RHS, wind_coefs = get_influence_coefficients_spanwise(collocations, rings, normals, M, N, V_app_infw)
         gamma_magnitude = solve_eq(coefs, RHS)
         areas = get_panels_area(panels, N, M)
 
