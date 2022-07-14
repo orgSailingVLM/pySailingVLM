@@ -138,3 +138,5 @@ sailingVLM/tests_VLM/.pytest_cache
 
 # vscode
 .vscode/
+
+testy_czasowe/*
