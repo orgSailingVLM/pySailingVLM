@@ -119,10 +119,10 @@ def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: n
 
     m = collocation_points.shape[0]
     # wektoryzacja -> patrz mail
-    RHS = [-np.dot(V_app_infw[i], normals[i]) for i in range(normals.shape[0])]
+    
+    RHS = -V_app_infw.dot(normals.transpose()).diagonal()
     coefs = np.zeros((m, m))
     wind_coefs = np.zeros((m, m, 3))
-    trailing_rings = []
     # loop over other vortices
     for i, ring in enumerate(rings):
         A = ring[0]
@@ -143,17 +143,8 @@ def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: n
             wind_coefs[j, i] = a
             coefs[j, i] = b
     RHS = np.asarray(RHS)
-    
-    #todo: do wywalenia?
-    for j, ring in enumerate(rings):
-        if j >= len(collocation_points) - M:
-            A = ring[0]
-            B = ring[1]
-            C = ring[2]
-            D = ring[3]
-            trailing_rings.append([A, B, C, D])
                 
-    return coefs, RHS, wind_coefs, trailing_rings
+    return coefs, RHS, wind_coefs
 
 def solve_eq(coefs: np.ndarray, RHS: np.ndarray):
     big_gamma = np.linalg.solve(coefs, RHS)
@@ -196,14 +187,8 @@ def get_panels_area(panels: np.ndarray, N: int, M: int)-> np.ndarray:
 def is_no_flux_BC_satisfied(V_app_fw, panels, areas, normals):
 
     N = panels.shape[0]
-    flux_through_panel = np.zeros(shape=N)
-    #panels_area = np.zeros(shape=N)
 
-    # dla kazdego panelu
-    for i in range(0, N):
-        #panel_surf_normal = panels[i].get_normal_to_panel()
-        #panels_area[i] = panels[i].get_panel_area()
-        flux_through_panel[i] = -np.dot(V_app_fw[i], normals[i])
+    flux_through_panel = -V_app_fw.dot(normals.transpose()).diagonal()
 
     for area in areas:
         if np.isnan(area) or area < 1E-14:
@@ -269,12 +254,7 @@ def calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho, center_of_p
 
 
 def calc_pressure(forces, normals, areas, N , M):
-    K = N*M
-    p = np.zeros(shape=K)
-
-    for i in range(K):
-        p[i] = np.dot(forces[i], normals[i]) / areas[i]
-
+    p = forces.dot(normals.transpose()).diagonal() /  areas
     return p
 
 

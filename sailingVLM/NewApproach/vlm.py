@@ -58,7 +58,7 @@ class Vlm:
 
         self.areas = get_panels_area(self.panels, self.N, self.M) 
         self.normals, self.collocation_points, self.center_of_pressure, self.rings, self.span_vectors = calculate_normals_collocations_cps_rings_spans(self.panels, self.gamma_orientation)
-        self.coefs, self.RHS, self.wind_coefs, self.trailing_rings = get_influence_coefficients_spanwise(self.collocation_points, self.rings, self.normals, self.M, self.N, V_app_infw)
+        self.coefs, self.RHS, self.wind_coefs = get_influence_coefficients_spanwise(self.collocation_points, self.rings, self.normals, self.M, self.N, V_app_infw)
         self.big_gamma = solve_eq(self.coefs, self.RHS)
         
         V_induced_at_ctrl_p = calc_induced_velocity(self.wind_coefs, self.big_gamma)
