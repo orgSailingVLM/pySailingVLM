@@ -5,6 +5,10 @@ from numpy.linalg import norm
 from sailingVLM.Solver.mesher import discrete_segment, make_point_mesh
 from sailingVLM.Rotations.geometry_calc import rotation_matrix
 
+import numba
+
+
+
 def get_leading_edge_mid_point(p2: np.ndarray, p3: np.ndarray) -> np.ndarray:
     return (p2 + p3) / 2.
 
@@ -54,30 +58,44 @@ def calculate_normals_collocations_cps_rings_spans(panels: np.ndarray, gamma_ori
         n = n / np.linalg.norm(n)
         ns[idx] = n
     return ns, collocation_points, center_of_pressure, rings, span_vectors
- 
+
+@numba.jit(nopython=True)
 def is_in_vortex_core(vector_list):
     #todo: polepszyc to
     for vec in vector_list:
         if norm(vec) < 1e-9:
             return True
+    return False
 
+#@numba.jit(nopython=True) -> slower than version below
+@numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True) 
 def vortex_line(p: np.array, p1: np.array, p2: np.array, gamma: float = 1.0) -> np.array:
+#def vortex_line(p, p1,  p2,  gamma = 1.0):
     # strona 254
-    r0 = np.array(p2 - p1)
-    r1 = np.array(p - p1)
-    r2 = np.array(p - p2)
 
+    r0 = np.asarray(p2 - p1)
+    r1 = np.asarray(p - p1)
+    r2 = np.asarray(p - p2)
+    
     r1_cross_r2 = np.cross(r1, r2)
     
-    q_ind = np.array([0, 0, 0])
-    if is_in_vortex_core([r1, r2, r1_cross_r2]):
-        return [0.0, 0.0, 0.0]
+    q_ind = np.array([0.0, 0.0, 0.0], dtype=np.float64)
+    # in nonpython mode must be list reflection to convert list to non python type
+    # nested python oject can be badly converted -> recommend to use numba.typed.List
+    b = is_in_vortex_core(numba.typed.List([r1, r2, r1_cross_r2]))
+    
+    # for normal code without numba
+    #b = is_in_vortex_core([r1, r2, r1_cross_r2])
+    if b:
+        return np.asarray([0.0, 0.0, 0.0], dtype=np.float64)
     else:
         q_ind = r1_cross_r2 / np.square(np.linalg.norm(r1_cross_r2))
         q_ind *= np.dot(r0, (r1 / np.linalg.norm(r1) - r2 / np.linalg.norm(r2)))
         q_ind *= gamma / (4 * np.pi)
 
     return q_ind
+
+
 
 def vortex_infinite_line(P: np.ndarray, A: np.array, r0: np.ndarray, gamma : float = 1.0):
 
@@ -108,6 +126,7 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
                 gamma: float = 1.0) -> np.array:
 
     sub1 = vortex_line(p, A, B, gamma)
+    #assert not vortex_line.nopython_signatures
     sub2 = vortex_line(p, B, C, gamma)
     sub3 = vortex_line(p, C, D, gamma)
     sub4 = vortex_line(p, D, A, gamma)
@@ -199,8 +218,8 @@ def is_no_flux_BC_satisfied(V_app_fw, panels, areas, normals):
             raise ValueError("Solution error, there shall be no flow through panel!")
 
     return True
-
 # czesc kodu sie powtarza, zrobic osobna funkcje
+
 def calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels, center_of_pressure, rings, M, N, normals):
         m = M * N
         coefs = np.zeros((m, m))
@@ -269,6 +288,7 @@ def get_vlm_CL_CD_free_wing(F: np.ndarray, V: np.array, rho : float, S : float) 
 
 ################ mesher #################
 # sprawdzic typy!
+
 def make_panels_from_mesh_spanwise_new(mesh, gamma_orientation : float) -> np.array:
     n_lines = mesh.shape[0]
     n_points_per_line = mesh.shape[1]
