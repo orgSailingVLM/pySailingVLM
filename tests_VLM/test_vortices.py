@@ -70,7 +70,7 @@ class TestVortices(TestCase):
         assert np.allclose(v01, v10)
 
     def test_is_in_vortex_core(self):
-        assert not is_in_vortex_core([1, 2, 3])
+        assert not is_in_vortex_core([1., 2., 3.])
         assert is_in_vortex_core([1e-10, 1e-10, 1e-10])
 
         P = np.array([1e-12, 0, 0])

@@ -23,6 +23,13 @@ class Arrow3D(FancyArrowPatch):
         FancyArrowPatch.__init__(self, (0, 0), (0, 0), *args, **kwargs)
         self._verts3d = xs, ys, zs
 
+    def do_3d_projection(self, renderer=None):
+        xs3d, ys3d, zs3d = self._verts3d
+        xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, self.axes.M)
+        self.set_positions((xs[0],ys[0]),(xs[1],ys[1]))
+
+        return np.min(zs)
+
     def draw(self, renderer):
         xs3d, ys3d, zs3d = self._verts3d
         xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, self.axes.M)
@@ -185,6 +192,7 @@ def display_panels_xyz_and_winds(panels1d,
     display_winds(ax, cp_points, water_size, inlet_condition, inviscid_flow_results)
     # display_forces_xyz(ax, panels1d, inviscid_flow_results)
     display_CE_CLR(ax, inviscid_flow_results, hull)
+
     if show_plot:
         plt.show()
 

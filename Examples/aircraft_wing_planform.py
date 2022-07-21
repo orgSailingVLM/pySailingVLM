@@ -1,4 +1,5 @@
 import numpy as np
+import timeit
 
 from Solver.vlm_solver import calc_circulation
 from Solver.mesher import make_panels_from_le_te_points
@@ -29,7 +30,7 @@ from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
      
  
 """
-
+start = timeit.default_timer()
 np.set_printoptions(precision=3, suppress=True)
 
 ### WING DEFINITION ###
@@ -49,8 +50,8 @@ Ry = rotation_matrix([0, 1, 0], np.deg2rad(AoA_deg))
 # we are going to rotate the geometry
 
 ### MESH DENSITY ###
-ns = 10    # number of panels (spanwise)
-nc = 5   # number of panels (chordwise)
+ns = 30    # number of panels (spanwise)
+nc = 30   # number of panels (chordwise)
 
 panels, mesh = make_panels_from_le_te_points(
     [np.dot(Ry, le_SW),
@@ -101,6 +102,8 @@ print(f"CL_vlm      {CL_vlm:.6f}  \t CD_vlm          {CD_vlm:.6f}")
 
 print(f"\n\ntotal_F {str(total_F)}")
 print("=== END ===")
+
+print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
 
 
 # po dodaniu TrailingEdge wyniki powinny byc o okolo kilkanacsie procent inne

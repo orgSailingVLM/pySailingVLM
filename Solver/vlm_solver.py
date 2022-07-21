@@ -17,7 +17,7 @@ def assembly_sys_of_eq(V_app_infw, panels):
     # i - panel iterator
     # j - vortex iterator
     for i in range(0, N):
-        if i % 10 == 0:
+        if i % 25 == 0:
             print(f"assembling v_ind_coeff matrix at ctr_p {i}/{N}")
 
         panel_surf_normal = panels1D[i].get_normal_to_panel()

@@ -48,7 +48,7 @@ def calc_V_at_cp(V_app_infw, gamma_magnitude, panels):
     v_ind_coeff = np.full((N, N, 3), 0., dtype=float)
 
     for i in range(0, N):
-        if i % 10 == 0:
+        if i % 25 == 0:
             print(f"assembling v_ind_coeff matrix at cp {i}/{N}")
 
         cp = panels_1d[i].get_cp_position()
