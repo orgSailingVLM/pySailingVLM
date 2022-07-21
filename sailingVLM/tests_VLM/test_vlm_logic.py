@@ -3,6 +3,8 @@
 """
 from unittest import TestCase
 import numpy as np
+import numba
+import os
 from numpy.testing import assert_almost_equal
 
 
@@ -24,8 +26,11 @@ from sailingVLM.NewApproach.vlm_logic import calculate_normals_collocations_cps_
                                             create_panels
 from sailingVLM.Solver.coeff_formulas import get_CL_CD_free_wing
 
+
 class TestVlmLogic(TestCase):
+
     def setUp(self):
+        
         self.M = 1
         self.N = 1
         self.panels = np.array([[   [  10, 0, 0 ],
@@ -43,6 +48,7 @@ class TestVlmLogic(TestCase):
         self.spans = np.array([[0.0, 10.0, 0.0]]) * self.gamma_orientation
         self.V = 1 * np.array([10.0, 0.0, 0.0])
         self.rho = 1.225
+     
     def test_calculate_normals_collocations_cps_rings_spans(self):
         normals, collocations, cps, rings, spans = calculate_normals_collocations_cps_rings_spans(self.panels, self.gamma_orientation)
 
@@ -102,8 +108,8 @@ class TestVlmLogic(TestCase):
         assert np.allclose(v01, v10)
 
     def test_is_in_vortex_core(self):
-        assert not is_in_vortex_core([1, 2, 3])
-        assert is_in_vortex_core([1e-10, 1e-10, 1e-10])
+        assert not is_in_vortex_core(numba.typed.List([1, 2, 3]))
+        assert is_in_vortex_core(numba.typed.List([1e-10, 1e-10, 1e-10]))
 
         P = np.array([1e-12, 0, 0])
         A = np.array([0, 0, 0])

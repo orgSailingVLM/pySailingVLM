@@ -60,7 +60,13 @@ def calculate_normals_collocations_cps_rings_spans(panels: np.ndarray, gamma_ori
     return ns, collocation_points, center_of_pressure, rings, span_vectors
 
 @numba.jit(nopython=True)
-def is_in_vortex_core(vector_list):
+def is_in_vortex_core(vector_list : numba.typed.List) -> bool:
+    """
+    is_in_vortex_core check if list of vectors is n vortex core
+
+    :param numba.typed.List vector_list: list of vectors
+    :return bool: True or False
+    """
     #todo: polepszyc to
     for vec in vector_list:
         if norm(vec) < 1e-9:

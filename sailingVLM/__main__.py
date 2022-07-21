@@ -112,8 +112,8 @@ def main():
     V = 1*np.array([10.0, 0.0, 0.0])
     rho = 1.225  # fluid density [kg/m3]
 
-    ns = 30    # number of panels (spanwise)
-    nc = 30    # number of panels (chordwise)
+    ns = 10    # number of panels (spanwise)
+    nc = 5    # number of panels (chordwise)
     gamma_orientation = 1.0
     #old_approach(chord, half_wing_span, AoA_deg, V, rho, ns, nc, gamma_orientation)
     new_approach(chord, half_wing_span, AoA_deg, V, rho, ns, nc, gamma_orientation)

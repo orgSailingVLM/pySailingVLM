@@ -1,5 +1,9 @@
 # pyLLTandVLM
 
+# before running test do:
+```
+export NUMBA_DISABLE_JIT=1
+```
 [![CircleCI](https://circleci.com/gh/ggruszczynski/sailingVLM/tree/main.svg?style=svg&circle-token=c62058c5c0f125149f3e70358b3280a403d2b2b2)](https://circleci.com/gh/ggruszczynski/sailingVLM/tree/main)
 python implementation of a 3D Vortex Lattice Method
 
