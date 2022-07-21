@@ -61,6 +61,7 @@ jobs:
           name: run sailingVLM/tests_VLM
           command: |
             . venv/bin/activate
+            export NUMBA_DISABLE_JIT=1
             coverage run -m unittest discover -v sailingVLM/tests_VLM
             coverage report
             coverage html
