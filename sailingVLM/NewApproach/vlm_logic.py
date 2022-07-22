@@ -127,7 +127,7 @@ def vortex_horseshoe(p: np.array, B: np.array, C: np.array, V_app_infw: np.ndarr
     sub3 = vortex_infinite_line(p, B, V_app_infw, -1.0 * gamma)
     q_ind = sub1 + sub2 + sub3
     return q_ind
-
+@numba.jit(nopython=True)
 def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
                 gamma: float = 1.0) -> np.array:
 
@@ -139,12 +139,11 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
 
     q_ind = sub1 + sub2 + sub3 + sub4
     return q_ind
-
+# numba tutaj nie rozumie typow -> do poprawki
+#@numba.jit(nopython=True)
 def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
     m = collocation_points.shape[0]
-    # wektoryzacja -> patrz mail
-    
     RHS = -V_app_infw.dot(normals.transpose()).diagonal()
     coefs = np.zeros((m, m))
     wind_coefs = np.zeros((m, m, 3))
@@ -175,6 +174,7 @@ def solve_eq(coefs: np.ndarray, RHS: np.ndarray):
     big_gamma = np.linalg.solve(coefs, RHS)
     return big_gamma
 
+@numba.jit(nopython=True)
 def calc_induced_velocity(v_ind_coeff, gamma_magnitude):
     N = gamma_magnitude.shape[0]
     
@@ -225,7 +225,8 @@ def is_no_flux_BC_satisfied(V_app_fw, panels, areas, normals):
 
     return True
 # czesc kodu sie powtarza, zrobic osobna funkcje
-
+# todo numba tutaj nie rozumie typow
+#@numba.jit(nopython=True)
 def calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels, center_of_pressure, rings, M, N, normals):
         m = M * N
         coefs = np.zeros((m, m))
