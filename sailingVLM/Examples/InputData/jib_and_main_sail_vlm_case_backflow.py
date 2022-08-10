@@ -7,14 +7,14 @@ import time
 case_name = os.path.basename(__file__)  # get name of the current file
 case_dir = os.path.dirname(os.path.realpath(__file__))  # get dir of the current file
 time_stamp = time.strftime("%Y-%m-%d_%Hh%Mm%Ss")
-output_dir_name = os.path.join("../results_example_jib_and_mainsail", time_stamp)
+output_dir_name = os.path.join("results_example_jib_and_mainsail_vlm", time_stamp)
 
 # SOLVER SETTINGS
 n_spanwise = 15  # No of control points (above the water) per sail, recommended: 50
-n_chordwise = 3  # No of control points (above the water) per sail
-# AoA_0lift_iterations = 10 # recommended range [10-20] note that running 1 iteration produce a shape without AoA_0lift constraint
-# AoA_0lift_max_change_per_iteration_deg = 0.05  # [deg] recommended range [0.1 - 0.01]
-# wind_sub_iterations = 3  # recommended value 3 - enough to converge CL and Heeling moment constrains
+n_chordwise = 5  # No of control points (above the water) per sail, recommended: 50
+AoA_0lift_iterations = 10 # recommended range [10-20] note that running 1 iteration produce a shape without AoA_0lift constraint
+AoA_0lift_max_change_per_iteration_deg = 0.05  # [deg] recommended range [0.1 - 0.01]
+wind_sub_iterations = 3  # recommended value 3 - enough to converge CL and Heeling moment constrains
 interpolation_type = "spline"  # either "spline" or "linear"
 LLT_twist = "real_twist"  # defines how the Lifting Line discretize the sail twist.
 # It can be "sheeting_angle_const" or "average_const" or "real_twist"
@@ -52,18 +52,6 @@ jib_girths = np.array([0.00, 1./4, 1./2, 3./4, 1.00])
 jib_chords = np.array([3.80, 2.98, 2.15, 1.33, 0.5]) - 0.4
 jib_centerline_twist_deg = 15. * jib_girths + 5
 
-# OPTIMIZATION CONSTRAINTS (INEQUALITY)
-# main_sail_CLmax = 1. * np.array([1.25, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25])
-# main_sail_CLmin = 0. * np.array([0.325, 0.58, 0.55, 0.4, 0.3, 0.2, 0.1])
-# main_sail_AoA_0lift_deg_min = -15.0 * np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
-#
-# jib_CLmax = 1. * np.array([1.0, 1.2, 1.2, 1.0, 0.8])
-# jib_CLmin = 0. * np.array([1.0, 1.0, 1.0, 1.0, 1.0])
-# jib_AoA_0lift_deg_min = -15.0 * np.array([1.0, 1.0, 1.0, 1.0, 1.0])
-#
-# # OPTIMIZATION CONSTRAINTS (EQUALITY)
-# imposed_heeling_moment = -12500  # [Nm]
-#
 # REFERENCE CSYS
 # The origin of the default CSYS is located @ waterline level and aft face of the mast
 # The positive x-coord: towards stern

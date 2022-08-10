@@ -8,6 +8,12 @@ from sailingVLM.Solver.vortices import normalize
 from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d import proj3d
 
+
+import mpl_toolkits.mplot3d as a3
+import matplotlib.colors as colors
+import matplotlib.cm as cm
+import matplotlib as mpl
+
 from sailingVLM.ResultsContainers.InviscidFlowResults import InviscidFlowResults
 from sailingVLM.Inlet.InletConditions import InletConditions
 from sailingVLM.YachtGeometry.HullGeometry import HullGeometry
@@ -34,10 +40,10 @@ def _prepare_geometry_data_to_display(panels1d):
     return le_mid_points, cp_points, ctr_points, te_midpoints
 
 
-def display_panels_xyz(panels1d):
+def display_panels_xyz(panels1d, pressure):
     fig = plt.figure(figsize=(12, 12))
     ax = plt.axes(projection='3d')
-    ax.set_title('Initial location of: \n Leading Edge, Lifting Line, Control Points and Trailing Edge')
+    # ax.set_title('Initial location of: \n Leading Edge, Lifting Line, Control Points and Trailing Edge')
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
@@ -58,13 +64,26 @@ def display_panels_xyz(panels1d):
 
     # Data for a three-dimensional line
     le_mid_points, cp_points, ctr_points, te_mid_points = _prepare_geometry_data_to_display(panels1d)
-
-    ax.scatter3D(le_mid_points[:, 0], le_mid_points[:, 1], le_mid_points[:, 2], c=le_mid_points[:, 2], marker="<", cmap='Greys')
-    ax.scatter3D(cp_points[:, 0], cp_points[:, 1], cp_points[:, 2], c=cp_points[:, 2], marker="o", cmap='Greens')
+    # ax.scatter3D(le_mid_points[:, 0], le_mid_points[:, 1], le_mid_points[:, 2], c=le_mid_points[:, 2], marker="<", cmap='Greys')
+    # ax.scatter3D(cp_points[:, 0], cp_points[:, 1], cp_points[:, 2], c=cp_points[:, 2], marker="o", cmap='Greens', s=2)  # s stands for size
     # ax.scatter3D(ctr_points[:, 0], ctr_points[:, 1], ctr_points[:, 2], c=ctr_points[:, 2], marker="x", cmap='Blues')
-    ax.scatter3D(te_mid_points[:, 0], te_mid_points[:, 1], te_mid_points[:, 2], c=te_mid_points[:, 2], marker=">", cmap='Greys')
+    # ax.scatter3D(te_mid_points[:, 0], te_mid_points[:, 1], te_mid_points[:, 2], c=te_mid_points[:, 2], marker=">", cmap='Greys')
 
+    ### plot panels and color by pressure
+    # https://stackoverflow.com/questions/15140072/how-to-map-number-to-color-using-matplotlibs-colormap
+    panel_points = np.array([panel.get_points() for panel in panels1d])
+    norm = mpl.colors.Normalize(vmin=min(pressure), vmax=max(pressure))
+    cmap = cm.hot
+    m = cm.ScalarMappable(norm=norm, cmap=cmap)
 
+    for vtx, p in zip(panel_points, pressure):
+        tri = a3.art3d.Poly3DCollection([vtx])
+        tri.set_color(m.to_rgba(p))
+        tri.set_edgecolor('k')
+        ax.add_collection3d(tri)
+
+    fig.colorbar(m, ax=ax)
+    ###
     # plot water level
     water_size = int(1.1*math.ceil(max(max(abs(le_mid_points[:, 2])), max(abs(te_mid_points[:, 2])))))
     xx, yy = np.meshgrid(range(-water_size, water_size), range(-water_size, water_size))
@@ -132,22 +151,44 @@ def display_CE_CLR(ax,
     plot_vector(clr, -F)
 
 
+def display_forces_xyz(ax, panels1d, inviscid_flow_results: InviscidFlowResults):
+    scale = 0.2*np.mean(inviscid_flow_results.F_xyz_total)  # ~0.2 gives nice plot
+    F_length = np.linalg.norm(inviscid_flow_results.F_xyz, axis=1)
+    F_max = max(F_length)
+
+    def plot_vector(origin, length):
+        vx = np.array([origin[0], origin[0] + length[0]])
+        vy = np.array([origin[1], origin[1] + length[1]])
+        vz = np.array([origin[2], origin[2] + length[2]])
+        arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color='gray', alpha=0.75)
+        ax.add_artist(arrow)
+        ax.scatter3D(origin[0], origin[1], origin[2], c='black', marker="o")
+
+    cp_points = np.array([panel.get_cp_position() for panel in panels1d])
+    for F, cp in zip(inviscid_flow_results.F_xyz, cp_points):
+        F_normalized = scale*F/F_max
+        plot_vector(cp, F_normalized)
+
+
 def display_panels_xyz_and_winds(panels1d,
                                  inlet_condition: InletConditions,
                                  inviscid_flow_results: InviscidFlowResults,
                                  hull: HullGeometry,
                                  show_plot=True
+
                                  ):
-    ax, cp_points, water_size = display_panels_xyz(panels1d)
-    ax.set_title('Lifting Line (green), Leading Edge & Trailing Edge (gray) \n'
+    ax, cp_points, water_size = display_panels_xyz(panels1d, inviscid_flow_results.pressure)
+    ax.set_title('Panels colored by pressure \n'
                  'Winds: True (green), Apparent (blue), Apparent + Induced (red) \n'
                  'Centre of Effort & Center of Lateral Resistance (black)')
 
     display_hull(ax, hull)
     display_winds(ax, cp_points, water_size, inlet_condition, inviscid_flow_results)
+    # display_forces_xyz(ax, panels1d, inviscid_flow_results)
     display_CE_CLR(ax, inviscid_flow_results, hull)
     if show_plot:
         plt.show()
+
 
 def display_panels_xz(panels1d):
     fig_name = f'plots/xy_initial_geometry_plot.png'
