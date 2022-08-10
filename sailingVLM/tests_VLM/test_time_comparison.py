@@ -19,8 +19,7 @@ class TimeComparison(TestCase):
         from sailingVLM.Solver.mesher import make_panels_from_le_te_points
         from sailingVLM.Rotations.geometry_calc import rotation_matrix
         from sailingVLM.Solver.coeff_formulas import get_CL_CD_free_wing
-        from sailingVLM.Solver.forces import calc_force_wrapper, calc_pressure
-        from sailingVLM.Solver.forces import calc_force_wrapper_new
+        from sailingVLM.Solver.forces import calc_force_VLM_xyz, calc_pressure
         from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
 
         np.set_printoptions(precision=3, suppress=True)
@@ -55,9 +54,9 @@ class TimeComparison(TestCase):
         V_app_fw_at_ctrl_p = V_app_infw + V_induced_at_ctrl_p
         assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p, panels)
 
-        Fold = calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho=self.rho)
+        Fold, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
 
-        F = calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, self.rho)
+        F, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, self.rho)
         F = F.reshape(N, 3)
 
         p = calc_pressure(F, panels)

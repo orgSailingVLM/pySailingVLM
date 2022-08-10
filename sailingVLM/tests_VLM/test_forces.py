@@ -106,7 +106,7 @@ class TestForces(TestCase):
 
         ### ACT ###
         ### CALCULATIONS ###
-        gamma_magnitude, v_ind_coeff = calc_circulation(V_app_infw, panels)
+        gamma_magnitude, v_ind_coeff, _ = calc_circulation(V_app_infw, panels)
         V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
         V_app_fw = V_app_infw + V_induced
 

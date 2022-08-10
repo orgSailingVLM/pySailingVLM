@@ -6,8 +6,7 @@ from sailingVLM.Solver.vlm_solver import calc_circulation
 from sailingVLM.Solver.mesher import make_panels_from_le_te_points
 from sailingVLM.Rotations.geometry_calc import rotation_matrix
 from sailingVLM.Solver.coeff_formulas import get_CL_CD_free_wing
-from sailingVLM.Solver.forces import calc_force_wrapper, calc_pressure
-from sailingVLM.Solver.forces import calc_force_wrapper_new
+from sailingVLM.Solver.forces import calc_force_VLM_xyz, calc_pressure
 from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
 from sailingVLM.NewApproach.vlm import Vlm
 
@@ -73,11 +72,9 @@ class TestNewApproach(TestCase):
         V_app_fw_at_ctrl_p = V_app_infw + V_induced_at_ctrl_p
         assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p, panels)
 
-        Fold = calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho=rho)
-
         # V_app_infw.reshape(ns,nc,3)
-        F = calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho)
-        F = F.reshape(N, 3)
+        F, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho)
+        F  = F.reshape(N, 3)
 
         p = calc_pressure(F, panels)
 

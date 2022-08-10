@@ -46,13 +46,8 @@ def calc_circulation(V_app_ifnw, panels):
     # print(RHS)
     # print(np.shape(A), " ", np.shape(RHS))
     gamma_magnitude = np.linalg.solve(A, RHS)
-<<<<<<< HEAD:sailingVLM/Solver/vlm_solver.py
 
     return gamma_magnitude, v_ind_coeff, A
-=======
-    print(f"System of equations is solved.")
-    return gamma_magnitude, v_ind_coeff
->>>>>>> cfb18081513835e212c057128a16738c4356b4b0:Solver/vlm_solver.py
 
 
 def calc_induced_velocity(v_ind_coeff, gamma_magnitude):
