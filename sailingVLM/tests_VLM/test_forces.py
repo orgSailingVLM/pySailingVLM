@@ -1,13 +1,15 @@
 import numpy as np
 from numpy.testing import assert_almost_equal
 
+
 from sailingVLM.Solver.vlm_solver import calc_circulation
 from sailingVLM.Solver.mesher import make_panels_from_le_te_points
 from sailingVLM.Solver.coeff_formulas import get_CL_CD_free_wing
-from sailingVLM.Solver.forces import calc_force_wrapper, calc_pressure, determine_vector_from_its_dot_and_cross_product
-from sailingVLM.Solver.forces import calc_force_wrapper_new
+from sailingVLM.Solver.forces import calc_force_VLM_xyz, calc_pressure, determine_vector_from_its_dot_and_cross_product
+from sailingVLM.Solver.forces import calc_force_VLM_xyz
 from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
 from sailingVLM.Rotations.geometry_calc import rotation_matrix
+
 from unittest import TestCase
 from numpy.linalg import norm
 
@@ -39,8 +41,10 @@ class TestForces(TestCase):
 
         self.rho = 1.225  # fluid density [kg/m3]
 
+
     def get_geom(self,ns,nc):
         panels, mesh, _ = make_panels_from_le_te_points(
+
             [np.dot(self.Ry, self.le_SW),
              np.dot(self.Ry, self.te_SE),
              np.dot(self.Ry, self.le_NW),
@@ -50,16 +54,25 @@ class TestForces(TestCase):
 
         return panels, mesh
 
+    def get_CL_CD_from_F(self, F):
+        total_F = np.sum(F, axis=0)
+        q = 0.5 * self.rho * (np.linalg.norm(self.V) ** 2) * self.S
+        CL_vlm = total_F[2] / q
+        CD_vlm = total_F[0] / q
+
+        return CL_vlm, CD_vlm
+
     def test_CL_CD_spanwise_only(self):
+        ### ARRANGE ###
         ### MESH DENSITY ###
         ns = 20  # number of panels (spanwise)
         nc = 1   # number of panels (chordwise)
+        N = ns * nc
 
         panels, mesh = self.get_geom(ns, nc)
-        rows, cols = panels.shape
-        N = rows * cols
-        V_app_infw = np.array([self.V for i in range(N)])
+        V_app_infw = np.array([self.V for _ in range(N)])
 
+        ### ACT ###
         ### CALCULATIONS ###
         gamma_magnitude, v_ind_coeff, A = calc_circulation(V_app_infw, panels)
         V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
@@ -67,23 +80,47 @@ class TestForces(TestCase):
 
         assert is_no_flux_BC_satisfied(V_app_fw, panels)
 
-        F = calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho=self.rho)
+        F, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
         F = F.reshape(N, 3)
-        p = calc_pressure(F, panels)
-
         ### compare vlm with book coeff_formulas ###
-        total_F = np.sum(F, axis=0)
-        q = 0.5 * self.rho * (np.linalg.norm(self.V) ** 2) * self.S
-        CL_vlm = total_F[2] / q
-        CD_vlm = total_F[0] / q
+        CL_vlm, CD_vlm = self.get_CL_CD_from_F(F)
 
         # rel_err_CL = abs((self.CL_expected - CL_vlm) / self.CL_expected)
         # rel_err_CD = abs((self.CD_ind_expected - CD_vlm) / self.CD_ind_expected)
         # print(f"CL_expected: {self.CL_expected:.4f} \t CL_vlm: {CL_vlm:.4f}")
         # print(f"CD_ind_expected: {self.CD_ind_expected:.4f} \t CL_vlm: {CD_vlm:.4f}")
 
+        ### ASSSERT ###
         assert_almost_equal(CL_vlm, 0.32477746534138485)
         assert_almost_equal(CD_vlm, 0.00020242110304907)
+
+    def test_CL_CD_spanwise_and_chordwise(self):
+        ### ARRANGE ###
+        ### MESH DENSITY ###
+        ns = 20  # number of panels (spanwise)
+        nc = 3  # number of panels (chordwise)
+        N = ns*nc
+
+        panels, mesh = self.get_geom(ns, nc)
+        V_app_infw = np.array([self.V for _ in range(N)])
+
+        ### ACT ###
+        ### CALCULATIONS ###
+        gamma_magnitude, v_ind_coeff = calc_circulation(V_app_infw, panels)
+        V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
+        V_app_fw = V_app_infw + V_induced
+
+        assert is_no_flux_BC_satisfied(V_app_fw, panels)
+
+        F, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
+        F = F.reshape(N, 3)
+
+        ### compare vlm with book coeff_formulas ###
+        CL_vlm, CD_vlm = self.get_CL_CD_from_F(F)
+
+        ### ASSSERT ###
+        assert_almost_equal(CL_vlm, 0.3247765909739283)
+        assert_almost_equal(CD_vlm, 0.0002024171446522)
 
 
     def test_determine_vector_from_its_dot_and_cross_product(self):

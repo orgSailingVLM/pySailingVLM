@@ -17,6 +17,9 @@ def assembly_sys_of_eq(V_app_infw, panels):
     # i - panel iterator
     # j - vortex iterator
     for i in range(0, N):
+        if i % 10 == 0:
+            print(f"assembling v_ind_coeff matrix at ctr_p {i}/{N}")
+
         panel_surf_normal = panels1D[i].get_normal_to_panel()
         ctr_p = panels1D[i].get_ctr_point_position()
         RHS[i] = -np.dot(V_app_infw[i], panel_surf_normal)
@@ -43,8 +46,13 @@ def calc_circulation(V_app_ifnw, panels):
     # print(RHS)
     # print(np.shape(A), " ", np.shape(RHS))
     gamma_magnitude = np.linalg.solve(A, RHS)
+<<<<<<< HEAD:sailingVLM/Solver/vlm_solver.py
 
     return gamma_magnitude, v_ind_coeff, A
+=======
+    print(f"System of equations is solved.")
+    return gamma_magnitude, v_ind_coeff
+>>>>>>> cfb18081513835e212c057128a16738c4356b4b0:Solver/vlm_solver.py
 
 
 def calc_induced_velocity(v_ind_coeff, gamma_magnitude):

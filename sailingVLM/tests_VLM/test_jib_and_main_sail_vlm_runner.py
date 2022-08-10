@@ -13,8 +13,9 @@ from sailingVLM.Solver.PanelsPlotter import display_panels_xyz_and_winds
 from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied
 
 from sailingVLM.Solver.vlm_solver import calc_circulation
-from sailingVLM.ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results
+from sailingVLM.ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_llt
 from sailingVLM.Solver.vlm_solver import calculate_app_fs
+
 
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
@@ -33,7 +34,7 @@ class TestVLM_Solver(TestCase):
             heel_deg, leeway_deg,
             v_from_original_xyz_2_reference_csys_xyz=reference_level_for_moments)
 
-        sail_factory = SailFactory(n_spanwise=n_spanwise, csys_transformations=self.csys_transformations, rake_deg=rake_deg,
+        sail_factory = SailFactory(n_spanwise=n_spanwise, n_chordwise=n_chordwise, csys_transformations=self.csys_transformations, rake_deg=rake_deg,
                                    sheer_above_waterline=sheer_above_waterline)
 
         jib_geometry = sail_factory.make_jib(
@@ -70,9 +71,9 @@ class TestVLM_Solver(TestCase):
         V_induced, V_app_fs = calculate_app_fs(self.inlet_condition, v_ind_coeff, gamma_magnitude)
         assert is_no_flux_BC_satisfied(V_app_fs, self.sail_set.panels1d)
 
-        inviscid_flow_results = prepare_inviscid_flow_results(
-            V_app_fs, V_induced, gamma_magnitude, v_ind_coeff,
-            self.sail_set, self.inlet_condition, self.csys_transformations)
+        inviscid_flow_results = prepare_inviscid_flow_results_llt(V_app_fs, V_induced, gamma_magnitude,
+                                                                  self.sail_set, self.inlet_condition,
+                                                                  self.csys_transformations)
 
         inviscid_flow_results.estimate_heeling_moment_from_keel(self.hull.center_of_lateral_resistance)
         display_panels_xyz_and_winds(self.sail_set.panels1d, self.inlet_condition, inviscid_flow_results, self.hull, show_plot=False)
@@ -88,9 +89,9 @@ class TestVLM_Solver(TestCase):
         #       f"\tThe the _COW_ CSYS is aligned along the centerline of the yacht (course over water).\n")
         #
 
-        # df_components.to_csv('expected_df_components.csv')
-        # df_integrals.to_csv('expected_df_integrals.csv', index=False)
-        # df_inlet_IC.to_csv('expected_df_inlet_IC.csv')
+        df_components.to_csv('expected_df_components.csv')
+        df_integrals.to_csv('expected_df_integrals.csv', index=False)
+        df_inlet_IC.to_csv('expected_df_inlet_IC.csv')
 
         expected_df_components = pd.read_csv(os.path.join(case_dir, 'expected_df_components.csv'))
         expected_df_components.set_index('Unnamed: 0', inplace=True)  # the mirror part is not stored, thus half of the indices are cut off
