@@ -88,20 +88,23 @@ class TestVLM_Solver(TestCase):
         #       f"\tThe the _COG_ CSYS is aligned in the direction of the yacht movement (course over ground).\n"
         #       f"\tThe the _COW_ CSYS is aligned along the centerline of the yacht (course over water).\n")
         #
+        components_path = os.path.join(case_dir, 'expected_df_components.csv')
+        integrals_path = os.path.join(case_dir, 'expected_df_integrals.csv')
+        inlet_path = os.path.join(case_dir, 'expected_df_inlet_IC.csv')
+        
+        df_components.to_csv(components_path)
+        df_integrals.to_csv(integrals_path, index=False)
+        df_inlet_IC.to_csv(inlet_path)
 
-        df_components.to_csv('expected_df_components.csv')
-        df_integrals.to_csv('expected_df_integrals.csv', index=False)
-        df_inlet_IC.to_csv('expected_df_inlet_IC.csv')
-
-        expected_df_components = pd.read_csv(os.path.join(case_dir, 'expected_df_components.csv'))
+        expected_df_components = pd.read_csv(components_path)
         expected_df_components.set_index('Unnamed: 0', inplace=True)  # the mirror part is not stored, thus half of the indices are cut off
         expected_df_components.index.name = None
         assert_frame_equal(df_components, expected_df_components)
 
-        expected_df_integrals = pd.read_csv(os.path.join(case_dir, 'expected_df_integrals.csv'))
+        expected_df_integrals = pd.read_csv(integrals_path)
         assert_frame_equal(df_integrals, expected_df_integrals)
 
-        expected_df_inlet_ic = pd.read_csv(os.path.join(case_dir, 'expected_df_inlet_IC.csv'))
+        expected_df_inlet_ic = pd.read_csv(inlet_path)
         expected_df_inlet_ic.set_index('Unnamed: 0', inplace=True)  # the mirror part is not stored, thus half of the indices are cut off
         expected_df_inlet_ic.index.name = None
         assert_frame_equal(df_inlet_IC, expected_df_inlet_ic)

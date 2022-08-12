@@ -140,3 +140,6 @@ sailingVLM/tests_VLM/.pytest_cache
 .vscode/
 
 testy_czasowe/*
+
+# do not include csv files from tests_VLM/InputFiles/
+sailingVLM/tests_VLM/InputFiles/*.csv
