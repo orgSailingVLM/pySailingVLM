@@ -1,33 +1,48 @@
 import numpy as np
 import pandas as pd
+
 from sailingVLM.Solver.forces import calc_moments, extract_above_water_quantities, calc_moment_arm_in_shifted_csys
-from sailingVLM.Solver.forces import determine_vector_from_its_dot_and_cross_product
+from sailingVLM.Solver.forces import determine_vector_from_its_dot_and_cross_product, calc_pressure
 from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
 from sailingVLM.YachtGeometry.SailGeometry import SailSet
 
 from sailingVLM.Inlet.InletConditions import InletConditions
-from sailingVLM.Solver.forces import calc_force_inviscid_xyz, calc_force_wrapper_new
+from sailingVLM.Solver.forces import calc_force_LLT_xyz, calc_force_VLM_xyz
 
 
-def prepare_inviscid_flow_results(V_app_fs, V_induced, gamma_magnitude, v_ind_coeff,
-                                  sail_set: SailSet,
-                                  inletConditions: InletConditions,
-                                  csys_transformations: CSYS_transformations):
+
+def prepare_inviscid_flow_results_llt(V_app_fs_at_cp, V_induced, gamma_magnitude,
+                                      sail_set: SailSet,
+                                      inletConditions: InletConditions,
+                                      csys_transformations: CSYS_transformations):
 
     spans = np.array([p.get_span_vector() for p in sail_set.panels1d])
-    # TODO: this shall be like in calc_force_wrapper:
-    #  - V_app_fs with respect to cp
-    #  - calculate dGamma as there are more panels in chordwise direction
+    force_xyz = calc_force_LLT_xyz(V_app_fs_at_cp, gamma_magnitude, spans, inletConditions.rho)  # be carefull V_app_fs shall be calculated with respect to cp
 
-    force_xyz = calc_force_inviscid_xyz(V_app_fs, gamma_magnitude, spans, inletConditions.rho)  # be carefull V_app_fs shall be calculated with respect to cp
+    pressure = calc_pressure(force_xyz, sail_set.panels1d)
+    inviscid_flow_results = InviscidFlowResults(gamma_magnitude, pressure, V_induced, V_app_fs_at_cp,
+                                                force_xyz, sail_set, csys_transformations)
+    return inviscid_flow_results
 
-    inviscid_flow_results = InviscidFlowResults(gamma_magnitude, v_ind_coeff, V_induced, V_app_fs,
+
+def prepare_inviscid_flow_results_vlm(gamma_magnitude,
+                                      sail_set: SailSet,
+                                      inlet_condition: InletConditions,
+                                      csys_transformations: CSYS_transformations):
+
+    force_xyz3d, V_app_fs_at_cp, V_induced_at_cp = calc_force_VLM_xyz(inlet_condition.V_app_infs, gamma_magnitude,
+                                                                      sail_set.panels, inlet_condition.rho)
+    force_xyz = force_xyz3d.reshape(len(sail_set.panels1d), 3)
+    pressure = calc_pressure(force_xyz, sail_set.panels)
+    pressure3d = pressure.reshape(sail_set.panels.shape)
+
+    inviscid_flow_results = InviscidFlowResults(gamma_magnitude, pressure, V_induced_at_cp, V_app_fs_at_cp,
                                                 force_xyz, sail_set, csys_transformations)
     return inviscid_flow_results
 
 
 class InviscidFlowResults:
-    def __init__(self, gamma_magnitude, v_ind_coeff, V_induced, V_app_fs, force_xyz,
+    def __init__(self, gamma_magnitude, pressure, V_induced, V_app_fs, force_xyz,
                  sail_set: SailSet,
                  csys_transformations: CSYS_transformations):
 
@@ -35,7 +50,7 @@ class InviscidFlowResults:
 
         self.csys_transformations = csys_transformations
         self.gamma_magnitude = gamma_magnitude
-        self.v_ind_coeff = v_ind_coeff
+        self.pressure = pressure
         self.V_induced = V_induced
         self.V_induced_length = np.linalg.norm(self.V_induced, axis=1)
         self.V_app_fs = V_app_fs
@@ -58,9 +73,7 @@ class InviscidFlowResults:
         dyn_dict = {}
         for i in range(len(sail_set.sails)):
             F_xyz_above_water_tmp = sail_set.extract_data_above_water_by_id(self.F_xyz, i)
-
             r_tmp = sail_set.extract_data_above_water_by_id(r, i)
-
 
             F_xyz_above_water_tmp_total = np.sum(F_xyz_above_water_tmp, axis=0)
             dyn_dict[f"F_{sail_set.sails[i].name}_total_COG.x"] = F_xyz_above_water_tmp_total[0]
@@ -114,6 +127,7 @@ class InviscidFlowResults:
         yield 'V_app_fs_length', self.V_app_fs_length
         yield 'AWA_fs_COG_deg', np.rad2deg(self.AWA_app_fs)
         yield 'AWA_fs_COW_deg', np.rad2deg(self.AWA_app_fs) - self.csys_transformations.leeway_deg
+        yield 'Pressure', self.pressure
         yield 'F_sails_COG.x', self.F_xyz[:, 0]
         yield 'F_sails_COG.y', self.F_xyz[:, 1]
         yield 'F_sails_COG.z', self.F_xyz[:, 2]

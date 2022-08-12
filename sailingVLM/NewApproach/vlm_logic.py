@@ -73,6 +73,7 @@ def is_in_vortex_core(vector_list : numba.typed.List) -> bool:
             return True
     return False
 
+
 #@numba.jit(nopython=True) #-> slower than version below
 @numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True) 
 def vortex_line(p: np.array, p1: np.array, p2: np.array, gamma: float = 1.0) -> np.array:

@@ -4,11 +4,12 @@ from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
 
 
 class SailFactory:
-    def __init__(self, csys_transformations: CSYS_transformations, n_spanwise=10, rake_deg=90, sheer_above_waterline=0):
+    def __init__(self, csys_transformations: CSYS_transformations, n_spanwise=10, n_chordwise=1, rake_deg=90, sheer_above_waterline=0):
         # sin(pi-alpha) = sin(alpha)
         # cos(pi-alpha) = -cos(alpha)
 
         self._n_spanwise = n_spanwise  # number of panels (span-wise, above the water) per one sail
+        self._n_chordwise = n_chordwise  # number of panels (chord-wise, above the water) per one sail
         self.rake = np.deg2rad(rake_deg)
         self.csys_transformations = csys_transformations
         self.sheer_above_waterline_xyz = [-sheer_above_waterline * np.cos(self.rake),
@@ -30,7 +31,7 @@ class SailFactory:
                                   tack_mounting[2]+main_sail_luff*np.sin(self.rake)])
 
         main_sail = SailGeometry(head_mounting, tack_mounting, self.csys_transformations,
-                                 n_spanwise=self._n_spanwise,
+                                 n_spanwise=self._n_spanwise, n_chordwise=self._n_chordwise,
                                  chords=main_sail_chords,
                                  initial_sail_twist_deg=sail_twist_deg, name="main_sail", LLT_twist=LLT_twist)
         return main_sail
@@ -53,7 +54,7 @@ class SailFactory:
                                   tack_mounting[2] + jib_luff*np.sin(forestay_angle)])
 
         jib = SailGeometry(head_mounting, tack_mounting,  self.csys_transformations,
-                           n_spanwise=self._n_spanwise,
+                           n_spanwise=self._n_spanwise, n_chordwise=self._n_chordwise,
                            chords=jib_chords,
                            initial_sail_twist_deg=sail_twist_deg, name="jib", LLT_twist=LLT_twist)
         return jib
