@@ -1,11 +1,14 @@
 import pstats
 import numpy as np
 import cProfile
+import time
+import sys, os
 from pstats import SortKey
+from contextlib import redirect_stdout
 ### GEOMETRY DEFINITION ###
 
 
-def new_approach(chord : float, half_wing_span : float, AoA_deg : float, V : np.array, rho : float, ns : int, nc : int, gamma_orientation : float):
+def new_approach(chord : float, half_wing_span : float, AoA_deg : float, V : np.array, rho : float, ns : int, nc : int, gamma_orientation : float, print_text : bool):
 
     from sailingVLM.NewApproach.vlm import Vlm
 
@@ -14,20 +17,21 @@ def new_approach(chord : float, half_wing_span : float, AoA_deg : float, V : np.
 
     my_vlm = Vlm(chord=chord, half_wing_span=half_wing_span, AoA_deg=AoA_deg, M=ns, N=nc, rho=rho, gamma_orientation=1.0, V=V)
 
-    print("gamma_magnitude: \n")
-    print(my_vlm.big_gamma)
-    print("DONE")
+    if print_text:
+        print("gamma_magnitude: \n")
+        print(my_vlm.big_gamma)
+        print("DONE")
 
-    ### compare vlm with book formulas ###
-    # reference values - to compare with book formulas
-    print(f"\nAspect Ratio {my_vlm.AR}")
-    print(f"CL_expected {my_vlm.CL_expected:.6f} \t CD_ind_expected {my_vlm.CD_ind_expected:.6f}")
-    print(f"CL_vlm      {my_vlm.CL_vlm:.6f}  \t CD_vlm          {my_vlm.CD_vlm:.6f}")
-    print(f"\n\ntotal_F {str(np.sum(my_vlm.F, axis=0))}")
-    # print(f"total_Fold {str(np.sum(Fold, axis=0))}")
-    print("=== END ===")
+        ### compare vlm with book formulas ###
+        # reference values - to compare with book formulas
+        print(f"\nAspect Ratio {my_vlm.AR}")
+        print(f"CL_expected {my_vlm.CL_expected:.6f} \t CD_ind_expected {my_vlm.CD_ind_expected:.6f}")
+        print(f"CL_vlm      {my_vlm.CL_vlm:.6f}  \t CD_vlm          {my_vlm.CD_vlm:.6f}")
+        print(f"\n\ntotal_F {str(np.sum(my_vlm.F, axis=0))}")
+        # print(f"total_Fold {str(np.sum(Fold, axis=0))}")
+        print("=== END ===")
 
-def old_approach(chord : float, half_wing_span : float, AoA_deg : float, V : np.array, rho : float, ns : int, nc : int, gamma_orientation : float):
+def old_approach(chord : float, half_wing_span : float, AoA_deg : float, V : np.array, rho : float, ns : int, nc : int, gamma_orientation : float, print_text):
 
     from sailingVLM.Solver.vlm_solver import calc_circulation
     from sailingVLM.Solver.mesher import make_panels_from_le_te_points
@@ -81,10 +85,10 @@ def old_approach(chord : float, half_wing_span : float, AoA_deg : float, V : np.
     F = F.reshape(N, 3)
 
     p = calc_pressure(F, panels)
-
-    print("gamma_magnitude: \n")
-    print(gamma_magnitude)
-    print("DONE")
+    if print_text:
+        print("gamma_magnitude: \n")
+        print(gamma_magnitude)
+        print("DONE")
 
     ### compare vlm with book formulas ###
     # reference values - to compare with book formulas
@@ -97,30 +101,42 @@ def old_approach(chord : float, half_wing_span : float, AoA_deg : float, V : np.
     CL_vlm = total_F[2] / q
     CD_vlm = total_F[0] / q
 
-    print(f"\nAspect Ratio {AR}")
-    print(f"CL_expected {CL_expected:.6f} \t CD_ind_expected {CD_ind_expected:.6f}")
-    print(f"CL_vlm      {CL_vlm:.6f}  \t CD_vlm          {CD_vlm:.6f}")
+    if print_text:
+        print(f"\nAspect Ratio {AR}")
+        print(f"CL_expected {CL_expected:.6f} \t CD_ind_expected {CD_ind_expected:.6f}")
+        print(f"CL_vlm      {CL_vlm:.6f}  \t CD_vlm          {CD_vlm:.6f}")
 
-    print(f"\n\ntotal_F {str(total_F)}")
-    print(f"total_Fold {str(np.sum(Fold, axis=0))}")
-    print("=== END ===")
+        print(f"\n\ntotal_F {str(total_F)}")
+        print(f"total_Fold {str(np.sum(Fold, axis=0))}")
+        print("=== END ===")
 
-def main():
-    chord = 1.              # chord length
-    half_wing_span = 100.
-    AoA_deg = 3.0
-    V = 1*np.array([10.0, 0.0, 0.0])
-    rho = 1.225  # fluid density [kg/m3]
+def main(print_text : bool):
+    with open('out.txt', 'w') as f:
+        with redirect_stdout(f):
+            chord = 1.              # chord length
+            half_wing_span = 100.
+            AoA_deg = 3.0
+            V = 1*np.array([10.0, 0.0, 0.0])
+            rho = 1.225  # fluid density [kg/m3]
 
-    ns = 30    # number of panels (spanwise)
-    nc = 30    # number of panels (chordwise)
-    gamma_orientation = 1.0
-    #old_approach(chord, half_wing_span, AoA_deg, V, rho, ns, nc, gamma_orientation)
-    new_approach(chord, half_wing_span, AoA_deg, V, rho, ns, nc, gamma_orientation)
+            ns = 20    # number of panels (spanwise)
+            nc = 20    # number of panels (chordwise)
+            gamma_orientation = 1.0
+            #old_approach(chord, half_wing_span, AoA_deg, V, rho, ns, nc, gamma_orientation, print_text)
+            new_approach(chord, half_wing_span, AoA_deg, V, rho, ns, nc, gamma_orientation, print_text)
+        
 if __name__ == "__main__":
-   
-    cProfile.run("main()", "output.dat")
+    
+    
+    start = time.time()
+    # profile code if main takes no arguments
+    #cProfile.run("main()", "output.dat")\# profile main with argumants
+    #cProfile.runctx('main(print_text)', {'print_text': True, 'main' : main}, {}, "output.dat")
+    
+    cProfile.runctx('main(print_text)', {'print_text': True, 'main' : main}, {}, "output.dat")
     #cProfile.runctx('old_approach(chord, half_wing_span, AoA_deg, V, rho, ns, nc, gamma_orientation)', {'chord': chord, 'half_wing_span' : half_wing_span, 'AoA_deg': AoA_deg,  'V' : V, 'rho' : rho, 'ns' : ns, 'nc' : nc, 'gamma_orientation' : gamma_orientation}, {}, filename='output.dat')
+    end = time.time()
+    print("Elapsed = %s" % (end - start))
 
     with open("output_time.txt", "w") as f:
         p = pstats.Stats("output.dat", stream=f)

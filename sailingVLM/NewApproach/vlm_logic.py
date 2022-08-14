@@ -59,7 +59,7 @@ def calculate_normals_collocations_cps_rings_spans(panels: np.ndarray, gamma_ori
         ns[idx] = n
     return ns, collocation_points, center_of_pressure, rings, span_vectors
 
-@numba.jit(nopython=True)
+@numba.jit(nopython=True, cache=True)
 def is_in_vortex_core(vector_list : numba.typed.List) -> bool:
     """
     is_in_vortex_core check if list of vectors is n vortex core
@@ -75,7 +75,7 @@ def is_in_vortex_core(vector_list : numba.typed.List) -> bool:
 
 
 #@numba.jit(nopython=True) #-> slower than version below
-@numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True) 
+@numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True, cache=True) 
 def vortex_line(p: np.array, p1: np.array, p2: np.array, gamma: float = 1.0) -> np.array:
 #def vortex_line(p, p1,  p2,  gamma = 1.0):
     # strona 254
@@ -102,8 +102,8 @@ def vortex_line(p: np.array, p1: np.array, p2: np.array, gamma: float = 1.0) -> 
 
     return q_ind
 
-
-
+# 6 seconds less with it (tested on 30x30)
+@numba.jit(nopython=True, cache=True)
 def vortex_infinite_line(P: np.ndarray, A: np.array, r0: np.ndarray, gamma : float = 1.0):
 
     u_inf = r0 / norm(r0)
@@ -115,6 +115,8 @@ def vortex_infinite_line(P: np.ndarray, A: np.array, r0: np.ndarray, gamma : flo
     v_ind *= gamma / (4. * np.pi)
     return v_ind
 
+# numba works slower here (40x40)
+#@numba.jit(nopython=True)
 def vortex_horseshoe(p: np.array, B: np.array, C: np.array, V_app_infw: np.ndarray,
                         gamma: float = 1.0) -> np.array:
     """
@@ -128,7 +130,8 @@ def vortex_horseshoe(p: np.array, B: np.array, C: np.array, V_app_infw: np.ndarr
     sub3 = vortex_infinite_line(p, B, V_app_infw, -1.0 * gamma)
     q_ind = sub1 + sub2 + sub3
     return q_ind
-@numba.jit(nopython=True)
+
+@numba.jit(nopython=True, cache=True)
 def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
                 gamma: float = 1.0) -> np.array:
 
@@ -142,6 +145,7 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
     return q_ind
 # numba tutaj nie rozumie typow -> do poprawki
 #@numba.jit(nopython=True)
+#@numba.njit(parallel=True)
 def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
     m = collocation_points.shape[0]
@@ -175,7 +179,8 @@ def solve_eq(coefs: np.ndarray, RHS: np.ndarray):
     big_gamma = np.linalg.solve(coefs, RHS)
     return big_gamma
 
-@numba.jit(nopython=True)
+# parallel - no time change
+@numba.jit(nopython=True, cache=True)
 def calc_induced_velocity(v_ind_coeff, gamma_magnitude):
     N = gamma_magnitude.shape[0]
     
@@ -187,13 +192,17 @@ def calc_induced_velocity(v_ind_coeff, gamma_magnitude):
 
     return V_induced
 
-
+# no seppedup
+#@numba.jit(nopython=True, parallel=True)
 def get_panels_area(panels: np.ndarray, N: int, M: int)-> np.ndarray:
     
     m = N * M
-    areas = np.zeros(m, dtype=float)
+    areas = np.zeros((m, 1))
+    #areas = np.zeros(m, dtype=float)
     sh = panels.shape[0]
-    for i in range(0, sh):
+    # numba.prange
+    # range works slightly quicker than numba.prange (without decorator of course)
+    for i in range(sh):
         
         p = [panels[i, 0], panels[i, 1], panels[i, 2], panels[i, 3]]
         path = []
@@ -256,7 +265,11 @@ def calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels, center_of_pressure, ri
         V_at_cp = V_app_infw + V_induced
         return V_at_cp, V_induced
 
-
+# "Loop serialization occurs when any number of prange driven loops are present 
+# inside another prange driven loop. In this case the outermost of all the prange loops executes
+# in parallel and any inner prange loops (nested or otherwise) 
+# are treated as standard range based loops. Essentially, nested parallelism does not occur."
+#@numba.jit(nopython=True, parallel=True)
 def calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho, center_of_pressure, rings, M, N, normals, span_vectors):
     # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     # f. Secondary Computations: Pressures, Loads, Velocities, Etc
@@ -266,7 +279,7 @@ def calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho, center_of_p
 
     K = M * N
     force_xyz = np.zeros((K, 3))
-
+    #numba.prange
     for i in range(K):
         # for spanwise only!
         # if panel is leading edge
@@ -296,6 +309,7 @@ def get_vlm_CL_CD_free_wing(F: np.ndarray, V: np.array, rho : float, S : float) 
 
 ################ mesher #################
 # sprawdzic typy!
+
 
 def make_panels_from_mesh_spanwise_new(mesh, gamma_orientation : float) -> np.array:
     n_lines = mesh.shape[0]
