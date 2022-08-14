@@ -144,3 +144,4 @@ output*
 # do not include csv files from tests_VLM/InputFiles/
 sailingVLM/tests_VLM/InputFiles/*.csv
 out.txt
+sailingVLM/NewApproach/jit_*
