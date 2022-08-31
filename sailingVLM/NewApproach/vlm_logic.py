@@ -196,7 +196,8 @@ def calc_induced_velocity(v_ind_coeff, gamma_magnitude):
 #@numba.jit(nopython=True, parallel=True)
 def get_panels_area(panels: np.ndarray, N: int, M: int)-> np.ndarray:
     
-    m = N * M
+    #m = N * M
+    m = panels.shape[0]
     areas = np.zeros((m, 1))
     #areas = np.zeros(m, dtype=float)
     sh = panels.shape[0]

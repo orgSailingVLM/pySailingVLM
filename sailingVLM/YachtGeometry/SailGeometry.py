@@ -129,13 +129,13 @@ class SailGeometry(BaseGeometry):
                 underwater_axis = le_NW_underwater - le_SW_underwater  # head - tack
                 frchords_vec = self.rotate_chord_around_le(underwater_axis, frchords_vec, np.flip(sail_twist_deg, axis=0))
                 pass
-
-            panels, mesh = make_panels_from_le_points_and_chords(
+            # inicjalizacja zmiennych? sa w ifie przeciez
+            panels, mesh, new_approach_panels = make_panels_from_le_points_and_chords(
                 [le_SW, le_NW],
                 [self.__n_chordwise, self.__n_spanwise],
                 rchords_vec, gamma_orientation=-1)
 
-            panels_mirror, mesh_mirror = make_panels_from_le_points_and_chords(
+            panels_mirror, mesh_mirror, new_approach_panels_mirror = make_panels_from_le_points_and_chords(
                 [le_SW_underwater, le_NW_underwater],
                 [self.__n_chordwise, self.__n_spanwise],
                 frchords_vec, gamma_orientation=-1)
@@ -144,14 +144,14 @@ class SailGeometry(BaseGeometry):
             te_NE = le_NW  # trailing edge North - East coordinate
             te_SE = le_SW  # trailing edge South - East coordinate
 
-            panels, mesh = make_panels_from_le_te_points(
+            panels, mesh, new_approach_panels = make_panels_from_le_te_points(
                 [le_SW, te_SE, le_NW, te_NE],
                 [self.__n_chordwise, self.__n_spanwise], gamma_orientation=-1)
 
             te_NE_underwater = le_NW_underwater  # trailing edge North - East coordinate
             te_SE_underwater = le_SW_underwater  # trailing edge South - East coordinate
 
-            panels_mirror, mesh_mirror = make_panels_from_le_te_points(
+            panels_mirror, mesh_mirror, new_approach_panels_mirror = make_panels_from_le_te_points(
                 [le_SW_underwater, te_SE_underwater, le_NW_underwater, te_NE_underwater],
                 [self.__n_chordwise, self.__n_spanwise], gamma_orientation=-1)
 
@@ -159,7 +159,25 @@ class SailGeometry(BaseGeometry):
         self.__panels = np.hstack((panels_mirror, panels))
         self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
-
+        
+        # moje dodatki w ramach eksperymentow
+        
+        new_approach_panels_reshaped = new_approach_panels.reshape(self.__n_spanwise, self.__n_chordwise, 4, 3)
+        new_approach_panels_mirror_reshaped = new_approach_panels_mirror.reshape(self.__n_spanwise, self.__n_chordwise, 4, 3)
+        
+        
+        new_panels = new_approach_panels_reshaped[:-1, :].flatten().reshape(self.__n_spanwise, 4, 3)
+        new_panels_mirror = new_approach_panels_mirror_reshaped[:-1, :].flatten().reshape(self.__n_spanwise , 4, 3)
+        # to na 80 proc dobrze
+        self.new_panels = np.concatenate([new_panels_mirror, new_panels])
+        
+        trailing_panels = new_approach_panels_reshaped[-1, :]
+        trailing_panels_mirror = new_approach_panels_mirror_reshaped[-1, :]
+        # to okej
+        self.trailings = np.concatenate([trailing_panels_mirror, trailing_panels])
+        
+        
+        
     def rotate_chord_around_le(self, axis, chords_vec, sail_twist_deg_vec):
         # sail_twist = np.deg2rad(45.)
         # todo: dont forget to reverse rotations in postprocessing (plots)
@@ -208,7 +226,16 @@ class SailSet(BaseGeometry):
         self.__panels = np.hstack([sail.panels for sail in self.sails])
         self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
-
+        #my_panels = np.concatenate([sail.new_panels for sail in self.sails]) 
+        #my_trailings = np.concatenate([sail.trailings for sail in self.sails]) 
+        args_panels = tuple([sail.new_panels for sail in self.sails])
+        args_trailings = tuple([sail.trailings for sail in self.sails])
+        
+        part1 = np.concatenate(args_panels)
+        part2 = np.concatenate(args_trailings)
+        
+        self.my_panels = np.concatenate([part1, part2])
+        
     @property
     def panels1d(self):
         return self.__panels1D

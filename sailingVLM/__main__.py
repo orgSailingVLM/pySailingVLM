@@ -23,6 +23,12 @@ from sailingVLM.Solver.forces import calc_force_VLM_xyz, calc_pressure
 # from InputData.jib_and_main_sail_vlm_case_backflow import *
 from sailingVLM.Examples.InputData.jib_and_main_sail_vlm_case import *
 
+###
+from sailingVLM.NewApproach.vlm_logic import get_panels_area, \
+                                            calculate_normals_collocations_cps_rings_spans, \
+                                            get_influence_coefficients_spanwise, \
+                                            solve_eq
+###
 # np.set_printoptions(precision=3, suppress=True)
 
 start = timeit.default_timer()
@@ -66,11 +72,28 @@ inlet_condition = InletConditions(wind, rho=rho, panels1D=sail_set.panels1d)
 
 hull = HullGeometry(sheer_above_waterline, foretriangle_base, csys_transformations, center_of_lateral_resistance_upright)
 
+# zminić pod siebie
+# panele ktore maja isc do mojej cyrkulacji powinny byc takie (1d array)
+###
+M = n_chordwise
+N = n_spanwise
+areas = get_panels_area(sail_set.my_panels, N, M) 
+gamma_orientation = -1
+normals, collocation_points, center_of_pressure, rings, span_vectors = calculate_normals_collocations_cps_rings_spans(sail_set.my_panels, gamma_orientation)
+coefs, RHS, wind_coefs = get_influence_coefficients_spanwise(collocation_points, rings, normals, M, N, inlet_condition.V_app_infs)
+big_gamma = solve_eq(coefs, RHS)
+
+
+###
+# porownac collocation points  (notatka na kartce)
+###
+####
 gamma_magnitude, v_ind_coeff, _ = calc_circulation(inlet_condition.V_app_infs, sail_set.panels)
 V_induced_at_ctrl_p, V_app_fs_at_ctrl_p = calculate_app_fs(inlet_condition, v_ind_coeff, gamma_magnitude)
 
 assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, sail_set.panels)
 
+# to do
 inviscid_flow_results = prepare_inviscid_flow_results_vlm(gamma_magnitude, sail_set, inlet_condition, csys_transformations)
 inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
 

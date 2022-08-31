@@ -30,7 +30,7 @@ def make_panels_from_le_points_and_chords(le_points, grid_size, chords_vec, gamm
     # panels = make_panels_from_mesh_chordwise(mesh)
     mesh = np.swapaxes(mesh, 0, 1)
     panels, new_approach_panels = make_panels_from_mesh_spanwise(mesh, gamma_orientation)
-    return panels, mesh
+    return panels, mesh, new_approach_panels
 
 
 def make_panels_from_le_te_points(points, grid_size, gamma_orientation):
@@ -99,6 +99,7 @@ def make_panels_from_mesh_chordwise(mesh):
 
 # tutaj to rozpisac
 def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> Tuple[np.array, np.ndarray]:
+    
     panels = []
     new_approach_panels = []
     n_lines = mesh.shape[0]
