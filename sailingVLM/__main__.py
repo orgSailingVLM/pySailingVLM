@@ -1,149 +1,99 @@
-import pstats
-import numpy as np
-import cProfile
-import time
-import sys, os
-from pstats import SortKey
-from contextlib import redirect_stdout
-### GEOMETRY DEFINITION ###
+import timeit
+import shutil
 
 
-def new_approach(chord : float, half_wing_span : float, AoA_deg : float, V : np.array, rho : float, ns : int, nc : int, gamma_orientation : float, print_text : bool):
+from sailingVLM.YachtGeometry.SailFactory import SailFactory
+from sailingVLM.YachtGeometry.SailGeometry import SailSet
+from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
+from sailingVLM.Solver.Interpolator import Interpolator
+from sailingVLM.YachtGeometry.HullGeometry import HullGeometry
+from sailingVLM.Inlet.InletConditions import InletConditions
+from sailingVLM.Inlet.Winds import ExpWindProfile
 
-    from sailingVLM.NewApproach.vlm import Vlm
+from sailingVLM.ResultsContainers.save_results_utils import save_results_to_file
+from sailingVLM.Solver.PanelsPlotter import display_panels_xyz_and_winds
+from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied
 
-    np.set_printoptions(precision=10, suppress=True)
+from sailingVLM.Solver.vlm_solver import calc_circulation
+from sailingVLM.ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_vlm
+from sailingVLM.Solver.vlm_solver import calculate_app_fs
+from sailingVLM.ResultsContainers.InviscidFlowResults import InviscidFlowResults
+from sailingVLM.Solver.forces import calc_force_VLM_xyz, calc_pressure
 
+# from InputData.jib_and_main_sail_vlm_case_backflow import *
+from sailingVLM.Examples.InputData.jib_and_main_sail_vlm_case import *
 
-    my_vlm = Vlm(chord=chord, half_wing_span=half_wing_span, AoA_deg=AoA_deg, M=ns, N=nc, rho=rho, gamma_orientation=1.0, V=V)
+# np.set_printoptions(precision=3, suppress=True)
 
-    if print_text:
-        print("gamma_magnitude: \n")
-        print(my_vlm.big_gamma)
-        print("DONE")
+start = timeit.default_timer()
 
-        ### compare vlm with book formulas ###
-        # reference values - to compare with book formulas
-        print(f"\nAspect Ratio {my_vlm.AR}")
-        print(f"CL_expected {my_vlm.CL_expected:.6f} \t CD_ind_expected {my_vlm.CD_ind_expected:.6f}")
-        print(f"CL_vlm      {my_vlm.CL_vlm:.6f}  \t CD_vlm          {my_vlm.CD_vlm:.6f}")
-        print(f"\n\ntotal_F {str(np.sum(my_vlm.F, axis=0))}")
-        # print(f"total_Fold {str(np.sum(Fold, axis=0))}")
-        print("=== END ===")
+interpolator = Interpolator(interpolation_type)
 
-def old_approach(chord : float, half_wing_span : float, AoA_deg : float, V : np.array, rho : float, ns : int, nc : int, gamma_orientation : float, print_text):
+csys_transformations = CSYS_transformations(
+    heel_deg, leeway_deg,
+    v_from_original_xyz_2_reference_csys_xyz=reference_level_for_moments)
 
-    from sailingVLM.Solver.vlm_solver import calc_circulation
-    from sailingVLM.Solver.mesher import make_panels_from_le_te_points
-    from sailingVLM.Rotations.geometry_calc import rotation_matrix
-    from sailingVLM.Solver.coeff_formulas import get_CL_CD_free_wing
-    from sailingVLM.Solver.forces import calc_force_wrapper, calc_pressure
-    from sailingVLM.Solver.forces import calc_force_wrapper_new
-    from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
+sail_factory = SailFactory(csys_transformations=csys_transformations, n_spanwise=n_spanwise, n_chordwise=n_chordwise,
+                           rake_deg=rake_deg, sheer_above_waterline=sheer_above_waterline)
 
+jib_geometry = sail_factory.make_jib(
+    jib_luff=jib_luff,
+    foretriangle_base=foretriangle_base,
+    foretriangle_height=foretriangle_height,
+    jib_chords=interpolator.interpolate_girths(jib_girths, jib_chords, n_spanwise + 1),
+    sail_twist_deg=interpolator.interpolate_girths(jib_girths, jib_centerline_twist_deg, n_spanwise + 1),
+    mast_LOA=mast_LOA,
+    LLT_twist=LLT_twist)
 
-    np.set_printoptions(precision=3, suppress=True)
+main_sail_geometry = sail_factory.make_main_sail(
+    main_sail_luff=main_sail_luff,
+    boom_above_sheer=boom_above_sheer,
+    main_sail_chords=interpolator.interpolate_girths(main_sail_girths, main_sail_chords, n_spanwise + 1),
+    sail_twist_deg=interpolator.interpolate_girths(main_sail_girths, main_sail_centerline_twist_deg, n_spanwise + 1),
+    LLT_twist=LLT_twist)
 
-    
-    # Points defining wing (x,y,z) #
-    le_NW = np.array([0., half_wing_span, 0.])      # leading edge North - West coordinate
-    le_SW = np.array([0., -half_wing_span, 0.])     # leading edge South - West coordinate
+sail_set = SailSet([jib_geometry, main_sail_geometry])
+# sail_set = SailSet([jib_geometry])
 
-    te_NE = np.array([chord, half_wing_span, 0.])   # trailing edge North - East coordinate
-    te_SE = np.array([chord, -half_wing_span, 0.])  # trailing edge South - East coordinate
+# wind = FlatWindProfile(alpha_true_wind_deg, tws_ref, SOG_yacht)
+wind = ExpWindProfile(
+    alpha_true_wind_deg, tws_ref, SOG_yacht,
+    exp_coeff=wind_exp_coeff,
+    reference_measurment_height=wind_reference_measurment_height,
+    reference_water_level_for_wind_profile=reference_water_level_for_wind_profile)
 
-   
-    Ry = rotation_matrix([0, 1, 0], np.deg2rad(AoA_deg))
-    # we are going to rotate the geometry
+inlet_condition = InletConditions(wind, rho=rho, panels1D=sail_set.panels1d)
 
-    ### MESH DENSITY ###
-    
-    panels, mesh, _ = make_panels_from_le_te_points(
-        [np.dot(Ry, le_SW),
-        np.dot(Ry, te_SE),
-        np.dot(Ry, le_NW),
-        np.dot(Ry, te_NE)],
-        [nc, ns],
-        gamma_orientation=gamma_orientation)
+hull = HullGeometry(sheer_above_waterline, foretriangle_base, csys_transformations, center_of_lateral_resistance_upright)
 
-    rows, cols = panels.shape
-    N = rows * cols
+gamma_magnitude, v_ind_coeff, _ = calc_circulation(inlet_condition.V_app_infs, sail_set.panels)
+V_induced_at_ctrl_p, V_app_fs_at_ctrl_p = calculate_app_fs(inlet_condition, v_ind_coeff, gamma_magnitude)
 
-    
-    ### FLIGHT CONDITIONS ###
-    V_app_infw = np.array([V for i in range(N)])
-   
-    ### CALCULATIONS ###
-    gamma_magnitude, v_ind_coeff, A = calc_circulation(V_app_infw, panels)
-    V_induced_at_ctrl_p = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
-    V_app_fw_at_ctrl_p = V_app_infw + V_induced_at_ctrl_p
-    assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p, panels)
+assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, sail_set.panels)
 
-    Fold = calc_force_wrapper(V_app_infw, gamma_magnitude, panels, rho=rho)
+inviscid_flow_results = prepare_inviscid_flow_results_vlm(gamma_magnitude, sail_set, inlet_condition, csys_transformations)
+inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
 
-    F = calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho)
-    F = F.reshape(N, 3)
+print("Preparing visualization.")
+display_panels_xyz_and_winds(sail_set.panels1d, inlet_condition, inviscid_flow_results, hull)
 
-    p = calc_pressure(F, panels)
-    if print_text:
-        print("gamma_magnitude: \n")
-        print(gamma_magnitude)
-        print("DONE")
+df_components, df_integrals, df_inlet_IC = save_results_to_file(inviscid_flow_results, None, inlet_condition, sail_set, output_dir_name)
+shutil.copy(os.path.join(case_dir, case_name), os.path.join(output_dir_name, case_name))
 
-    ### compare vlm with book formulas ###
-    # reference values - to compare with book formulas
-    AR = 2 * half_wing_span / chord
-    S = 2 * half_wing_span * chord
-    CL_expected, CD_ind_expected = get_CL_CD_free_wing(AR, AoA_deg)
+print(f"-------------------------------------------------------------")
+print(f"Notice:\n"
+      f"\tThe forces [N] and moments [Nm] are without profile drag.\n"
+      f"\tThe the _COG_ CSYS is aligned in the direction of the yacht movement (course over ground).\n"
+      f"\tThe the _COW_ CSYS is aligned along the centerline of the yacht (course over water).\n"
+      f"\tNumber of panels (sail set with mirror): {sail_set.panels.shape}")
 
-    total_F = np.sum(F, axis=0)
-    q = 0.5 * rho * (np.linalg.norm(V) ** 2) * S
-    CL_vlm = total_F[2] / q
-    CD_vlm = total_F[0] / q
+print(df_integrals)
 
-    if print_text:
-        print(f"\nAspect Ratio {AR}")
-        print(f"CL_expected {CL_expected:.6f} \t CD_ind_expected {CD_ind_expected:.6f}")
-        print(f"CL_vlm      {CL_vlm:.6f}  \t CD_vlm          {CD_vlm:.6f}")
+# rows_to_display = ['M_total_heeling', 'M_total_sway', 'F_sails_drag'] # select rows to print
+# print(df_integrals[df_integrals['Quantity'].isin(rows_to_display)])
 
-        print(f"\n\ntotal_F {str(total_F)}")
-        print(f"total_Fold {str(np.sum(Fold, axis=0))}")
-        print("=== END ===")
-
-def main(print_text : bool):
-    with open('out.txt', 'w') as f:
-        with redirect_stdout(f):
-            chord = 1.              # chord length
-            half_wing_span = 100.
-            AoA_deg = 3.0
-            V = 1*np.array([10.0, 0.0, 0.0])
-            rho = 1.225  # fluid density [kg/m3]
-
-            ns = 20    # number of panels (spanwise)
-            nc = 20    # number of panels (chordwise)
-            gamma_orientation = 1.0
-            #old_approach(chord, half_wing_span, AoA_deg, V, rho, ns, nc, gamma_orientation, print_text)
-            new_approach(chord, half_wing_span, AoA_deg, V, rho, ns, nc, gamma_orientation, print_text)
-        
-if __name__ == "__main__":
-    
-    
-    start = time.time()
-    # profile code if main takes no arguments
-    #cProfile.run("main()", "output.dat")\# profile main with argumants
-    #cProfile.runctx('main(print_text)', {'print_text': True, 'main' : main}, {}, "output.dat")
-    
-    cProfile.runctx('main(print_text)', {'print_text': True, 'main' : main}, {}, "output.dat")
-    #cProfile.runctx('old_approach(chord, half_wing_span, AoA_deg, V, rho, ns, nc, gamma_orientation)', {'chord': chord, 'half_wing_span' : half_wing_span, 'AoA_deg': AoA_deg,  'V' : V, 'rho' : rho, 'ns' : ns, 'nc' : nc, 'gamma_orientation' : gamma_orientation}, {}, filename='output.dat')
-    end = time.time()
-    print("Elapsed = %s" % (end - start))
-
-    with open("output_time.txt", "w") as f:
-        p = pstats.Stats("output.dat", stream=f)
-        p.sort_stats("time").print_stats()
-        
-    with open("output_calls.txt", "w") as f:
-        p = pstats.Stats("output.dat", stream=f)
-        p.sort_stats("calls").print_stats()
-        
-            
+print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
+#
+# import matplotlib.pyplot as plt
+# plt.plot([1,2,3],[5,6,7])
+# plt.show()
