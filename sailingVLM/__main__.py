@@ -24,10 +24,13 @@ from sailingVLM.Solver.forces import calc_force_VLM_xyz, calc_pressure
 from sailingVLM.Examples.InputData.jib_and_main_sail_vlm_case import *
 
 ###
-from sailingVLM.NewApproach.vlm_logic import get_panels_area, \
-                                            calculate_normals_collocations_cps_rings_spans, \
-                                            get_influence_coefficients_spanwise, \
-                                            solve_eq
+#from sailingVLM.NewApproach.vlm_logic import get_panels_area, \
+#                                            calculate_normals_collocations_cps_rings_spans, \
+#                                            get_influence_coefficients_spanwise, \
+#                                            solve_eq, \
+#                                            get_influence_coefficients_spanwise_jib_version,
+
+import sailingVLM.NewApproach.vlm_logic as vlm_logic                                        
 ###
 # np.set_printoptions(precision=3, suppress=True)
 
@@ -59,6 +62,7 @@ main_sail_geometry = sail_factory.make_main_sail(
     LLT_twist=LLT_twist)
 
 sail_set = SailSet([jib_geometry, main_sail_geometry])
+
 # sail_set = SailSet([jib_geometry])
 
 # wind = FlatWindProfile(alpha_true_wind_deg, tws_ref, SOG_yacht)
@@ -77,23 +81,74 @@ hull = HullGeometry(sheer_above_waterline, foretriangle_base, csys_transformatio
 ###
 M = n_chordwise
 N = n_spanwise
-areas = get_panels_area(sail_set.my_panels, N, M) 
+areas = vlm_logic.get_panels_area(sail_set.my_panels, N, M) 
 gamma_orientation = -1
-normals, collocation_points, center_of_pressure, rings, span_vectors = calculate_normals_collocations_cps_rings_spans(sail_set.my_panels, gamma_orientation)
-coefs, RHS, wind_coefs = get_influence_coefficients_spanwise(collocation_points, rings, normals, M, N, inlet_condition.V_app_infs)
-big_gamma = solve_eq(coefs, RHS)
+normals, collocation_points, center_of_pressure, rings, span_vectors = vlm_logic.calculate_normals_collocations_cps_rings_spans(sail_set.my_panels, gamma_orientation)
+coefs, RHS, wind_coefs = vlm_logic.get_influence_coefficients_spanwise_jib_version(collocation_points, rings, normals, M, N, inlet_condition.V_app_infs, sail_set.sails)
+big_gamma = vlm_logic.solve_eq(coefs, RHS)
+
+cp_good = []
+ctr_good = []
+normals_good = []
+area_good = []
+spans_good = []
+rings_good = []
+for item in sail_set.panels:
+    for panel in item:
+        cp_good.append(panel.get_cp_position())
+        ctr_good.append(panel.get_ctr_point_position())
+        normals_good.append(panel.get_normal_to_panel())
+        area_good.append(panel.get_panel_area())
+        spans_good.append(panel.get_span_vector())
+        rings_good.append(panel.get_vortex_ring_position())
+        
+
+cp_good = np.array(cp_good)
+ctr_good = np.array(ctr_good)
+normals_good = np.array(normals_good)
+area_good = np.array(area_good)
+spans_good = np.array(spans_good)
+rings_good = np.array(rings_good)
+
+np.testing.assert_almost_equal(cp_good, center_of_pressure)
+np.testing.assert_almost_equal(ctr_good, collocation_points)
+np.testing.assert_almost_equal(normals_good, normals)
+area_good = area_good.reshape(area_good.shape[0],1)
+np.testing.assert_almost_equal(area_good, areas)
+np.testing.assert_almost_equal(spans_good, span_vectors)
+np.testing.assert_almost_equal(rings_good, rings)
+
 
 
 ###
 # porownac collocation points  (notatka na kartce)
 ###
 ####
-gamma_magnitude, v_ind_coeff, _ = calc_circulation(inlet_condition.V_app_infs, sail_set.panels)
+gamma_magnitude, v_ind_coeff, A, RHS_good = calc_circulation(inlet_condition.V_app_infs, sail_set.panels)
+np.testing.assert_almost_equal(RHS_good, RHS)
+
+# pomnożone przez -1 działa
+np.testing.assert_almost_equal(A, -1*coefs)
+big_gamma = vlm_logic.solve_eq(coefs, RHS)
+
 V_induced_at_ctrl_p, V_app_fs_at_ctrl_p = calculate_app_fs(inlet_condition, v_ind_coeff, gamma_magnitude)
+
+# my
+# na razie nie weim cze,u to jest razy -1
+# dla dalszych testów zróbmy że wynik jet już pomnożony razy -1
+coefs = coefs * -1
+V_induced_at_ctrl_p_my, V_app_fs_at_ctrl_p_my = calculate_app_fs(inlet_condition, wind_coefs, big_gamma)
+np.testing.assert_almost_equal(V_induced_at_ctrl_p, V_induced_at_ctrl_p_my)
+np.testing.assert_almost_equal(V_app_fs_at_ctrl_p, V_app_fs_at_ctrl_p_my)
+
 
 assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, sail_set.panels)
 
-# to do
+#my
+# popr
+assert vlm_logic.is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p_my, sail_set.my_panels, areas, normals)
+
+
 inviscid_flow_results = prepare_inviscid_flow_results_vlm(gamma_magnitude, sail_set, inlet_condition, csys_transformations)
 inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
 

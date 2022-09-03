@@ -47,7 +47,7 @@ def calc_circulation(V_app_ifnw, panels):
     # print(np.shape(A), " ", np.shape(RHS))
     gamma_magnitude = np.linalg.solve(A, RHS)
 
-    return gamma_magnitude, v_ind_coeff, A
+    return gamma_magnitude, v_ind_coeff, A, RHS
 
 
 def calc_induced_velocity(v_ind_coeff, gamma_magnitude):

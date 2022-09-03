@@ -1,11 +1,13 @@
 import numpy as np
-from typing import Tuple
+from typing import List, Tuple
 from numpy.linalg import norm
 
 from sailingVLM.Solver.mesher import discrete_segment, make_point_mesh
 from sailingVLM.Rotations.geometry_calc import rotation_matrix
 
 import numba
+
+from sailingVLM.YachtGeometry.SailGeometry import SailGeometry, SailSet
 
 
 
@@ -143,6 +145,41 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
 
     q_ind = sub1 + sub2 + sub3 + sub4
     return q_ind
+
+# sails = [jib, main]
+def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray, sails : List[SailGeometry]) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    # *2 because of underwater panels
+    # number of trailing panels
+    # trailing panels are last 'number_of_trailings' elements 
+    number_of_trailings = N * len(sails) * 2
+    m = collocation_points.shape[0]
+    trailing_idxs = m - number_of_trailings
+    RHS = -V_app_infw.dot(normals.transpose()).diagonal()
+    coefs = np.zeros((m, m))
+    wind_coefs = np.zeros((m, m, 3))
+    # loop over other vortices
+    for i, ring in enumerate(rings):
+        A = ring[0]
+        B = ring[1]
+        C = ring[2]
+        D = ring[3]
+        # loop over points
+        for j, point in enumerate(collocation_points):
+           
+            a = vortex_ring(point, A, B, C, D)
+            # poprawka na trailing edge
+            # todo: zrobic to w drugim, oddzielnym ifie
+            # poziomo od 0 do n-1, reszta odzielnie
+            if i >= trailing_idxs:
+                #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
+                a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[i])
+            b = np.dot(a, normals[j].reshape(3, 1))
+            wind_coefs[j, i] = a
+            coefs[j, i] = b
+    RHS = np.asarray(RHS)
+                
+    return coefs, RHS, wind_coefs
+
 # numba tutaj nie rozumie typow -> do poprawki
 #@numba.jit(nopython=True)
 #@numba.njit(parallel=True)
@@ -235,6 +272,46 @@ def is_no_flux_BC_satisfied(V_app_fw, panels, areas, normals):
             raise ValueError("Solution error, there shall be no flow through panel!")
 
     return True
+
+
+def calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, sails : List[SailGeometry]):
+        
+    # *2 because of underwater panels
+    # number of trailing panels
+    # trailing panels are last 'number_of_trailings' elements 
+    number_of_trailings = N * len(sails) * 2
+    m = center_of_pressure.shape[0]
+    trailing_idxs = m - number_of_trailings
+    
+    
+    coefs = np.zeros((m, m))
+    wind_coefs = np.zeros((m, m, 3))
+    for i, point in enumerate(center_of_pressure):
+
+        # loop over other vortices
+        for j, ring in enumerate(rings):
+            A = ring[0]
+            B = ring[1]
+            C = ring[2]
+            D = ring[3]
+            a = vortex_ring(point, A, B, C, D)
+
+            # poprawka na trailing edge
+            # todo: zrobic to w drugim, oddzielnym ifie
+            if j >= trailing_idxs:
+                #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
+                a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j])
+            b = np.dot(a, normals[i].reshape(3, 1))
+            # v_ind_coeff to jest u mnie wind_coefs
+            wind_coefs[i, j] = a
+            coefs[i, j] = b
+
+    V_induced = calc_induced_velocity(wind_coefs, gamma_magnitude)
+    V_at_cp = V_app_infw + V_induced
+    return V_at_cp, V_induced
+
+    
+    
 # czesc kodu sie powtarza, zrobic osobna funkcje
 # todo numba tutaj nie rozumie typow
 #@numba.jit(nopython=True)
@@ -292,6 +369,35 @@ def calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho, center_of_p
         force_xyz[i] = rho * np.cross(V_at_cp[i], gamma)
 
     return force_xyz
+
+
+def calc_force_wrapper_new_jib_version(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, M, N, normals, span_vectors, sails :List[SailGeometry], panels_leading_edges_info : np.ndarray):
+    # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
+    # f. Secondary Computations: Pressures, Loads, Velocities, Etc
+    #Eq (12.25)
+
+    V_at_cp, V_induced = calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, sails)
+
+    K = center_of_pressure.shape[0]
+    force_xyz = np.zeros((K, 3))
+    #numba.prange
+    for i in range(K):
+        # for spanwise only!
+        # if panel is leading edge
+        gamma = 0.0
+        # tu ma być leading edge only
+        # do poprawki
+        # if panel is leading panel
+        if panels_leading_edges_info[i]:
+        #if i < M:
+            gamma = span_vectors[i] * gamma_magnitude[i]
+        else:
+            gamma = span_vectors[i] * (gamma_magnitude[i] - gamma_magnitude[i-M])
+        force_xyz[i] = rho * np.cross(V_at_cp[i], gamma)
+
+    return force_xyz
+
+
 
 
 def calc_pressure(forces, normals, areas, N , M):

@@ -49,7 +49,7 @@ class BaseGeometry:
         pass
 
 
-class SailGeometry(BaseGeometry):
+class  SailGeometry(BaseGeometry):
     def __init__(self, head_mounting: np.array, tack_mounting: np.array,
                  csys_transformations: CSYS_transformations,
                  n_spanwise=10, n_chordwise=1, chords=None,
@@ -130,6 +130,7 @@ class SailGeometry(BaseGeometry):
                 frchords_vec = self.rotate_chord_around_le(underwater_axis, frchords_vec, np.flip(sail_twist_deg, axis=0))
                 pass
             # inicjalizacja zmiennych? sa w ifie przeciez
+
             panels, mesh, new_approach_panels = make_panels_from_le_points_and_chords(
                 [le_SW, le_NW],
                 [self.__n_chordwise, self.__n_spanwise],
@@ -168,7 +169,7 @@ class SailGeometry(BaseGeometry):
         
         new_panels = new_approach_panels_reshaped[:-1, :].flatten().reshape(self.__n_spanwise, 4, 3)
         new_panels_mirror = new_approach_panels_mirror_reshaped[:-1, :].flatten().reshape(self.__n_spanwise , 4, 3)
-        # to na 80 proc dobrze
+        
         self.new_panels = np.concatenate([new_panels_mirror, new_panels])
         
         trailing_panels = new_approach_panels_reshaped[-1, :]
@@ -176,6 +177,17 @@ class SailGeometry(BaseGeometry):
         # to okej
         self.trailings = np.concatenate([trailing_panels_mirror, trailing_panels])
         
+        # tablica z informacjami gdzie sa leading edge
+        # todo jutro
+        panels_leading_edge_info = np.zeros(new_panels.shape[0], dtype=bool)
+        panels_leading_edge_info[:self.__n_chordwise] = True
+        
+        self.panels_leading_edge_info = np.concatenate([panels_leading_edge_info, panels_leading_edge_info])
+        
+        trailing_panels_leading_edge_info = np.zeros(trailing_panels.shape[0], dtype=bool)
+        
+        self.trailing_panels_leading_edge_info = np.concatenate([trailing_panels_leading_edge_info, trailing_panels_leading_edge_info])
+        print()
         
         
     def rotate_chord_around_le(self, axis, chords_vec, sail_twist_deg_vec):
