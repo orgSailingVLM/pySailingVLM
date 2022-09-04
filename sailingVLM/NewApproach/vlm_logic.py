@@ -147,7 +147,7 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
     return q_ind
 
 # sails = [jib, main]
-def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray, sails : List[SailGeometry]) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray, sails : List[SailGeometry], gamma_orientation : np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     # *2 because of underwater panels
     # number of trailing panels
     # trailing panels are last 'number_of_trailings' elements 
@@ -166,13 +166,13 @@ def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarr
         # loop over points
         for j, point in enumerate(collocation_points):
            
-            a = vortex_ring(point, A, B, C, D)
+            a = vortex_ring(point, A, B, C, D, gamma_orientation)
             # poprawka na trailing edge
             # todo: zrobic to w drugim, oddzielnym ifie
             # poziomo od 0 do n-1, reszta odzielnie
             if i >= trailing_idxs:
                 #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
-                a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[i])
+                a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[i], gamma_orientation)
             b = np.dot(a, normals[j].reshape(3, 1))
             wind_coefs[j, i] = a
             coefs[j, i] = b
@@ -183,7 +183,7 @@ def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarr
 # numba tutaj nie rozumie typow -> do poprawki
 #@numba.jit(nopython=True)
 #@numba.njit(parallel=True)
-def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray, gamma_orientation : np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
 
     m = collocation_points.shape[0]
     RHS = -V_app_infw.dot(normals.transpose()).diagonal()
@@ -198,13 +198,13 @@ def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: n
         # loop over points
         for j, point in enumerate(collocation_points):
            
-            a = vortex_ring(point, A, B, C, D)
+            a = vortex_ring(point, A, B, C, D, gamma_orientation)
             # poprawka na trailing edge
             # todo: zrobic to w drugim, oddzielnym ifie
             # poziomo od 0 do n-1, reszta odzielnie
             if i >= len(collocation_points) - M:
                 #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
-                a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[i])
+                a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[i], gamma_orientation)
             b = np.dot(a, normals[j].reshape(3, 1))
             wind_coefs[j, i] = a
             coefs[j, i] = b
@@ -274,7 +274,7 @@ def is_no_flux_BC_satisfied(V_app_fw, panels, areas, normals):
     return True
 
 
-def calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, sails : List[SailGeometry]):
+def calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, sails : List[SailGeometry], gamma_orientation : np.ndarray):
         
     # *2 because of underwater panels
     # number of trailing panels
@@ -294,13 +294,13 @@ def calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure
             B = ring[1]
             C = ring[2]
             D = ring[3]
-            a = vortex_ring(point, A, B, C, D)
+            a = vortex_ring(point, A, B, C, D, gamma_orientation)
 
             # poprawka na trailing edge
             # todo: zrobic to w drugim, oddzielnym ifie
             if j >= trailing_idxs:
                 #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
-                a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j])
+                a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j], gamma_orientation)
             b = np.dot(a, normals[i].reshape(3, 1))
             # v_ind_coeff to jest u mnie wind_coefs
             wind_coefs[i, j] = a
@@ -315,7 +315,7 @@ def calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure
 # czesc kodu sie powtarza, zrobic osobna funkcje
 # todo numba tutaj nie rozumie typow
 #@numba.jit(nopython=True)
-def calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels, center_of_pressure, rings, M, N, normals):
+def calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels, center_of_pressure, rings, M, N, normals, gamma_orientation : np.ndarray):
         m = M * N
         coefs = np.zeros((m, m))
         wind_coefs = np.zeros((m, m, 3))
@@ -327,13 +327,13 @@ def calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels, center_of_pressure, ri
                 B = ring[1]
                 C = ring[2]
                 D = ring[3]
-                a = vortex_ring(point, A, B, C, D)
+                a = vortex_ring(point, A, B, C, D, gamma_orientation)
 
                 # poprawka na trailing edge
                 # todo: zrobic to w drugim, oddzielnym ifie
                 if j >= len(center_of_pressure) - M:
                     #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
-                    a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j])
+                    a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j], gamma_orientation)
                 b = np.dot(a, normals[i].reshape(3, 1))
                 # v_ind_coeff to jest u mnie wind_coefs
                 wind_coefs[i, j] = a
