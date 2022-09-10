@@ -23,6 +23,7 @@ from sailingVLM.Solver.forces import calc_force_VLM_xyz, calc_pressure
 # from InputData.jib_and_main_sail_vlm_case_backflow import *
 from sailingVLM.Examples.InputData.jib_and_main_sail_vlm_case import *
 
+from sailingVLM.NewApproach.vlm import NewVlm
 ###
 #from sailingVLM.NewApproach.vlm_logic import get_panels_area, \
 #                                            calculate_normals_collocations_cps_rings_spans, \
@@ -79,13 +80,8 @@ hull = HullGeometry(sheer_above_waterline, foretriangle_base, csys_transformatio
 # zminić pod siebie
 # panele ktore maja isc do mojej cyrkulacji powinny byc takie (1d array)
 ###
-M = n_chordwise
-N = n_spanwise
-areas = vlm_logic.get_panels_area(sail_set.my_panels, N, M) 
 gamma_orientation = -1
-normals, collocation_points, center_of_pressure, rings, span_vectors = vlm_logic.calculate_normals_collocations_cps_rings_spans(sail_set.my_panels, gamma_orientation)
-coefs, RHS, wind_coefs = vlm_logic.get_influence_coefficients_spanwise_jib_version(collocation_points, rings, normals, M, N, inlet_condition.V_app_infs, sail_set.sails, gamma_orientation)
-big_gamma = vlm_logic.solve_eq(coefs, RHS)
+myvlm = NewVlm(sail_set.my_panels, n_chordwise, n_spanwise, inlet_condition.rho, inlet_condition.V_app_infs, sail_set.sails, sail_set.leading_edges_info, gamma_orientation)
 
 cp_good = []
 ctr_good = []
@@ -116,44 +112,42 @@ rings_good = np.array(rings_good)
 # wyszly wszystkie minus jedynki
 gammas_good = np.array(gammas_good)
 
-np.testing.assert_almost_equal(cp_good, center_of_pressure)
-np.testing.assert_almost_equal(ctr_good, collocation_points)
-np.testing.assert_almost_equal(normals_good, normals)
+np.testing.assert_almost_equal(cp_good, myvlm.center_of_pressure)
+np.testing.assert_almost_equal(ctr_good, myvlm.collocation_points)
+np.testing.assert_almost_equal(normals_good, myvlm.normals)
 area_good = area_good.reshape(area_good.shape[0],1)
-np.testing.assert_almost_equal(area_good, areas)
-np.testing.assert_almost_equal(spans_good, span_vectors)
-np.testing.assert_almost_equal(rings_good, rings)
+np.testing.assert_almost_equal(area_good, myvlm.areas)
+np.testing.assert_almost_equal(spans_good, myvlm.span_vectors)
+np.testing.assert_almost_equal(rings_good, myvlm.rings)
 
 
 
-###
-# porownac collocation points  (notatka na kartce)
-###
 ####
 gamma_magnitude, v_ind_coeff, A, RHS_good = calc_circulation(inlet_condition.V_app_infs, sail_set.panels)
-np.testing.assert_almost_equal(RHS_good, RHS)
+np.testing.assert_almost_equal(RHS_good, myvlm.RHS)
 
 # WIELKI TEST
-np.testing.assert_almost_equal(A, coefs)
-np.testing.assert_almost_equal(wind_coefs, v_ind_coeff)
-big_gamma = vlm_logic.solve_eq(coefs, RHS)
-
-V_induced_at_ctrl_p, V_app_fs_at_ctrl_p = calculate_app_fs(inlet_condition, v_ind_coeff, gamma_magnitude)
+np.testing.assert_almost_equal(A, myvlm.coefs)
+np.testing.assert_almost_equal(myvlm.wind_coefs, v_ind_coeff)
 
 
-V_induced_at_ctrl_p_my, V_app_fs_at_ctrl_p_my = calculate_app_fs(inlet_condition, wind_coefs, big_gamma)
+V_induced_at_ctrl_p, V_app_fs_at_ctrl_p = calculate_app_fs(inlet_condition.V_app_infs, v_ind_coeff, gamma_magnitude)
+
+
+V_induced_at_ctrl_p_my, V_app_fs_at_ctrl_p_my = calculate_app_fs(inlet_condition.V_app_infs, myvlm.wind_coefs, myvlm.gamma_magnitude)
 np.testing.assert_almost_equal(V_induced_at_ctrl_p, V_induced_at_ctrl_p_my)
 np.testing.assert_almost_equal(V_app_fs_at_ctrl_p, V_app_fs_at_ctrl_p_my)
 
 
+# to zawarte jest w NewVLM
 assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, sail_set.panels)
 
-#my
+# my
 # popr
-assert vlm_logic.is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p_my, sail_set.my_panels, areas, normals)
+assert vlm_logic.is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p_my, sail_set.my_panels, myvlm.areas, myvlm.normals)
 
 # to be fixed
-inviscid_flow_results = prepare_inviscid_flow_results_vlm(gamma_magnitude, sail_set, inlet_condition, csys_transformations)
+inviscid_flow_results = prepare_inviscid_flow_results_vlm(gamma_magnitude, sail_set, inlet_condition, csys_transformations, myvlm)
 inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
 
 print("Preparing visualization.")

@@ -9,7 +9,9 @@ from sailingVLM.YachtGeometry.SailGeometry import SailSet
 from sailingVLM.Inlet.InletConditions import InletConditions
 from sailingVLM.Solver.forces import calc_force_LLT_xyz, calc_force_VLM_xyz
 
+from sailingVLM.NewApproach.vlm_logic import calc_force_wrapper_new_jib_version
 
+from sailingVLM.NewApproach.vlm import NewVlm
 
 def prepare_inviscid_flow_results_llt(V_app_fs_at_cp, V_induced, gamma_magnitude,
                                       sail_set: SailSet,
@@ -28,10 +30,14 @@ def prepare_inviscid_flow_results_llt(V_app_fs_at_cp, V_induced, gamma_magnitude
 def prepare_inviscid_flow_results_vlm(gamma_magnitude,
                                       sail_set: SailSet,
                                       inlet_condition: InletConditions,
-                                      csys_transformations: CSYS_transformations):
+                                      csys_transformations: CSYS_transformations, myvlm : NewVlm):
 
-    force_xyz3d, V_app_fs_at_cp, V_induced_at_cp = calc_force_VLM_xyz(inlet_condition.V_app_infs, gamma_magnitude,
-                                                                      sail_set.panels, inlet_condition.rho)
+    force_xyz3d, V_app_fs_at_cp, V_induced_at_cp = calc_force_VLM_xyz(inlet_condition.V_app_infs, gamma_magnitude,  sail_set.panels, inlet_condition.rho)
+   
+
+    my_force = calc_force_wrapper_new_jib_version(myvlm.V_app_infs, myvlm.gamma_magnitude, myvlm.rho, myvlm.center_of_pressure, myvlm.rings, myvlm.n_chordwise , myvlm.n_spanwise, myvlm.normals, myvlm.span_vectors, myvlm.sails, myvlm.leading_edges_info, myvlm.gamma_orientation)
+    
+    
     force_xyz = force_xyz3d.reshape(len(sail_set.panels1d), 3)
     pressure = calc_pressure(force_xyz, sail_set.panels)
     pressure3d = pressure.reshape(sail_set.panels.shape)

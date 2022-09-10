@@ -9,10 +9,13 @@ from sailingVLM.NewApproach.vlm_logic import \
     calc_force_wrapper_new, \
     calc_pressure, \
     get_vlm_CL_CD_free_wing, \
-    create_panels
+    create_panels, \
+    get_influence_coefficients_spanwise_jib_version
 
 from sailingVLM.Solver.coeff_formulas import get_CL_CD_free_wing
+from typing import List
 
+from sailingVLM.Solver.vlm_solver import calculate_app_fs
 # sprawdzic typy tablic !!!!
 @dataclass
 class Vlm:
@@ -75,4 +78,45 @@ class Vlm:
         
         
 
+# sprawdzic typy !!!!
+@dataclass
+class NewVlm:
+    
 
+    panels: np.ndarray
+    n_chordwise : int
+    n_spanwise :int 
+        
+    rho : float
+    V_app_infs : np.ndarray
+    sails : List[np.ndarray]
+    leading_edges_info : np.ndarray
+    gamma_orientation : float = 1.0
+    
+    # post init atributes
+    areas : np.ndarray = field(init=False)
+    normals : np.ndarray = field(init=False)
+    collocation_points : np.ndarray = field(init=False)
+    center_of_pressure : np.ndarray = field(init=False)
+    rings : np.ndarray = field(init=False)
+    span_vectors : np.ndarray = field(init=False)
+    coefs : np.ndarray = field(init=False)
+    RHS : np.ndarray = field(init=False)
+    wind_coefs : np.ndarray = field(init=False)
+    gamma_magnitude : np.ndarray = field(init=False)
+    #F : np.ndarray = field(init=False)
+    #pressure : np.ndarray = field(init=False)
+
+    
+    def __post_init__(self):
+        
+        # M = self.n_chordwise
+        # N = self.n_spanwise
+        self.areas = get_panels_area(self.panels, self.n_spanwise, self.n_chordwise) 
+        self.normals, self.collocation_points, self.center_of_pressure, self.rings, self.span_vectors = calculate_normals_collocations_cps_rings_spans(self.panels, self.gamma_orientation)
+        self.coefs, self.RHS, self.wind_coefs = get_influence_coefficients_spanwise_jib_version( self.collocation_points,  self.rings,  self.normals, self.n_chordwise, self.n_spanwise, self.V_app_infs, self.sails, self.gamma_orientation)
+        self.gamma_magnitude = solve_eq( self.coefs,  self.RHS)
+
+        self.V_induced_at_ctrl,  self.V_app_fs_at_ctrl_p = calculate_app_fs(self.V_app_infs,  self.wind_coefs,  self.gamma_magnitude)
+
+        assert is_no_flux_BC_satisfied(self.V_app_fs_at_ctrl_p, self.panels, self.areas, self.normals)

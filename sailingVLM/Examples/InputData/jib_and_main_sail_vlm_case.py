@@ -10,7 +10,7 @@ time_stamp = time.strftime("%Y-%m-%d_%Hh%Mm%Ss")
 output_dir_name = os.path.join("results_example_jib_and_mainsail_vlm", time_stamp)
 
 # SOLVER SETTINGS
-n_spanwise = 2  # No of control points (above the water) per sail, recommended: 50
+n_spanwise = 3  # No of control points (above the water) per sail, recommended: 50
 n_chordwise = 2  # No of control points (above the water) per sail, recommended: 50
 AoA_0lift_iterations = 10 # recommended range [10-20] note that running 1 iteration produce a shape without AoA_0lift constraint
 AoA_0lift_max_change_per_iteration_deg = 0.05  # [deg] recommended range [0.1 - 0.01]

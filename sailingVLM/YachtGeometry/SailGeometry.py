@@ -166,8 +166,10 @@ class  SailGeometry(BaseGeometry):
         new_approach_panels_reshaped = new_approach_panels.reshape(self.__n_spanwise, self.__n_chordwise, 4, 3)
         new_approach_panels_mirror_reshaped = new_approach_panels_mirror.reshape(self.__n_spanwise, self.__n_chordwise, 4, 3)
         
-        
-        new_panels = new_approach_panels_reshaped[:-1, :].flatten().reshape(self.__n_spanwise, 4, 3)
+        # to be checked
+        #new_panels = new_approach_panels_reshaped[:-1, :].flatten().reshape(self.__n_spanwise, 4, 3)
+        # teraz jest 3 w pionie 2 w poziomie i nie dziala
+        new_panels = new_approach_panels_reshaped[:-1, :].reshape(self.__n_spanwise * self.__n_chordwise, 4, 3)
         new_panels_mirror = new_approach_panels_mirror_reshaped[:-1, :].flatten().reshape(self.__n_spanwise , 4, 3)
         
         self.new_panels = np.concatenate([new_panels_mirror, new_panels])
@@ -248,6 +250,14 @@ class SailSet(BaseGeometry):
         
         self.my_panels = np.concatenate([part1, part2])
         
+        args_panels_info = tuple([sail.panels_leading_edge_info for sail in self.sails])
+        args_trailings_info = tuple([sail.trailing_panels_leading_edge_info for sail in self.sails])
+        
+        part11 = np.concatenate(args_panels_info)
+        part22 = np.concatenate(args_trailings_info)
+        
+        self.leading_edges_info = np.concatenate([part11, part22])
+        print()
     @property
     def panels1d(self):
         return self.__panels1D
