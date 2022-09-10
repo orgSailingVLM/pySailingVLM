@@ -145,3 +145,5 @@ output*
 sailingVLM/tests_VLM/InputFiles/*.csv
 out.txt
 sailingVLM/NewApproach/jit_*
+
+results_example_jib_and_mainsail_vlm/
