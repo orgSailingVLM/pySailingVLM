@@ -162,33 +162,19 @@ class  SailGeometry(BaseGeometry):
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
         
         # moje dodatki w ramach eksperymentow
+        # panale nad woda, panele pod woda (2*M*N, 4, 3)
+        #self.my_panels = np.concatenate([new_approach_panels, new_approach_panels_mirror])
         
-        new_approach_panels_reshaped = new_approach_panels.reshape(self.__n_spanwise, self.__n_chordwise, 4, 3)
-        new_approach_panels_mirror_reshaped = new_approach_panels_mirror.reshape(self.__n_spanwise, self.__n_chordwise, 4, 3)
+        self.panels_above = new_approach_panels
+        self.panels_under = new_approach_panels_mirror
+       
+        # array with inf about horseshore ring
+        self.horseshoe_info = np.full(self.panels_above.shape[0], True)
         
-        # to be checked
-        #new_panels = new_approach_panels_reshaped[:-1, :].flatten().reshape(self.__n_spanwise, 4, 3)
-        # teraz jest 3 w pionie 2 w poziomie i nie dziala
-        new_panels = new_approach_panels_reshaped[:-1, :].reshape(self.__n_spanwise * self.__n_chordwise, 4, 3)
-        new_panels_mirror = new_approach_panels_mirror_reshaped[:-1, :].flatten().reshape(self.__n_spanwise , 4, 3)
-        
-        self.new_panels = np.concatenate([new_panels_mirror, new_panels])
-        
-        trailing_panels = new_approach_panels_reshaped[-1, :]
-        trailing_panels_mirror = new_approach_panels_mirror_reshaped[-1, :]
-        # to okej
-        self.trailings = np.concatenate([trailing_panels_mirror, trailing_panels])
-        
-        # tablica z informacjami gdzie sa leading edge
-        # todo jutro
-        panels_leading_edge_info = np.zeros(new_panels.shape[0], dtype=bool)
-        panels_leading_edge_info[:self.__n_chordwise] = True
-        
-        self.panels_leading_edge_info = np.concatenate([panels_leading_edge_info, panels_leading_edge_info])
-        
-        trailing_panels_leading_edge_info = np.zeros(trailing_panels.shape[0], dtype=bool)
-        
-        self.trailing_panels_leading_edge_info = np.concatenate([trailing_panels_leading_edge_info, trailing_panels_leading_edge_info])
+        for i in range(len(self.horseshoe_info)):
+            if i < self.panels_above.shape[0] - self.__n_chordwise:
+                self.horseshoe_info[i] = False
+                
         print()
         
         
@@ -240,23 +226,19 @@ class SailSet(BaseGeometry):
         self.__panels = np.hstack([sail.panels for sail in self.sails])
         self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
-        #my_panels = np.concatenate([sail.new_panels for sail in self.sails]) 
-        #my_trailings = np.concatenate([sail.trailings for sail in self.sails]) 
-        args_panels = tuple([sail.new_panels for sail in self.sails])
-        args_trailings = tuple([sail.trailings for sail in self.sails])
+
+        # jib panels, jib underwater, main panels, main underwater
+        # shape (len(sails) * 2*N*M, 4, 3)
+        #self.sail_panels = np.concatenate([sail.my_panels for sail in self.sails])
+        above = np.concatenate([sail.panels_above for sail in self.sails])
+        under = np.concatenate([sail.panels_under for sail in self.sails])
+        self.sail_panels = np.concatenate([above, under])
         
-        part1 = np.concatenate(args_panels)
-        part2 = np.concatenate(args_trailings)
+        above_horseshoe_info = np.concatenate([sail.horseshoe_info for sail in self.sails])
+        under_horseshoe_info = np.concatenate([sail.horseshoe_info for sail in self.sails])
+        #under_horseshoe_info = np.concatenate([np.flip(sail.horseshoe_info) for sail in self.sails])
+        self.horseshoe_info = np.concatenate([above_horseshoe_info, under_horseshoe_info])
         
-        self.my_panels = np.concatenate([part1, part2])
-        
-        args_panels_info = tuple([sail.panels_leading_edge_info for sail in self.sails])
-        args_trailings_info = tuple([sail.trailing_panels_leading_edge_info for sail in self.sails])
-        
-        part11 = np.concatenate(args_panels_info)
-        part22 = np.concatenate(args_trailings_info)
-        
-        self.leading_edges_info = np.concatenate([part11, part22])
         print()
     @property
     def panels1d(self):

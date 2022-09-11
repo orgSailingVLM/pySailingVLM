@@ -31,7 +31,8 @@ from sailingVLM.NewApproach.vlm import NewVlm
 #                                            solve_eq, \
 #                                            get_influence_coefficients_spanwise_jib_version,
 
-import sailingVLM.NewApproach.vlm_logic as vlm_logic                                        
+import sailingVLM.NewApproach.vlm_logic as vlm_logic 
+from unittest import TestCase                                       
 ###
 # np.set_printoptions(precision=3, suppress=True)
 
@@ -64,7 +65,6 @@ main_sail_geometry = sail_factory.make_main_sail(
 
 sail_set = SailSet([jib_geometry, main_sail_geometry])
 
-# sail_set = SailSet([jib_geometry])
 
 # wind = FlatWindProfile(alpha_true_wind_deg, tws_ref, SOG_yacht)
 wind = ExpWindProfile(
@@ -81,7 +81,7 @@ hull = HullGeometry(sheer_above_waterline, foretriangle_base, csys_transformatio
 # panele ktore maja isc do mojej cyrkulacji powinny byc takie (1d array)
 ###
 gamma_orientation = -1
-myvlm = NewVlm(sail_set.my_panels, n_chordwise, n_spanwise, inlet_condition.rho, inlet_condition.V_app_infs, sail_set.sails, sail_set.leading_edges_info, gamma_orientation)
+myvlm = NewVlm(sail_set.sail_panels, n_chordwise, n_spanwise, inlet_condition.rho, inlet_condition.V_app_infs, sail_set.sails, sail_set.horseshoe_info, gamma_orientation)
 
 cp_good = []
 ctr_good = []
@@ -90,8 +90,10 @@ area_good = []
 spans_good = []
 rings_good = []
 gammas_good = []
+panels_good = []
 for item in sail_set.panels:
     for panel in item:
+        panels_good.append(panel.get_points())
         cp_good.append(panel.get_cp_position())
         ctr_good.append(panel.get_ctr_point_position())
         normals_good.append(panel.get_normal_to_panel())
@@ -111,32 +113,47 @@ spans_good = np.array(spans_good)
 rings_good = np.array(rings_good)
 # wyszly wszystkie minus jedynki
 gammas_good = np.array(gammas_good)
+panels_good = np.array(panels_good)
 
-np.testing.assert_almost_equal(cp_good, myvlm.center_of_pressure)
-np.testing.assert_almost_equal(ctr_good, myvlm.collocation_points)
-np.testing.assert_almost_equal(normals_good, myvlm.normals)
+
+# np.testing.assert_almost_equal(cp_good, myvlm.center_of_pressure)
+# np.testing.assert_almost_equal(ctr_good, myvlm.collocation_points)
+# np.testing.assert_almost_equal(normals_good, myvlm.normals)
+# area_good = area_good.reshape(area_good.shape[0],1)
+# np.testing.assert_almost_equal(area_good, myvlm.areas)
+# np.testing.assert_almost_equal(spans_good, myvlm.span_vectors)
+# np.testing.assert_almost_equal(rings_good, myvlm.rings)
+case = TestCase()
+# tests if elements  are the same egardles of order
+case.assertCountEqual(myvlm.panels.tolist(), panels_good.tolist())
+case.assertCountEqual(cp_good.tolist(), myvlm.center_of_pressure.tolist())
+case.assertCountEqual(ctr_good.tolist(), myvlm.collocation_points.tolist())
+case.assertCountEqual(normals_good.tolist(), myvlm.normals.tolist())
 area_good = area_good.reshape(area_good.shape[0],1)
-np.testing.assert_almost_equal(area_good, myvlm.areas)
-np.testing.assert_almost_equal(spans_good, myvlm.span_vectors)
-np.testing.assert_almost_equal(rings_good, myvlm.rings)
+case.assertCountEqual(area_good.tolist(), myvlm.areas.tolist())
+case.assertCountEqual(spans_good.tolist(), myvlm.span_vectors.tolist())
+case.assertCountEqual(rings_good.tolist(), myvlm.rings.tolist())
 
 
 
 ####
 gamma_magnitude, v_ind_coeff, A, RHS_good = calc_circulation(inlet_condition.V_app_infs, sail_set.panels)
-np.testing.assert_almost_equal(RHS_good, myvlm.RHS)
+# tu do poprawki
+# zle jest liczny horseshoe 
+# patrz linijka 174 i 240 SailGeometry.py
+case.assertCountEqual(RHS_good.tolist(), myvlm.RHS.tolist())
 
 # WIELKI TEST
-np.testing.assert_almost_equal(A, myvlm.coefs)
-np.testing.assert_almost_equal(myvlm.wind_coefs, v_ind_coeff)
+case.assertCountEqual(A.tolist(), myvlm.coefs.tolist())
+case.assertCountEqual(myvlm.wind_coefs.tolist(), v_ind_coeff.tolist())
 
 
 V_induced_at_ctrl_p, V_app_fs_at_ctrl_p = calculate_app_fs(inlet_condition.V_app_infs, v_ind_coeff, gamma_magnitude)
 
 
 V_induced_at_ctrl_p_my, V_app_fs_at_ctrl_p_my = calculate_app_fs(inlet_condition.V_app_infs, myvlm.wind_coefs, myvlm.gamma_magnitude)
-np.testing.assert_almost_equal(V_induced_at_ctrl_p, V_induced_at_ctrl_p_my)
-np.testing.assert_almost_equal(V_app_fs_at_ctrl_p, V_app_fs_at_ctrl_p_my)
+case.assertCountEqual(V_induced_at_ctrl_p.tolist(), V_induced_at_ctrl_p_my.tolist())
+case.assertCountEqual(V_app_fs_at_ctrl_p.tolist(), V_app_fs_at_ctrl_p_my.tolist())
 
 
 # to zawarte jest w NewVLM

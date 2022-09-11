@@ -90,7 +90,7 @@ class NewVlm:
     rho : float
     V_app_infs : np.ndarray
     sails : List[np.ndarray]
-    leading_edges_info : np.ndarray
+    horseshoe_info : np.ndarray
     gamma_orientation : float = 1.0
     
     # post init atributes
@@ -114,7 +114,7 @@ class NewVlm:
         # N = self.n_spanwise
         self.areas = get_panels_area(self.panels, self.n_spanwise, self.n_chordwise) 
         self.normals, self.collocation_points, self.center_of_pressure, self.rings, self.span_vectors = calculate_normals_collocations_cps_rings_spans(self.panels, self.gamma_orientation)
-        self.coefs, self.RHS, self.wind_coefs = get_influence_coefficients_spanwise_jib_version( self.collocation_points,  self.rings,  self.normals, self.n_chordwise, self.n_spanwise, self.V_app_infs, self.sails, self.gamma_orientation)
+        self.coefs, self.RHS, self.wind_coefs = get_influence_coefficients_spanwise_jib_version( self.collocation_points,  self.rings,  self.normals, self.n_chordwise, self.n_spanwise, self.V_app_infs, self.sails, self.horseshoe_info, self.gamma_orientation)
         self.gamma_magnitude = solve_eq( self.coefs,  self.RHS)
 
         self.V_induced_at_ctrl,  self.V_app_fs_at_ctrl_p = calculate_app_fs(self.V_app_infs,  self.wind_coefs,  self.gamma_magnitude)

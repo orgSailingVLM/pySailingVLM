@@ -147,13 +147,9 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
     return q_ind
 
 # sails = [jib, main]
-def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray, sails : List[SailGeometry], gamma_orientation : np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    # *2 because of underwater panels
-    # number of trailing panels
-    # trailing panels are last 'number_of_trailings' elements 
-    number_of_trailings = N * len(sails) * 2
+def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray, sails : List[SailGeometry], horseshoe_info : np.ndarray, gamma_orientation : float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    
     m = collocation_points.shape[0]
-    trailing_idxs = m - number_of_trailings
     RHS = -V_app_infw.dot(normals.transpose()).diagonal()
     coefs = np.zeros((m, m))
     wind_coefs = np.zeros((m, m, 3))
@@ -170,7 +166,7 @@ def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarr
             # poprawka na trailing edge
             # todo: zrobic to w drugim, oddzielnym ifie
             # poziomo od 0 do n-1, reszta odzielnie
-            if i >= trailing_idxs:
+            if horseshoe_info[i]:
                 #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
                 a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[i], gamma_orientation)
             b = np.dot(a, normals[j].reshape(3, 1))
