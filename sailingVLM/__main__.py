@@ -24,6 +24,7 @@ from sailingVLM.Solver.forces import calc_force_VLM_xyz, calc_pressure
 from sailingVLM.Examples.InputData.jib_and_main_sail_vlm_case import *
 
 from sailingVLM.NewApproach.vlm import NewVlm
+from sailingVLM.Solver.TrailingEdgePanel import TrailingEdgePanel
 ###
 #from sailingVLM.NewApproach.vlm_logic import get_panels_area, \
 #                                            calculate_normals_collocations_cps_rings_spans, \
@@ -77,11 +78,6 @@ inlet_condition = InletConditions(wind, rho=rho, panels1D=sail_set.panels1d)
 
 hull = HullGeometry(sheer_above_waterline, foretriangle_base, csys_transformations, center_of_lateral_resistance_upright)
 
-# zminić pod siebie
-# panele ktore maja isc do mojej cyrkulacji powinny byc takie (1d array)
-###
-gamma_orientation = -1
-myvlm = NewVlm(sail_set.sail_panels, n_chordwise, n_spanwise, inlet_condition.rho, inlet_condition.V_app_infs, sail_set.sails, sail_set.horseshoe_info, gamma_orientation)
 
 cp_good = []
 ctr_good = []
@@ -91,6 +87,7 @@ spans_good = []
 rings_good = []
 gammas_good = []
 panels_good = []
+horseshoe_info_panels = []
 for item in sail_set.panels:
     for panel in item:
         panels_good.append(panel.get_points())
@@ -104,6 +101,13 @@ for item in sail_set.panels:
         gammas_good.append(panel.gamma_orientation)
         
         
+        if isinstance(panel, TrailingEdgePanel):
+            horseshoe_info_panels.append(True)
+        else:
+             horseshoe_info_panels.append(False)
+        
+        
+        
 
 cp_good = np.array(cp_good)
 ctr_good = np.array(ctr_good)
@@ -115,45 +119,38 @@ rings_good = np.array(rings_good)
 gammas_good = np.array(gammas_good)
 panels_good = np.array(panels_good)
 
+horseshoe_info_panels = np.array(horseshoe_info_panels)
 
-# np.testing.assert_almost_equal(cp_good, myvlm.center_of_pressure)
-# np.testing.assert_almost_equal(ctr_good, myvlm.collocation_points)
-# np.testing.assert_almost_equal(normals_good, myvlm.normals)
-# area_good = area_good.reshape(area_good.shape[0],1)
-# np.testing.assert_almost_equal(area_good, myvlm.areas)
-# np.testing.assert_almost_equal(spans_good, myvlm.span_vectors)
-# np.testing.assert_almost_equal(rings_good, myvlm.rings)
-case = TestCase()
-# tests if elements  are the same egardles of order
-case.assertCountEqual(myvlm.panels.tolist(), panels_good.tolist())
-case.assertCountEqual(cp_good.tolist(), myvlm.center_of_pressure.tolist())
-case.assertCountEqual(ctr_good.tolist(), myvlm.collocation_points.tolist())
-case.assertCountEqual(normals_good.tolist(), myvlm.normals.tolist())
+
+# zminić pod siebie
+# panele ktore maja isc do mojej cyrkulacji powinny byc takie (1d array)
+###
+gamma_orientation = -1
+myvlm = NewVlm(sail_set.my_panels, n_chordwise, n_spanwise, inlet_condition.rho, inlet_condition.V_app_infs, sail_set.sails, sail_set.trailing_edge_info, gamma_orientation)
+
+
+# sortowanie jest bo inaczej nie porownam tego bo mam inny uklad paneli
+np.testing.assert_almost_equal(np.sort(panels_good, axis=0), np.sort(myvlm.panels, axis=0))
+np.testing.assert_almost_equal(np.sort(cp_good, axis=0), np.sort(myvlm.center_of_pressure, axis=0))
+np.testing.assert_almost_equal(np.sort(ctr_good, axis=0), np.sort(myvlm.collocation_points, axis=0))
+np.testing.assert_almost_equal(np.sort(normals_good, axis=0), np.sort(myvlm.normals, axis=0))
 area_good = area_good.reshape(area_good.shape[0],1)
-case.assertCountEqual(area_good.tolist(), myvlm.areas.tolist())
-case.assertCountEqual(spans_good.tolist(), myvlm.span_vectors.tolist())
-case.assertCountEqual(rings_good.tolist(), myvlm.rings.tolist())
-
+np.testing.assert_almost_equal(np.sort(area_good, axis=0), np.sort(myvlm.areas, axis=0))
+np.testing.assert_almost_equal(np.sort(spans_good, axis=0), np.sort(myvlm.span_vectors, axis=0))
+np.testing.assert_almost_equal(np.sort(rings_good, axis=0), np.sort(myvlm.rings, axis=0))
 
 
 ####
 gamma_magnitude, v_ind_coeff, A, RHS_good = calc_circulation(inlet_condition.V_app_infs, sail_set.panels)
-# tu do poprawki
-# zle jest liczny horseshoe 
-# patrz linijka 174 i 240 SailGeometry.py
-case.assertCountEqual(RHS_good.tolist(), myvlm.RHS.tolist())
 
-# WIELKI TEST
-case.assertCountEqual(A.tolist(), myvlm.coefs.tolist())
-case.assertCountEqual(myvlm.wind_coefs.tolist(), v_ind_coeff.tolist())
-
+np.testing.assert_almost_equal(np.sort(RHS_good, axis=0), np.sort(myvlm.RHS, axis=0))
 
 V_induced_at_ctrl_p, V_app_fs_at_ctrl_p = calculate_app_fs(inlet_condition.V_app_infs, v_ind_coeff, gamma_magnitude)
 
 
 V_induced_at_ctrl_p_my, V_app_fs_at_ctrl_p_my = calculate_app_fs(inlet_condition.V_app_infs, myvlm.wind_coefs, myvlm.gamma_magnitude)
-case.assertCountEqual(V_induced_at_ctrl_p.tolist(), V_induced_at_ctrl_p_my.tolist())
-case.assertCountEqual(V_app_fs_at_ctrl_p.tolist(), V_app_fs_at_ctrl_p_my.tolist())
+np.testing.assert_almost_equal(np.sort(np.sort(V_induced_at_ctrl_p, axis=0), np.sort(V_induced_at_ctrl_p_my, axis=0)))
+np.testing.assert_almost_equal(np.sort(np.sort(V_app_fs_at_ctrl_p, axis=0), np.sort(V_app_fs_at_ctrl_p_my, axis=0)))
 
 
 # to zawarte jest w NewVLM
@@ -161,7 +158,7 @@ assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, sail_set.panels)
 
 # my
 # popr
-assert vlm_logic.is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p_my, sail_set.my_panels, myvlm.areas, myvlm.normals)
+assert vlm_logic.is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p_my, myvlm.panels, myvlm.areas, myvlm.normals)
 
 # to be fixed
 inviscid_flow_results = prepare_inviscid_flow_results_vlm(gamma_magnitude, sail_set, inlet_condition, csys_transformations, myvlm)

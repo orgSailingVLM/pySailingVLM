@@ -151,6 +151,7 @@ def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarr
     
     m = collocation_points.shape[0]
     RHS = -V_app_infw.dot(normals.transpose()).diagonal()
+    
     coefs = np.zeros((m, m))
     wind_coefs = np.zeros((m, m, 3))
     # loop over other vortices

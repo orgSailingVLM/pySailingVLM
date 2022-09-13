@@ -5,6 +5,7 @@ from abc import abstractmethod
 from sailingVLM.Rotations.geometry_calc import rotation_matrix
 from sailingVLM.Solver import Panel
 from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
+from sailingVLM.Solver.TrailingEdgePanel import TrailingEdgePanel
 from sailingVLM.Solver.mesher import make_panels_from_le_te_points, make_panels_from_le_points_and_chords
 from typing import List
 
@@ -131,12 +132,12 @@ class  SailGeometry(BaseGeometry):
                 pass
             # inicjalizacja zmiennych? sa w ifie przeciez
 
-            panels, mesh, new_approach_panels = make_panels_from_le_points_and_chords(
+            panels, mesh, new_approach_panels, trailing_edge_info = make_panels_from_le_points_and_chords(
                 [le_SW, le_NW],
                 [self.__n_chordwise, self.__n_spanwise],
                 rchords_vec, gamma_orientation=-1)
 
-            panels_mirror, mesh_mirror, new_approach_panels_mirror = make_panels_from_le_points_and_chords(
+            panels_mirror, mesh_mirror, new_approach_panels_mirror, trailing_edge_info = make_panels_from_le_points_and_chords(
                 [le_SW_underwater, le_NW_underwater],
                 [self.__n_chordwise, self.__n_spanwise],
                 frchords_vec, gamma_orientation=-1)
@@ -145,7 +146,7 @@ class  SailGeometry(BaseGeometry):
             te_NE = le_NW  # trailing edge North - East coordinate
             te_SE = le_SW  # trailing edge South - East coordinate
 
-            panels, mesh, new_approach_panels = make_panels_from_le_te_points(
+            panels, mesh, new_approach_panels, trailing_edge_info = make_panels_from_le_te_points(
                 [le_SW, te_SE, le_NW, te_NE],
                 [self.__n_chordwise, self.__n_spanwise], gamma_orientation=-1)
 
@@ -158,6 +159,8 @@ class  SailGeometry(BaseGeometry):
 
         # https://stackoverflow.com/questions/33356442/when-should-i-use-hstack-vstack-vs-append-vs-concatenate-vs-column-stack
         self.__panels = np.hstack((panels_mirror, panels))
+        
+        
         self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
         
@@ -167,14 +170,10 @@ class  SailGeometry(BaseGeometry):
         
         self.panels_above = new_approach_panels
         self.panels_under = new_approach_panels_mirror
+        self.trailing_edge_info = trailing_edge_info
        
-        # array with inf about horseshore ring
-        self.horseshoe_info = np.full(self.panels_above.shape[0], True)
-        
-        for i in range(len(self.horseshoe_info)):
-            if i < self.panels_above.shape[0] - self.__n_chordwise:
-                self.horseshoe_info[i] = False
-                
+    
+
         print()
         
         
@@ -227,17 +226,13 @@ class SailSet(BaseGeometry):
         self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
 
-        # jib panels, jib underwater, main panels, main underwater
-        # shape (len(sails) * 2*N*M, 4, 3)
-        #self.sail_panels = np.concatenate([sail.my_panels for sail in self.sails])
-        above = np.concatenate([sail.panels_above for sail in self.sails])
-        under = np.concatenate([sail.panels_under for sail in self.sails])
-        self.sail_panels = np.concatenate([above, under])
+        panels_above = np.concatenate([sail.panels_above for sail in self.sails])
+        panels_under = np.concatenate([sail.panels_under for sail in self.sails])
+        self.my_panels = np.concatenate([panels_above, panels_under])
         
-        above_horseshoe_info = np.concatenate([sail.horseshoe_info for sail in self.sails])
-        under_horseshoe_info = np.concatenate([sail.horseshoe_info for sail in self.sails])
-        #under_horseshoe_info = np.concatenate([np.flip(sail.horseshoe_info) for sail in self.sails])
-        self.horseshoe_info = np.concatenate([above_horseshoe_info, under_horseshoe_info])
+        trailing_info_above = np.concatenate([sail.trailing_edge_info for sail in self.sails])
+        trailing_info_under = np.concatenate([sail.trailing_edge_info for sail in self.sails])
+        self.trailing_edge_info = np.concatenate([trailing_info_above, trailing_info_under])
         
         print()
     @property
