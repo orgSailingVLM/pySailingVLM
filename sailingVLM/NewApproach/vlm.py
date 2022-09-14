@@ -8,7 +8,7 @@ from sailingVLM.NewApproach.vlm_logic import \
     solve_eq, calc_induced_velocity,  \
     is_no_flux_BC_satisfied, \
     calc_force_wrapper_new, \
-    calc_pressure, \
+    calc_pressure_new_approach, \
     get_vlm_CL_CD_free_wing, \
     create_panels, \
     get_influence_coefficients_spanwise_jib_version
@@ -69,7 +69,7 @@ class Vlm:
         V_app_fw_at_ctrl_p = V_app_infw + V_induced_at_ctrl_p
         assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p, self.panels, self.areas, self.normals)
         self.F = calc_force_wrapper_new(V_app_infw, self.big_gamma, self.panels, self.rho, self.center_of_pressure, self.rings, self.M, self.N, self.normals, self.span_vectors)
-        self.pressure = calc_pressure(self.F, self.normals, self.areas, self.N, self.M)
+        self.pressure = calc_pressure_new_approach(self.F, self.normals, self.areas, self.N, self.M)
         
         self.AR = 2 * self.half_wing_span / self.chord
         self.S = 2 * self.half_wing_span * self.chord
@@ -92,7 +92,8 @@ class NewVlm:
     wind : np.ndarray
     #V_app_infs : np.ndarray
     sails : List[np.ndarray]
-    horseshoe_info : np.ndarray
+    trailing_edge_info : np.ndarray
+    leading_edge_info : np.ndarray  
     gamma_orientation : float = 1.0
     
     # post init atributes
@@ -119,7 +120,7 @@ class NewVlm:
         
         self.inlet_conditions = InletConditionsNew(self.wind, self.rho, self.center_of_pressure)
         
-        self.coefs, self.RHS, self.wind_coefs = get_influence_coefficients_spanwise_jib_version( self.collocation_points,  self.rings,  self.normals, self.n_chordwise, self.n_spanwise, self.inlet_conditions.V_app_infs, self.sails, self.horseshoe_info, self.gamma_orientation)
+        self.coefs, self.RHS, self.wind_coefs = get_influence_coefficients_spanwise_jib_version( self.collocation_points,  self.rings,  self.normals, self.n_chordwise, self.n_spanwise, self.inlet_conditions.V_app_infs, self.sails, self.trailing_edge_info, self.gamma_orientation)
         self.gamma_magnitude = solve_eq( self.coefs,  self.RHS)
 
         self.V_induced_at_ctrl,  self.V_app_fs_at_ctrl_p = calculate_app_fs(self.inlet_conditions.V_app_infs,  self.wind_coefs,  self.gamma_magnitude)

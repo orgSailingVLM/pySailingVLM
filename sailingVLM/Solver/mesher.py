@@ -29,8 +29,8 @@ def make_panels_from_le_points_and_chords(le_points, grid_size, chords_vec, gamm
     mesh = make_point_mesh(le_line, te_line, n_chordwise)
     # panels = make_panels_from_mesh_chordwise(mesh)
     mesh = np.swapaxes(mesh, 0, 1)
-    panels, new_approach_panels, trailing_edge_info = make_panels_from_mesh_spanwise(mesh, gamma_orientation)
-    return panels, mesh, new_approach_panels, trailing_edge_info
+    panels, new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_mesh_spanwise(mesh, gamma_orientation)
+    return panels, mesh, new_approach_panels, trailing_edge_info, leading_edge_info
 
 
 def make_panels_from_le_te_points(points, grid_size, gamma_orientation):
@@ -46,8 +46,8 @@ def make_panels_from_le_te_points(points, grid_size, gamma_orientation):
     north_line = discrete_segment(le_NW, te_NE, nc)
 
     mesh = make_point_mesh(south_line, north_line, ns)
-    panels, new_approach_panels, trailing_edge_info = make_panels_from_mesh_spanwise(mesh, gamma_orientation)
-    return panels, mesh, new_approach_panels
+    panels, new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_mesh_spanwise(mesh, gamma_orientation)
+    return panels, mesh, new_approach_panels, leading_edge_info
 
 
 def discrete_segment(p1, p2, n):
@@ -109,6 +109,7 @@ def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> Tuple[np.array, n
     
     new_approach_panels = np.zeros((N * M, 4, 3))
     trailing_edge_info = np.full(N * M, False, dtype=bool)
+    leading_edge_info = np.full(N * M, False, dtype=bool)
     counter = 0
     
     for i in range(n_lines - 1):
@@ -121,6 +122,7 @@ def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> Tuple[np.array, n
             # if last panel -> make trailing panel
             new_approach_panels[counter] = [pSE, pSW, pNW, pNE]
             
+            
             if i == (n_lines - 2):
                 trailing_edge_info[counter] = True
                 panel = TrailingEdgePanel(
@@ -131,6 +133,9 @@ def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> Tuple[np.array, n
                               gamma_orientation=gamma_orientation)
                 
             else:
+                if i == 0:
+                    leading_edge_info[counter] = True
+                
                 panel = Panel(p1=pSE,
                               p2=pSW,
                               p3=pNW,
@@ -142,4 +147,4 @@ def make_panels_from_mesh_spanwise(mesh, gamma_orientation) -> Tuple[np.array, n
             
         
             
-    return np.array(panels), np.asarray(new_approach_panels), trailing_edge_info
+    return np.array(panels), np.asarray(new_approach_panels), trailing_edge_info, leading_edge_info

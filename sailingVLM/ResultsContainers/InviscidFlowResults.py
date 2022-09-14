@@ -9,7 +9,7 @@ from sailingVLM.YachtGeometry.SailGeometry import SailSet
 from sailingVLM.Inlet.InletConditions import InletConditions
 from sailingVLM.Solver.forces import calc_force_LLT_xyz, calc_force_VLM_xyz
 
-from sailingVLM.NewApproach.vlm_logic import calc_force_wrapper_new_jib_version
+from sailingVLM.NewApproach.vlm_logic import calc_force_wrapper_new_jib_version, calc_pressure_new_approach
 
 from sailingVLM.NewApproach.vlm import NewVlm
 
@@ -34,10 +34,6 @@ def prepare_inviscid_flow_results_vlm(gamma_magnitude,
 
     force_xyz3d, V_app_fs_at_cp, V_induced_at_cp = calc_force_VLM_xyz(inlet_condition.V_app_infs, gamma_magnitude,  sail_set.panels, inlet_condition.rho)
    
-
-    my_force = calc_force_wrapper_new_jib_version(myvlm.V_app_infs, myvlm.gamma_magnitude, myvlm.rho, myvlm.center_of_pressure, myvlm.rings, myvlm.n_chordwise , myvlm.n_spanwise, myvlm.normals, myvlm.span_vectors, myvlm.sails, myvlm.leading_edges_info, myvlm.gamma_orientation)
-    
-    
     force_xyz = force_xyz3d.reshape(len(sail_set.panels1d), 3)
     pressure = calc_pressure(force_xyz, sail_set.panels)
     pressure3d = pressure.reshape(sail_set.panels.shape)
@@ -46,6 +42,29 @@ def prepare_inviscid_flow_results_vlm(gamma_magnitude,
                                                 force_xyz, sail_set, csys_transformations)
     return inviscid_flow_results
 
+
+def prepare_inviscid_flow_results_vlm_new_approach(gamma_magnitude,
+                                      sail_set: SailSet,
+                                      inlet_condition: InletConditions,
+                                      csys_transformations: CSYS_transformations, myvlm : NewVlm):
+
+    force_xyz3d, V_app_fs_at_cp, V_induced_at_cp = calc_force_VLM_xyz(inlet_condition.V_app_infs, gamma_magnitude,  sail_set.panels, inlet_condition.rho)
+   
+
+    my_force = calc_force_wrapper_new_jib_version(myvlm.inlet_conditions.V_app_infs, myvlm.gamma_magnitude, myvlm.rho, myvlm.center_of_pressure, myvlm.rings, myvlm.n_chordwise , myvlm.n_spanwise, myvlm.normals, myvlm.span_vectors, myvlm.sails, myvlm.trailing_edge_info, myvlm.leading_edge_info, myvlm.gamma_orientation)
+    
+    
+    force_xyz = force_xyz3d.reshape(len(sail_set.panels1d), 3)
+    np.testing.assert_almost_equal(np.sort(force_xyz, axis=0), np.sort(my_force, axis=0))
+    
+    pressure = calc_pressure(force_xyz, sail_set.panels)
+    pressure3d = pressure.reshape(sail_set.panels.shape)
+    my_pressure = calc_pressure_new_approach(my_force, myvlm.normals, myvlm.areas, myvlm.n_spanwise, myvlm.n_chordwise)
+    # tu sie wywala
+    np.testing.assert_almost_equal(np.sort(pressure3d, axis=0), np.sort(my_pressure, axis=0))
+    inviscid_flow_results = InviscidFlowResults(gamma_magnitude, pressure, V_induced_at_cp, V_app_fs_at_cp,
+                                                force_xyz, sail_set, csys_transformations)
+    return inviscid_flow_results
 
 class InviscidFlowResults:
     def __init__(self, gamma_magnitude, pressure, V_induced, V_app_fs, force_xyz,

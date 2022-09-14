@@ -132,12 +132,12 @@ class  SailGeometry(BaseGeometry):
                 pass
             # inicjalizacja zmiennych? sa w ifie przeciez
 
-            panels, mesh, new_approach_panels, trailing_edge_info = make_panels_from_le_points_and_chords(
+            panels, mesh, new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
                 [le_SW, le_NW],
                 [self.__n_chordwise, self.__n_spanwise],
                 rchords_vec, gamma_orientation=-1)
 
-            panels_mirror, mesh_mirror, new_approach_panels_mirror, trailing_edge_info = make_panels_from_le_points_and_chords(
+            panels_mirror, mesh_mirror, new_approach_panels_mirror, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
                 [le_SW_underwater, le_NW_underwater],
                 [self.__n_chordwise, self.__n_spanwise],
                 frchords_vec, gamma_orientation=-1)
@@ -146,14 +146,14 @@ class  SailGeometry(BaseGeometry):
             te_NE = le_NW  # trailing edge North - East coordinate
             te_SE = le_SW  # trailing edge South - East coordinate
 
-            panels, mesh, new_approach_panels, trailing_edge_info = make_panels_from_le_te_points(
+            panels, mesh, new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_le_te_points(
                 [le_SW, te_SE, le_NW, te_NE],
                 [self.__n_chordwise, self.__n_spanwise], gamma_orientation=-1)
 
             te_NE_underwater = le_NW_underwater  # trailing edge North - East coordinate
             te_SE_underwater = le_SW_underwater  # trailing edge South - East coordinate
 
-            panels_mirror, mesh_mirror, new_approach_panels_mirror = make_panels_from_le_te_points(
+            panels_mirror, mesh_mirror, new_approach_panels_mirror, trailing_edge_info, leading_edge_info = make_panels_from_le_te_points(
                 [le_SW_underwater, te_SE_underwater, le_NW_underwater, te_NE_underwater],
                 [self.__n_chordwise, self.__n_spanwise], gamma_orientation=-1)
 
@@ -170,8 +170,9 @@ class  SailGeometry(BaseGeometry):
         
         self.panels_above = new_approach_panels
         self.panels_under = new_approach_panels_mirror
+        # both trailing_edge_info and leading_edge_info are the same for above and underwater
         self.trailing_edge_info = trailing_edge_info
-       
+        self.leading_edge_info = leading_edge_info
     
 
         print()
@@ -233,6 +234,10 @@ class SailSet(BaseGeometry):
         trailing_info_above = np.concatenate([sail.trailing_edge_info for sail in self.sails])
         trailing_info_under = np.concatenate([sail.trailing_edge_info for sail in self.sails])
         self.trailing_edge_info = np.concatenate([trailing_info_above, trailing_info_under])
+        
+        leading_info_above = np.concatenate([sail.leading_edge_info for sail in self.sails])
+        leading_info_under = np.concatenate([sail.leading_edge_info for sail in self.sails])
+        self.leading_edge_info = np.concatenate([leading_info_above, leading_info_under])
         
         print()
     @property

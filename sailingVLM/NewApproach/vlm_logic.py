@@ -272,16 +272,11 @@ def is_no_flux_BC_satisfied(V_app_fw, panels, areas, normals):
     return True
 
 
-def calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, sails : List[SailGeometry], gamma_orientation : np.ndarray):
+def calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, sails : List[SailGeometry], trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
         
-    # *2 because of underwater panels
-    # number of trailing panels
-    # trailing panels are last 'number_of_trailings' elements 
-    number_of_trailings = N * len(sails) * 2
+    
     m = center_of_pressure.shape[0]
-    trailing_idxs = m - number_of_trailings
-    
-    
+
     coefs = np.zeros((m, m))
     wind_coefs = np.zeros((m, m, 3))
     for i, point in enumerate(center_of_pressure):
@@ -296,7 +291,7 @@ def calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure
 
             # poprawka na trailing edge
             # todo: zrobic to w drugim, oddzielnym ifie
-            if j >= trailing_idxs:
+            if trailing_edge_info[j]:
                 #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
                 a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j], gamma_orientation)
             b = np.dot(a, normals[i].reshape(3, 1))
@@ -369,12 +364,12 @@ def calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho, center_of_p
     return force_xyz
 
 
-def calc_force_wrapper_new_jib_version(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, M, N, normals, span_vectors, sails :List[SailGeometry], panels_leading_edges_info : np.ndarray, gamma_orientation : float = 1.0):
+def calc_force_wrapper_new_jib_version(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, M, N, normals, span_vectors, sails :List[SailGeometry], trailing_edge_info : np.ndarray, leading_edges_info : np.ndarray, gamma_orientation : float = 1.0):
     # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     # f. Secondary Computations: Pressures, Loads, Velocities, Etc
     #Eq (12.25)
 
-    V_at_cp, V_induced = calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, sails, gamma_orientation)
+    V_at_cp, V_induced = calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, sails, trailing_edge_info, gamma_orientation)
 
     K = center_of_pressure.shape[0]
     force_xyz = np.zeros((K, 3))
@@ -386,7 +381,7 @@ def calc_force_wrapper_new_jib_version(V_app_infw, gamma_magnitude, rho, center_
         # tu ma być leading edge only
         # do poprawki
         # if panel is leading panel
-        if panels_leading_edges_info[i]:
+        if leading_edges_info[i]:
         #if i < M:
             gamma = span_vectors[i] * gamma_magnitude[i]
         else:
@@ -398,7 +393,7 @@ def calc_force_wrapper_new_jib_version(V_app_infw, gamma_magnitude, rho, center_
 
 
 
-def calc_pressure(forces, normals, areas, N , M):
+def calc_pressure_new_approach(forces, normals, areas, N , M):
     p = forces.dot(normals.transpose()).diagonal() /  areas
     return p
 

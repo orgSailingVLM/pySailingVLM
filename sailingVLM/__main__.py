@@ -15,7 +15,7 @@ from sailingVLM.Solver.PanelsPlotter import display_panels_xyz_and_winds
 from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied
 
 from sailingVLM.Solver.vlm_solver import calc_circulation
-from sailingVLM.ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_vlm
+from sailingVLM.ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_vlm, prepare_inviscid_flow_results_vlm_new_approach
 from sailingVLM.Solver.vlm_solver import calculate_app_fs
 from sailingVLM.ResultsContainers.InviscidFlowResults import InviscidFlowResults
 from sailingVLM.Solver.forces import calc_force_VLM_xyz, calc_pressure
@@ -105,7 +105,7 @@ for item in sail_set.panels:
         if isinstance(panel, TrailingEdgePanel):
             horseshoe_info_panels.append(True)
         else:
-             horseshoe_info_panels.append(False)
+            horseshoe_info_panels.append(False)
         
         
         
@@ -123,12 +123,8 @@ panels_good = np.array(panels_good)
 horseshoe_info_panels = np.array(horseshoe_info_panels)
 
 
-# zminić pod siebie
-# panele ktore maja isc do mojej cyrkulacji powinny byc takie (1d array)
-###
 gamma_orientation = -1
-
-myvlm = NewVlm(sail_set.my_panels, n_chordwise, n_spanwise, rho, wind, sail_set.sails, sail_set.trailing_edge_info, gamma_orientation)
+myvlm = NewVlm(sail_set.my_panels, n_chordwise, n_spanwise, rho, wind, sail_set.sails, sail_set.trailing_edge_info, sail_set.leading_edge_info, gamma_orientation)
 
 
 # sortowanie jest bo inaczej nie porownam tego bo mam inny uklad paneli
@@ -142,7 +138,7 @@ np.testing.assert_almost_equal(np.sort(spans_good, axis=0), np.sort(myvlm.span_v
 np.testing.assert_almost_equal(np.sort(rings_good, axis=0), np.sort(myvlm.rings, axis=0))
 
 
-####
+
 gamma_magnitude, v_ind_coeff, A, RHS_good = calc_circulation(inlet_condition.V_app_infs, sail_set.panels)
 
 np.testing.assert_almost_equal(np.sort(RHS_good, axis=0), np.sort(myvlm.RHS, axis=0))
@@ -155,15 +151,13 @@ np.testing.assert_almost_equal(np.sort(V_induced_at_ctrl_p, axis=0), np.sort(V_i
 np.testing.assert_almost_equal(np.sort(V_app_fs_at_ctrl_p, axis=0), np.sort(V_app_fs_at_ctrl_p_my, axis=0))
 
 
-# to zawarte jest w NewVLM
-assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, sail_set.panels)
 
-# my
-# popr
+assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, sail_set.panels)
 assert vlm_logic.is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p_my, myvlm.panels, myvlm.areas, myvlm.normals)
 
 # to be fixed
 inviscid_flow_results = prepare_inviscid_flow_results_vlm(gamma_magnitude, sail_set, inlet_condition, csys_transformations, myvlm)
+inviscid_flow_results = prepare_inviscid_flow_results_vlm_new_approach(gamma_magnitude, sail_set, inlet_condition, csys_transformations, myvlm)
 inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
 
 print("Preparing visualization.")
