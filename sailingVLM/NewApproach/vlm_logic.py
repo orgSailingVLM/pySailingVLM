@@ -150,8 +150,9 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
 def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray, sails : List[SailGeometry], horseshoe_info : np.ndarray, gamma_orientation : float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     
     m = collocation_points.shape[0]
+    # to nie dziala dla jiba?
     RHS = -V_app_infw.dot(normals.transpose()).diagonal()
-    
+    #RHS = [-np.dot(V_app_infw[i], normals[i]) for i in range(normals.shape[0])]
     coefs = np.zeros((m, m))
     wind_coefs = np.zeros((m, m, 3))
     # loop over other vortices

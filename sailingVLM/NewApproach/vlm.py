@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 import numpy as np
+from sailingVLM.Inlet.InletConditions import InletConditionsNew
 from sailingVLM.NewApproach.vlm_logic import \
     get_panels_area, \
     calculate_normals_collocations_cps_rings_spans, \
@@ -88,7 +89,8 @@ class NewVlm:
     n_spanwise :int 
         
     rho : float
-    V_app_infs : np.ndarray
+    wind : np.ndarray
+    #V_app_infs : np.ndarray
     sails : List[np.ndarray]
     horseshoe_info : np.ndarray
     gamma_orientation : float = 1.0
@@ -104,7 +106,7 @@ class NewVlm:
     RHS : np.ndarray = field(init=False)
     wind_coefs : np.ndarray = field(init=False)
     gamma_magnitude : np.ndarray = field(init=False)
-    #F : np.ndarray = field(init=False)
+    inlet_conditions: InletConditionsNew = field(init=False)
     #pressure : np.ndarray = field(init=False)
 
     
@@ -114,9 +116,12 @@ class NewVlm:
         # N = self.n_spanwise
         self.areas = get_panels_area(self.panels, self.n_spanwise, self.n_chordwise) 
         self.normals, self.collocation_points, self.center_of_pressure, self.rings, self.span_vectors = calculate_normals_collocations_cps_rings_spans(self.panels, self.gamma_orientation)
-        self.coefs, self.RHS, self.wind_coefs = get_influence_coefficients_spanwise_jib_version( self.collocation_points,  self.rings,  self.normals, self.n_chordwise, self.n_spanwise, self.V_app_infs, self.sails, self.horseshoe_info, self.gamma_orientation)
+        
+        self.inlet_conditions = InletConditionsNew(self.wind, self.rho, self.center_of_pressure)
+        
+        self.coefs, self.RHS, self.wind_coefs = get_influence_coefficients_spanwise_jib_version( self.collocation_points,  self.rings,  self.normals, self.n_chordwise, self.n_spanwise, self.inlet_conditions.V_app_infs, self.sails, self.horseshoe_info, self.gamma_orientation)
         self.gamma_magnitude = solve_eq( self.coefs,  self.RHS)
 
-        self.V_induced_at_ctrl,  self.V_app_fs_at_ctrl_p = calculate_app_fs(self.V_app_infs,  self.wind_coefs,  self.gamma_magnitude)
+        self.V_induced_at_ctrl,  self.V_app_fs_at_ctrl_p = calculate_app_fs(self.inlet_conditions.V_app_infs,  self.wind_coefs,  self.gamma_magnitude)
 
         assert is_no_flux_BC_satisfied(self.V_app_fs_at_ctrl_p, self.panels, self.areas, self.normals)

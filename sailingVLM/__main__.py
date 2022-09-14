@@ -76,6 +76,7 @@ wind = ExpWindProfile(
 
 inlet_condition = InletConditions(wind, rho=rho, panels1D=sail_set.panels1d)
 
+
 hull = HullGeometry(sheer_above_waterline, foretriangle_base, csys_transformations, center_of_lateral_resistance_upright)
 
 
@@ -126,7 +127,8 @@ horseshoe_info_panels = np.array(horseshoe_info_panels)
 # panele ktore maja isc do mojej cyrkulacji powinny byc takie (1d array)
 ###
 gamma_orientation = -1
-myvlm = NewVlm(sail_set.my_panels, n_chordwise, n_spanwise, inlet_condition.rho, inlet_condition.V_app_infs, sail_set.sails, sail_set.trailing_edge_info, gamma_orientation)
+
+myvlm = NewVlm(sail_set.my_panels, n_chordwise, n_spanwise, rho, wind, sail_set.sails, sail_set.trailing_edge_info, gamma_orientation)
 
 
 # sortowanie jest bo inaczej nie porownam tego bo mam inny uklad paneli
@@ -148,9 +150,9 @@ np.testing.assert_almost_equal(np.sort(RHS_good, axis=0), np.sort(myvlm.RHS, axi
 V_induced_at_ctrl_p, V_app_fs_at_ctrl_p = calculate_app_fs(inlet_condition.V_app_infs, v_ind_coeff, gamma_magnitude)
 
 
-V_induced_at_ctrl_p_my, V_app_fs_at_ctrl_p_my = calculate_app_fs(inlet_condition.V_app_infs, myvlm.wind_coefs, myvlm.gamma_magnitude)
-np.testing.assert_almost_equal(np.sort(np.sort(V_induced_at_ctrl_p, axis=0), np.sort(V_induced_at_ctrl_p_my, axis=0)))
-np.testing.assert_almost_equal(np.sort(np.sort(V_app_fs_at_ctrl_p, axis=0), np.sort(V_app_fs_at_ctrl_p_my, axis=0)))
+V_induced_at_ctrl_p_my, V_app_fs_at_ctrl_p_my = calculate_app_fs(myvlm.inlet_conditions.V_app_infs, myvlm.wind_coefs, myvlm.gamma_magnitude)
+np.testing.assert_almost_equal(np.sort(V_induced_at_ctrl_p, axis=0), np.sort(V_induced_at_ctrl_p_my, axis=0))
+np.testing.assert_almost_equal(np.sort(V_app_fs_at_ctrl_p, axis=0), np.sort(V_app_fs_at_ctrl_p_my, axis=0))
 
 
 # to zawarte jest w NewVLM
