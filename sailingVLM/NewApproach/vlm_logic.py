@@ -233,7 +233,7 @@ def get_panels_area(panels: np.ndarray, N: int, M: int)-> np.ndarray:
     
     #m = N * M
     m = panels.shape[0]
-    areas = np.zeros((m, 1))
+    areas = np.zeros(m)
     #areas = np.zeros(m, dtype=float)
     sh = panels.shape[0]
     # numba.prange
@@ -388,7 +388,7 @@ def calc_force_wrapper_new_jib_version(V_app_infw, gamma_magnitude, rho, center_
             gamma = span_vectors[i] * (gamma_magnitude[i] - gamma_magnitude[i-M])
         force_xyz[i] = rho * np.cross(V_at_cp[i], gamma)
 
-    return force_xyz
+    return force_xyz, V_at_cp, V_induced
 
 
 
@@ -473,3 +473,13 @@ def create_panels(half_wing_span : float, chord : float, AoA_deg : float, M : in
         [nc, ns],
         gamma_orientation=1)
     return new_approach_panels
+
+
+def extract_above_water_quantities_new_approach(quantities, cp_points):
+    
+    # for jib and main, quantities is always dividable by 2
+    half = int(quantities.shape[0] / 2)
+    above_water_quantities = quantities[0:half]
+    total_above_water_quantities = np.sum(above_water_quantities, axis=0)  # heeling, sway, yaw (z-axis)
+    return above_water_quantities, total_above_water_quantities
+

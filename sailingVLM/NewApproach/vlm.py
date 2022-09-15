@@ -11,7 +11,9 @@ from sailingVLM.NewApproach.vlm_logic import \
     calc_pressure_new_approach, \
     get_vlm_CL_CD_free_wing, \
     create_panels, \
-    get_influence_coefficients_spanwise_jib_version
+    get_influence_coefficients_spanwise_jib_version, \
+    calc_force_wrapper_new_jib_version
+    
 
 from sailingVLM.Solver.coeff_formulas import get_CL_CD_free_wing
 from typing import List
@@ -108,8 +110,10 @@ class NewVlm:
     wind_coefs : np.ndarray = field(init=False)
     gamma_magnitude : np.ndarray = field(init=False)
     inlet_conditions: InletConditionsNew = field(init=False)
-    #pressure : np.ndarray = field(init=False)
-
+    force : np.ndarray = field(init=False)
+    pressure : np.ndarray = field(init=False)
+    V_app_fs_at_cp : np.ndarray = field(init=False)
+    V_induced_at_cp : np.ndarray = field(init=False)
     
     def __post_init__(self):
         
@@ -126,3 +130,14 @@ class NewVlm:
         self.V_induced_at_ctrl,  self.V_app_fs_at_ctrl_p = calculate_app_fs(self.inlet_conditions.V_app_infs,  self.wind_coefs,  self.gamma_magnitude)
 
         assert is_no_flux_BC_satisfied(self.V_app_fs_at_ctrl_p, self.panels, self.areas, self.normals)
+        
+        self.force, self.V_app_fs_at_cp, self.V_induced_at_cp = calc_force_wrapper_new_jib_version(self.inlet_conditions.V_app_infs, self.gamma_magnitude, self.rho, self.center_of_pressure, self.rings, self.n_chordwise , self.n_spanwise, self.normals, self.span_vectors, self.sails, self.trailing_edge_info, self.leading_edge_info, self.gamma_orientation)
+    
+
+    
+        self.pressure = calc_pressure_new_approach(self.force, self.normals, self.areas, self.n_spanwise, self.n_chordwise)
+        
+    
+        
+
+        

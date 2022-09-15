@@ -278,7 +278,7 @@ class SailSet(BaseGeometry):
         underwater_part_of_sail = int(n_sail / 2)
         sail_data_above_water = data[n_start_of_sail+underwater_part_of_sail:n_start_of_sail+n_sail]
         return sail_data_above_water
-
+    
     def extract_data_above_water_to_df(self, data):
         above_water_dfs = [pd.DataFrame(self.extract_data_above_water_by_id(data, i)) for i in range(len(self.sails))]
         merged_df_above_water = pd.concat(above_water_dfs)
