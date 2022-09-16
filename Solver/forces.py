@@ -100,6 +100,17 @@ def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
     return force_re_xyz, V_app_fs_at_cp, V_induced_at_cp
 
 
+def calc_pressure_xyz3d(force, panels):
+    # todo: this is a new version
+    p = np.zeros(shape=panels.shape)
+    for i in range(panels.shape[0]):
+        for j in range(panels.shape[1]):
+            area = panels[i, j].get_panel_area()
+            n = panels[i, j].get_normal_to_panel()
+            p[i, j] = np.dot(force[i, j], n) / area  # todo: fix sign
+    return p
+
+
 def calc_pressure(force, panels):
     panels_1d = panels.flatten()
     n = len(panels_1d)

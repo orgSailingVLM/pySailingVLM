@@ -156,6 +156,7 @@ class SailGeometry(BaseGeometry):
                 [self.__n_chordwise, self.__n_spanwise], gamma_orientation=-1)
 
         # https://stackoverflow.com/questions/33356442/when-should-i-use-hstack-vstack-vs-append-vs-concatenate-vs-column-stack
+        # self.__panels = np.vstack((panels_mirror, panels)) # todo: vstack seems to be more reasonable
         self.__panels = np.hstack((panels_mirror, panels))
         self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
@@ -205,6 +206,7 @@ class SailSet(BaseGeometry):
     def __init__(self, sails: List[SailGeometry]):
         self.sails = sails
         # https://stackoverflow.com/questions/33356442/when-should-i-use-hstack-vstack-vs-append-vs-concatenate-vs-column-stack
+        # self.__panels = np.vstack([sail.panels for sail in self.sails])  # todo: vstack seems to be more reasonable
         self.__panels = np.hstack([sail.panels for sail in self.sails])
         self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
@@ -237,14 +239,14 @@ class SailSet(BaseGeometry):
         sail = self.sails[sail_no]
         n_sail = int(len(sail.panels1d))
         n_start_of_sail = sum([len(self.sails[i].panels1d) for i in range(sail_no)])
-        sail_data_above_water = data[n_start_of_sail:n_start_of_sail+n_sail]
-        return sail_data_above_water
+        sail_data = data[n_start_of_sail:n_start_of_sail+n_sail]
+        return sail_data
 
     def extract_data_above_water_by_id(self, data, sail_no):
         sail = self.sails[sail_no]
         n_sail = len(sail.panels1d)
         n_start_of_sail = sum([len(self.sails[i].panels1d) for i in range(sail_no)])
-        underwater_part_of_sail = int(n_sail / 2)  # TODO: BUG!
+        underwater_part_of_sail = int(n_sail / 2) # TODO: this used to be buggy
         sail_data_above_water = data[n_start_of_sail+underwater_part_of_sail:n_start_of_sail+n_sail]
         return sail_data_above_water
 

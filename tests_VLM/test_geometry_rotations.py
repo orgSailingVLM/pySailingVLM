@@ -79,8 +79,8 @@ class TestRotations(TestCase):
         point_back = main_sail_geometry.csys_transformations.reverse_rotations_with_mirror(rotated_point)
         assert_almost_equal(point, point_back)
 
-    def _prepare_sail_set(self, initial_twist_factor):
-        n_spanwise = 10  # No of control points (above the water) per sail
+    def _prepare_sail_set(self, initial_twist_factor, n_spanwise=10, n_chordwise=1):
+        # n_spanwise # No of control points (above the water) per sail
 
         main_sail_girths = np.array([0.00, 1. / 4, 1. / 2, 3. / 4, 7. / 8, 1.00])
         main_sail_chords = np.array([4.00, 3.64, 3.20, 2.64, 2.32, 2.00])
@@ -99,7 +99,7 @@ class TestRotations(TestCase):
         rake_deg = 110  # rake angle [deg]
         LLT_twist = "real_twist"  # defines how the Lifting Line discretize the sail twist.
         # It can be "sheeting_angle_const" or "average_const" or "real_twist"
-        sail_factory = SailFactory(self.csys_transformations, n_spanwise=n_spanwise,
+        sail_factory = SailFactory(self.csys_transformations, n_spanwise=n_spanwise, n_chordwise=n_chordwise,
                                    rake_deg=rake_deg,
                                    sheer_above_waterline=sheer_above_waterline)
 
@@ -124,6 +124,30 @@ class TestRotations(TestCase):
         # display_panels_xyz(sail_set.panels1d)
 
         return sail_set
+
+    def test_data_extractor(self):
+        from Solver.forces import extract_above_water_quantities
+        sail_set = self._prepare_sail_set(initial_twist_factor=10., n_spanwise=5, n_chordwise=3)
+        cp_points = sail_set.get_cp_points()
+
+        # assert_almost_equal(cp_points[30], np.array([3.66551554,   7.18780739, -11.10346907]))  # check position of random cp_point
+        # assert_almost_equal(cp_points[49], np.array([3.66551554,   7.18780739,  11.10346907]))  # check position of random cp_point
+
+        cp_points_above_water_z_mask, _ = extract_above_water_quantities(cp_points, cp_points)
+        assert all(cp_points_above_water_z_mask[:, 2] > 0)  # all z-coordinates are positive, i.e. above water
+
+        cp_jib_reference = sail_set.sails[0].get_cp_points()
+        cp_jib_extracted = sail_set.extract_data_by_id(cp_points, 0)
+
+        assert_almost_equal(cp_jib_reference, cp_jib_extracted)
+
+        assert_almost_equal(sail_set.sails[1].get_cp_points(), sail_set.extract_data_by_id(cp_points, 1))  # the main sail
+
+        cp_points_above_water_jib_extracted = sail_set.extract_data_above_water_by_id(cp_points, 0)
+        cp_points_above_water_mainsail_extracted = sail_set.extract_data_above_water_by_id(cp_points, 1)
+        cp_points_above_water_extracted = np.vstack([cp_points_above_water_jib_extracted, cp_points_above_water_mainsail_extracted])
+        assert_almost_equal(cp_points_above_water_z_mask, cp_points_above_water_extracted)
+
 
     def test_sail_set_rotations(self):
         sail_set = self._prepare_sail_set(initial_twist_factor=0.)
