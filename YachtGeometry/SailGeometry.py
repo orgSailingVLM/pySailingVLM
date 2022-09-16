@@ -244,7 +244,7 @@ class SailSet(BaseGeometry):
         sail = self.sails[sail_no]
         n_sail = len(sail.panels1d)
         n_start_of_sail = sum([len(self.sails[i].panels1d) for i in range(sail_no)])
-        underwater_part_of_sail = int(n_sail / 2)
+        underwater_part_of_sail = int(n_sail / 2)  # TODO: BUG!
         sail_data_above_water = data[n_start_of_sail+underwater_part_of_sail:n_start_of_sail+n_sail]
         return sail_data_above_water
 

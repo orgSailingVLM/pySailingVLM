@@ -12,8 +12,8 @@ from unittest import TestCase
 
 class TestPanels(TestCase):
     def setUp(self):
-        self.points = [np.array([10, 0, 0]), np.array([0, 0, 0]),
-                       np.array([0, 10, 0]), np.array([10, 10, 0])]
+        self.points = [np.array([10., 0., 0.]), np.array([0., 0., 0.]),
+                       np.array([0., 10., 0.]), np.array([10., 10., 0.])]
 
         self.panel = Panel(*self.points)
         self.assertTrue(self.panel._are_points_coplanar())
@@ -27,7 +27,7 @@ class TestPanels(TestCase):
     def test_pressure(self):
         from Solver.forces import calc_pressure
 
-        p = calc_pressure(force=np.array([[0, 0, 1], [3, 2, 1]]),
+        p = calc_pressure(force=np.array([[0., 0., 1.], [3., 2., 1.]]),
                           panels=np.array([self.panel, self.panel]))
 
         assert_almost_equal(p, [0.01, 0.01])

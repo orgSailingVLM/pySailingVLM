@@ -59,6 +59,9 @@ class InviscidFlowResults:
         self.F_xyz = force_xyz
         F_xyz_above_water, self.F_xyz_total = extract_above_water_quantities(self.F_xyz, cp_points)
 
+        cp_points_above_water, _ = extract_above_water_quantities(cp_points, cp_points)
+
+        cp_points_above_water_buggy  = sail_set.extract_data_above_water_by_id(cp_points, 0) # TODO: this is buggy
         # todo clean up the mess
         # todo check the output ... and add a test
         # F_xyz_above_water_jib = sail_set.extract_data_above_water_by_id(self.F_xyz, 0)

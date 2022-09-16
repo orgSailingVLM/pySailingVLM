@@ -50,8 +50,8 @@ Ry = rotation_matrix([0, 1, 0], np.deg2rad(AoA_deg))
 # we are going to rotate the geometry
 
 ### MESH DENSITY ###
-ns = 30    # number of panels (spanwise)
-nc = 30   # number of panels (chordwise)
+ns = 15    # number of panels (spanwise)
+nc = 15   # number of panels (chordwise)
 
 panels, mesh = make_panels_from_le_te_points(
     [np.dot(Ry, le_SW),
