@@ -385,6 +385,13 @@ def calc_force_wrapper_new_jib_version(V_app_infw, gamma_magnitude, rho, center_
         #if i < M:
             gamma = span_vectors[i] * gamma_magnitude[i]
         else:
+            # bug jest tutaj
+            # i-M JEST ZLE
+            #jak wiatr wieje z lewej do prawej to liczymy w  rzedach 
+            # jak od gory do dolu to liczymy w koleumnach, z tym ze tych przypadkow nie rozpatrujemy, dac jakis exception ze ktos 
+            # podal zly wiatr
+            # patrz kartka 
+            # leading edges jest zawsze tam gdzie wieje wiatr
             gamma = span_vectors[i] * (gamma_magnitude[i] - gamma_magnitude[i-M])
         force_xyz[i] = rho * np.cross(V_at_cp[i], gamma)
 

@@ -270,7 +270,7 @@ class SailSet(BaseGeometry):
         n_start_of_sail = sum([len(self.sails[i].panels1d) for i in range(sail_no)])
         sail_data_above_water = data[n_start_of_sail:n_start_of_sail+n_sail]
         return sail_data_above_water
-
+    # ta funkcja ma buga i bierze rzeczy dla paneli m.in pod woda
     def extract_data_above_water_by_id(self, data, sail_no):
         sail = self.sails[sail_no]
         n_sail = len(sail.panels1d)
