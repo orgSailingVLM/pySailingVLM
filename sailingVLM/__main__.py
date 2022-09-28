@@ -11,7 +11,7 @@ from sailingVLM.Inlet.InletConditions import InletConditions
 from sailingVLM.Inlet.Winds import ExpWindProfile
 
 from sailingVLM.ResultsContainers.save_results_utils import save_results_to_file
-from sailingVLM.Solver.PanelsPlotter import display_panels_xyz_and_winds
+from sailingVLM.Solver.PanelsPlotter import display_panels_xyz_and_winds, display_panels_xyz_and_winds_new_approach
 from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied
 
 from sailingVLM.Solver.vlm_solver import calc_circulation
@@ -162,6 +162,9 @@ inviscid_flow_results_new_approach = prepare_inviscid_flow_results_vlm_new_appro
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.gamma_magnitude, axis=0), np.sort(inviscid_flow_results_new_approach.gamma_magnitude, axis=0))
 # sprawdzic to
 #np.testing.assert_almost_equal(np.sort(inviscid_flow_results.csys_transformations, axis=0), np.sort(inviscid_flow_results_new_approach.csys_transformations, axis=0))
+
+np.testing.assert_almost_equal(np.sort(inviscid_flow_results.pressure, axis=0), np.sort(myvlm.pressure, axis=0))
+
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.pressure, axis=0), np.sort(inviscid_flow_results_new_approach.pressure, axis=0))
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.V_induced, axis=0), np.sort(inviscid_flow_results_new_approach.V_induced, axis=0))
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.V_induced_length, axis=0), np.sort(inviscid_flow_results_new_approach.V_induced_length, axis=0))
@@ -183,23 +186,25 @@ inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_r
 print("Preparing visualization.")
 display_panels_xyz_and_winds(sail_set.panels1d, inlet_condition, inviscid_flow_results, hull)
 
-df_components, df_integrals, df_inlet_IC = save_results_to_file(inviscid_flow_results, None, inlet_condition, sail_set, output_dir_name)
-shutil.copy(os.path.join(case_dir, case_name), os.path.join(output_dir_name, case_name))
+display_panels_xyz_and_winds_new_approach(myvlm, inlet_condition, hull)
 
-print(f"-------------------------------------------------------------")
-print(f"Notice:\n"
-      f"\tThe forces [N] and moments [Nm] are without profile drag.\n"
-      f"\tThe the _COG_ CSYS is aligned in the direction of the yacht movement (course over ground).\n"
-      f"\tThe the _COW_ CSYS is aligned along the centerline of the yacht (course over water).\n"
-      f"\tNumber of panels (sail set with mirror): {sail_set.panels.shape}")
+# df_components, df_integrals, df_inlet_IC = save_results_to_file(inviscid_flow_results, None, inlet_condition, sail_set, output_dir_name)
+# shutil.copy(os.path.join(case_dir, case_name), os.path.join(output_dir_name, case_name))
 
-print(df_integrals)
+# print(f"-------------------------------------------------------------")
+# print(f"Notice:\n"
+#       f"\tThe forces [N] and moments [Nm] are without profile drag.\n"
+#       f"\tThe the _COG_ CSYS is aligned in the direction of the yacht movement (course over ground).\n"
+#       f"\tThe the _COW_ CSYS is aligned along the centerline of the yacht (course over water).\n"
+#       f"\tNumber of panels (sail set with mirror): {sail_set.panels.shape}")
 
-# rows_to_display = ['M_total_heeling', 'M_total_sway', 'F_sails_drag'] # select rows to print
-# print(df_integrals[df_integrals['Quantity'].isin(rows_to_display)])
+# print(df_integrals)
 
-print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
-#
-# import matplotlib.pyplot as plt
-# plt.plot([1,2,3],[5,6,7])
-# plt.show()
+# # rows_to_display = ['M_total_heeling', 'M_total_sway', 'F_sails_drag'] # select rows to print
+# # print(df_integrals[df_integrals['Quantity'].isin(rows_to_display)])
+
+# print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
+# #
+# # import matplotlib.pyplot as plt
+# # plt.plot([1,2,3],[5,6,7])
+# # plt.show()

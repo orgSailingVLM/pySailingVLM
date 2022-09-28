@@ -33,19 +33,22 @@ def prepare_inviscid_flow_results_vlm(gamma_magnitude,
                                       csys_transformations: CSYS_transformations, myvlm : NewVlm):
 
     force_xyz3d, V_app_fs_at_cp, V_induced_at_cp = calc_force_VLM_xyz(inlet_condition.V_app_infs, gamma_magnitude,  sail_set.panels, inlet_condition.rho)
-    ###
-    # ta funkcja ma buga
-    my_force, V_at_cp, V_induced = calc_force_wrapper_new_jib_version(myvlm.inlet_conditions.V_app_infs, myvlm.gamma_magnitude, myvlm.rho, myvlm.center_of_pressure, myvlm.rings, myvlm.n_chordwise , myvlm.n_spanwise, myvlm.normals, myvlm.span_vectors, myvlm.sails, myvlm.trailing_edge_info, myvlm.leading_edge_info, myvlm.gamma_orientation)
-    my_pressure = calc_pressure_new_approach(my_force, myvlm.normals, myvlm.areas, myvlm.n_spanwise, myvlm.n_chordwise)
-
-    np.testing.assert_almost_equal(np.sort(V_app_fs_at_cp, axis=0), np.sort(V_at_cp, axis=0))
-    np.testing.assert_almost_equal(np.sort(V_induced_at_cp, axis=0), np.sort(V_induced, axis=0))
-    ###
     force_xyz = force_xyz3d.reshape(len(sail_set.panels1d), 3)
     pressure = calc_pressure(force_xyz, sail_set.panels)
     pressure3d = pressure.reshape(sail_set.panels.shape)
+    
+    ###
+    # ta funkcja ma buga
+    my_force, V_at_cp, V_induced = calc_force_wrapper_new_jib_version(myvlm.inlet_conditions.V_app_infs, myvlm.gamma_magnitude, myvlm.rho, myvlm.center_of_pressure, myvlm.rings, myvlm.n_spanwise, myvlm.n_chordwise ,  myvlm.normals, myvlm.span_vectors, myvlm.sails, myvlm.trailing_edge_info, myvlm.leading_edge_info, myvlm.gamma_orientation)
+    #my_pressure = calc_pressure_new_approach(my_force, myvlm.normals, myvlm.areas, myvlm.n_spanwise, myvlm.n_chordwise)
 
-    #np.testing.assert_almost_equal(np.sort(force_xyz, axis=0), np.sort(my_force, axis=0))
+    np.testing.assert_almost_equal(np.sort(V_app_fs_at_cp, axis=0), np.sort(V_at_cp, axis=0))
+    np.testing.assert_almost_equal(np.sort(V_induced_at_cp, axis=0), np.sort(V_induced, axis=0))
+    np.testing.assert_almost_equal(np.sort(force_xyz, axis=0), np.sort(my_force, axis=0))
+    ###
+    
+
+    #
     #np.testing.assert_almost_equal(np.sort(pressure, axis=0), np.sort(my_pressure, axis=0))
     
     
@@ -275,28 +278,28 @@ class InviscidFlowResultsNew:
 
         self.dyn_dict = dyn_dict
 
-        # self.M_xyz = calc_moments(r, myvlm.force)
-        # _, self.M_total_above_water_in_xyz_csys = extract_above_water_quantities(self.M_xyz, cp_points)
+        self.M_xyz = calc_moments(r, myvlm.force)
+        _, self.M_total_above_water_in_xyz_csys = extract_above_water_quantities(self.M_xyz, myvlm.center_of_pressure)
 
-        # r_dot_F = np.array([np.dot(r[i], force_xyz[i]) for i in range(len(force_xyz))])
-        # _, r_dot_F_total_above_water = extract_above_water_quantities(r_dot_F, cp_points)
+        r_dot_F = np.array([np.dot(r[i], myvlm.force[i]) for i in range(len(myvlm.force))])
+        _, r_dot_F_total_above_water = extract_above_water_quantities(r_dot_F, myvlm.center_of_pressure)
 
-        # self.above_water_centre_of_effort_estimate_xyz \
-        #     = determine_vector_from_its_dot_and_cross_product(
-        #         self.F_xyz_total, r_dot_F_total_above_water, self.M_total_above_water_in_xyz_csys)
+        self.above_water_centre_of_effort_estimate_xyz \
+            = determine_vector_from_its_dot_and_cross_product(
+                self.F_xyz_total, r_dot_F_total_above_water, self.M_total_above_water_in_xyz_csys)
 
-        # # r0 = self.M_total_above_water_in_xyz_csys[0] /self.F_xyz_total[0]
-        # # r1 = self.M_total_above_water_in_xyz_csys[1] / self.F_xyz_total[1]
-        # # r2 = self.M_total_above_water_in_xyz_csys[2] / self.F_xyz_total[2]
-        # # r_naive = np.array([r0,r1,r2])
-        # # np.cross(r_naive, self.F_xyz_total)
+        # r0 = self.M_total_above_water_in_xyz_csys[0] /self.F_xyz_total[0]
+        # r1 = self.M_total_above_water_in_xyz_csys[1] / self.F_xyz_total[1]
+        # r2 = self.M_total_above_water_in_xyz_csys[2] / self.F_xyz_total[2]
+        # r_naive = np.array([r0,r1,r2])
+        # np.cross(r_naive, self.F_xyz_total)
 
-        # self.F_centerline = csys_transformations.from_xyz_to_centerline_csys(force_xyz)
-        # _, self.F_centerline_total = extract_above_water_quantities(self.F_centerline, cp_points)
+        self.F_centerline = csys_transformations.from_xyz_to_centerline_csys(myvlm.force)
+        _, self.F_centerline_total = extract_above_water_quantities(self.F_centerline, myvlm.center_of_pressure)
 
-        # self.M_centerline_csys = csys_transformations.from_xyz_to_centerline_csys(self.M_xyz)
-        # _, M_total_above_water_in_centerline_csys = extract_above_water_quantities(self.M_centerline_csys, cp_points)
-        # self.M_total_above_water_in_centerline_csys = M_total_above_water_in_centerline_csys
+        self.M_centerline_csys = csys_transformations.from_xyz_to_centerline_csys(self.M_xyz)
+        _, M_total_above_water_in_centerline_csys = extract_above_water_quantities(self.M_centerline_csys, myvlm.center_of_pressure)
+        self.M_total_above_water_in_centerline_csys = M_total_above_water_in_centerline_csys
 
     def estimate_heeling_moment_from_keel(self, underwater_centre_of_effort_xyz):
         self.M_xyz_underwater_estimate_total = np.cross(underwater_centre_of_effort_xyz, -self.F_xyz_total)

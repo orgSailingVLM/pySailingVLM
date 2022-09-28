@@ -147,7 +147,7 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
     return q_ind
 
 # sails = [jib, main]
-def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray, sails : List[SailGeometry], horseshoe_info : np.ndarray, gamma_orientation : float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, V_app_infw: np.ndarray, sails : List[SailGeometry], horseshoe_info : np.ndarray, gamma_orientation : float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     
     m = collocation_points.shape[0]
     # to nie dziala dla jiba?
@@ -229,7 +229,7 @@ def calc_induced_velocity(v_ind_coeff, gamma_magnitude):
 
 # no seppedup
 #@numba.jit(nopython=True, parallel=True)
-def get_panels_area(panels: np.ndarray, N: int, M: int)-> np.ndarray:
+def get_panels_area(panels: np.ndarray)-> np.ndarray:
     
     #m = N * M
     m = panels.shape[0]
@@ -368,7 +368,9 @@ def calc_force_wrapper_new_jib_version(V_app_infw, gamma_magnitude, rho, center_
     # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     # f. Secondary Computations: Pressures, Loads, Velocities, Etc
     #Eq (12.25)
-
+    ##### WAZNE #####
+    # N - odleglosc miedzy leading a trailing edge
+    # M - rozpietosc skrzydel    
     V_at_cp, V_induced = calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, sails, trailing_edge_info, gamma_orientation)
 
     K = center_of_pressure.shape[0]
@@ -378,23 +380,11 @@ def calc_force_wrapper_new_jib_version(V_app_infw, gamma_magnitude, rho, center_
         # for spanwise only!
         # if panel is leading edge
         gamma = 0.0
-        # tu ma być leading edge only
-        # do poprawki
-        # if panel is leading panel
         if leading_edges_info[i]:
-        #if i < M:
             gamma = span_vectors[i] * gamma_magnitude[i]
         else:
-            # bug jest tutaj
-            # i-M JEST ZLE
-            #jak wiatr wieje z lewej do prawej to liczymy w  rzedach 
-            # jak od gory do dolu to liczymy w koleumnach, z tym ze tych przypadkow nie rozpatrujemy, dac jakis exception ze ktos 
-            # podal zly wiatr
-            # patrz kartka 
-            # leading edges jest zawsze tam gdzie wieje wiatr
             gamma = span_vectors[i] * (gamma_magnitude[i] - gamma_magnitude[i-M])
         force_xyz[i] = rho * np.cross(V_at_cp[i], gamma)
-
     return force_xyz, V_at_cp, V_induced
 
 

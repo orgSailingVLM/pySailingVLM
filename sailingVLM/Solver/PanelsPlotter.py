@@ -3,6 +3,7 @@ import numpy as np
 import math
 
 import matplotlib.pyplot as plt
+from sailingVLM.NewApproach.vlm import NewVlm
 
 from sailingVLM.Solver.vortices import normalize
 from matplotlib.patches import FancyArrowPatch
@@ -130,6 +131,34 @@ def display_winds(ax, cp_points, water_size,  inlet_condition: InletConditions, 
             ax.add_artist(arrow)
 
 
+def display_winds_new_approach(ax, cp_points, water_size,  inlet_condition: InletConditions, myvlm : NewVlm):
+    N = len(cp_points[:, 2])
+
+    mean_AWA = np.mean(inlet_condition.AWA_infs_deg)
+    shift_x = (-0.925) * water_size * np.cos(np.deg2rad(mean_AWA))
+    shift_y = (-0.925) * water_size * np.sin(np.deg2rad(mean_AWA))
+
+    V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs, myvlm.V_app_fs]
+    colors = ['green', 'blue', 'red']  # G: True wind, B: - Apparent wind, R: Apparent + Induced wind
+    for V_wind, color in zip(V_winds, colors):
+        # V_wind = V_winds[2]
+        # color = colors[2]
+        for i in range(N):
+            # vx = np.array([cp_points[i, 0], cp_points[i, 0] + V_wind[i, 0]])
+            # vy = np.array([cp_points[i, 1], cp_points[i, 1] + V_wind[i, 1]])
+            vx = np.array([shift_x, shift_x+V_wind[i, 0]])
+            vy = np.array([shift_y, shift_y+V_wind[i, 1]])
+            vz = np.array([cp_points[i, 2], cp_points[i, 2]])
+
+            # ax.plot(vx, vy, vz,color='red', alpha=0.8, lw=1)  # old way
+            # arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>",  c=cp_points[:, 2], cmap='Greys')
+            if cp_points[i, 2] > 0:
+                arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.75)
+            else:
+                arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.15)
+            ax.add_artist(arrow)
+
+
 def display_CE_CLR(ax,
                    inviscid_flow_results: InviscidFlowResults,
                    hull: HullGeometry):
@@ -150,7 +179,26 @@ def display_CE_CLR(ax,
     plot_vector(ce, F)
     plot_vector(clr, -F)
 
+def display_CE_CLR_new_approach(ax,
+                   myvlm : NewVlm,
+                   hull: HullGeometry):
+    # https://en.wikipedia.org/wiki/Forces_on_sails#Forces_on_sailing_craft
+    def plot_vector(origin, length):
+        vx = np.array([origin[0], origin[0] + length[0]])
+        vy = np.array([origin[1], origin[1] + length[1]])
+        vz = np.array([origin[2], origin[2] + length[2]])
+        arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color='black', alpha=0.75)
+        ax.add_artist(arrow)
+        ax.scatter3D(origin[0], origin[1], origin[2], c='black', marker="o")
 
+    scale = 0.8*np.mean(myvlm.V_app_fs_length)  # ~10 gives nice plot
+    clr = hull.center_of_lateral_resistance
+    ce = myvlm.above_water_centre_of_effort_estimate_xyz
+
+    F = scale * normalize(myvlm.F_xyz_total)
+    plot_vector(ce, F)
+    plot_vector(clr, -F)
+    
 def display_forces_xyz(ax, panels1d, inviscid_flow_results: InviscidFlowResults):
     scale = 0.2*np.mean(inviscid_flow_results.F_xyz_total)  # ~0.2 gives nice plot
     F_length = np.linalg.norm(inviscid_flow_results.F_xyz, axis=1)
@@ -189,7 +237,24 @@ def display_panels_xyz_and_winds(panels1d,
     if show_plot:
         plt.show()
 
+def display_panels_xyz_and_winds_new_approach(myvlm : NewVlm,
+                                 inlet_condition: InletConditions,
+                                 hull: HullGeometry,
+                                 show_plot=True
 
+                                 ):
+    ax, cp_points, water_size = display_panels_xyz(myvlm.panels, myvlm.pressure)
+    ax.set_title('Panels colored by pressure \n'
+                 'Winds: True (green), Apparent (blue), Apparent + Induced (red) \n'
+                 'Centre of Effort & Center of Lateral Resistance (black)')
+
+    display_hull(ax, hull)
+    display_winds_new_approach(ax, cp_points, water_size, inlet_condition, myvlm)
+    # display_forces_xyz(ax, panels1d, inviscid_flow_results)
+    display_CE_CLR(ax, myvlm, hull)
+    if show_plot:
+        plt.show()
+        
 def display_panels_xz(panels1d):
     fig_name = f'plots/xy_initial_geometry_plot.png'
     plt.rcParams.update({'font.size': 14})

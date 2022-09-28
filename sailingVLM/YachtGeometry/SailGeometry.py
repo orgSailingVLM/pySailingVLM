@@ -203,7 +203,15 @@ class  SailGeometry(BaseGeometry):
     @property
     def spans(self):
         return self.__spans
-
+    
+    @property
+    def n_chordwise(self):
+        return self.__n_chordwise
+    
+    @property
+    def n_spanwise(self):
+        return self.__n_spanwise
+    
     @property
     def panels1d(self) -> np.array([Panel]):
         return self.__panels1D
@@ -238,7 +246,7 @@ class SailSet(BaseGeometry):
         leading_info_above = np.concatenate([sail.leading_edge_info for sail in self.sails])
         leading_info_under = np.concatenate([sail.leading_edge_info for sail in self.sails])
         self.leading_edge_info = np.concatenate([leading_info_above, leading_info_under])
-        
+    
         print()
     @property
     def panels1d(self):

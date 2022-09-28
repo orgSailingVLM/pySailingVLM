@@ -117,21 +117,21 @@ class NewVlm:
     
     def __post_init__(self):
         
-        # M = self.n_chordwise
-        # N = self.n_spanwise
-        self.areas = get_panels_area(self.panels, self.n_spanwise, self.n_chordwise) 
+        # M = wzdluz rozpoetosci skrzydel, spanwise
+        # N = chordwise, linia laczaca leading i trailing
+        self.areas = get_panels_area(self.panels) 
         self.normals, self.collocation_points, self.center_of_pressure, self.rings, self.span_vectors = calculate_normals_collocations_cps_rings_spans(self.panels, self.gamma_orientation)
         
         self.inlet_conditions = InletConditionsNew(self.wind, self.rho, self.center_of_pressure)
         
-        self.coefs, self.RHS, self.wind_coefs = get_influence_coefficients_spanwise_jib_version( self.collocation_points,  self.rings,  self.normals, self.n_chordwise, self.n_spanwise, self.inlet_conditions.V_app_infs, self.sails, self.trailing_edge_info, self.gamma_orientation)
+        self.coefs, self.RHS, self.wind_coefs = get_influence_coefficients_spanwise_jib_version( self.collocation_points, self.rings, self.normals, self.inlet_conditions.V_app_infs, self.sails, self.trailing_edge_info, self.gamma_orientation)
         self.gamma_magnitude = solve_eq( self.coefs,  self.RHS)
 
         self.V_induced_at_ctrl,  self.V_app_fs_at_ctrl_p = calculate_app_fs(self.inlet_conditions.V_app_infs,  self.wind_coefs,  self.gamma_magnitude)
 
         assert is_no_flux_BC_satisfied(self.V_app_fs_at_ctrl_p, self.panels, self.areas, self.normals)
         
-        self.force, self.V_app_fs_at_cp, self.V_induced_at_cp = calc_force_wrapper_new_jib_version(self.inlet_conditions.V_app_infs, self.gamma_magnitude, self.rho, self.center_of_pressure, self.rings, self.n_chordwise , self.n_spanwise, self.normals, self.span_vectors, self.sails, self.trailing_edge_info, self.leading_edge_info, self.gamma_orientation)
+        self.force, self.V_app_fs_at_cp, self.V_induced_at_cp = calc_force_wrapper_new_jib_version(self.inlet_conditions.V_app_infs, self.gamma_magnitude, self.rho, self.center_of_pressure, self.rings, self.n_spanwise, self.n_chordwise, self.normals, self.span_vectors, self.sails, self.trailing_edge_info, self.leading_edge_info, self.gamma_orientation)
     
 
     

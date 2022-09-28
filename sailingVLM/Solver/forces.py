@@ -91,6 +91,8 @@ def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
 
     for i in range(0, panels.shape[0]):
         for j in range(0, panels.shape[1]):
+
+            gamma = 0.0
             if i == 0:  # leading edge only
                 gamma = panels[i, j].get_span_vector() * gamma_re[i, j]
             else:
