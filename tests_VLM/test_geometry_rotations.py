@@ -137,16 +137,17 @@ class TestRotations(TestCase):
         assert all(cp_points_above_water_z_mask[:, 2] > 0)  # all z-coordinates are positive, i.e. above water
 
         cp_jib_reference = sail_set.sails[0].get_cp_points()
-        cp_jib_extracted = sail_set.extract_data_by_id(cp_points, 0)
-
-        assert_almost_equal(cp_jib_reference, cp_jib_extracted)
-
-        assert_almost_equal(sail_set.sails[1].get_cp_points(), sail_set.extract_data_by_id(cp_points, 1))  # the main sail
-
+        cp_points_above_water_jib_reference, _ = extract_above_water_quantities(cp_jib_reference, cp_jib_reference)
         cp_points_above_water_jib_extracted = sail_set.extract_data_above_water_by_id(cp_points, 0)
+        assert_almost_equal(cp_points_above_water_jib_reference, cp_points_above_water_jib_extracted)
+
+        cp_mainsail_reference = sail_set.sails[1].get_cp_points()
+        cp_points_above_water_mainsail_reference, _ = extract_above_water_quantities(cp_mainsail_reference, cp_mainsail_reference)
         cp_points_above_water_mainsail_extracted = sail_set.extract_data_above_water_by_id(cp_points, 1)
-        cp_points_above_water_extracted = np.vstack([cp_points_above_water_jib_extracted, cp_points_above_water_mainsail_extracted])
-        assert_almost_equal(cp_points_above_water_z_mask, cp_points_above_water_extracted)
+        assert_almost_equal(cp_points_above_water_mainsail_reference, cp_points_above_water_mainsail_extracted)
+
+        # cp_points_above_water_extracted = np.hstack([cp_points_above_water_jib_extracted, cp_points_above_water_mainsail_extracted])
+        # assert_almost_equal(cp_points_above_water_z_mask, cp_points_above_water_extracted)
 
 
     def test_sail_set_rotations(self):

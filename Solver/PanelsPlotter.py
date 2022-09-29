@@ -2,6 +2,8 @@
 import numpy as np
 import math
 
+import matplotlib
+# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 from Solver.vortices import normalize
@@ -47,6 +49,7 @@ def _prepare_geometry_data_to_display(panels1d):
 
 
 def display_panels_xyz(panels1d, pressure):
+
     fig = plt.figure(figsize=(12, 12))
     ax = plt.axes(projection='3d')
     # ax.set_title('Initial location of: \n Leading Edge, Lifting Line, Control Points and Trailing Edge')

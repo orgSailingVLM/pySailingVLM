@@ -33,10 +33,8 @@ def prepare_inviscid_flow_results_vlm(gamma_magnitude,
 
     pressure_xyz3d = calc_pressure_xyz3d(force_xyz3d, sail_set.panels)
 
-    force_xyz = force_xyz3d.reshape(len(sail_set.panels1d), 3)
+    force_xyz = force_xyz3d.reshape(len(sail_set.panels1d), 3) # todo: may thid cause bugs when changing vstack/hstack arragment of panels in SailGeometry.py?
     pressure = pressure_xyz3d.flatten()
-    # pressure = calc_pressure(force_xyz, sail_set.panels)
-    # pressure3d = pressure.reshape(sail_set.panels.shape)
 
     inviscid_flow_results = InviscidFlowResults(gamma_magnitude, pressure, V_induced_at_cp, V_app_fs_at_cp,
                                                 force_xyz, sail_set, csys_transformations)
@@ -63,8 +61,6 @@ class InviscidFlowResults:
         self.F_xyz = force_xyz
         F_xyz_above_water, self.F_xyz_total = extract_above_water_quantities(self.F_xyz, cp_points)
 
-        cp_points_above_water, _ = extract_above_water_quantities(cp_points, cp_points)
-        cp_points_above_water_buggy = sail_set.extract_data_above_water_by_id(cp_points, 0)
         # todo clean up the mess
         # todo check the output ... and add a test
         # F_xyz_above_water_jib = sail_set.extract_data_above_water_by_id(self.F_xyz, 0)

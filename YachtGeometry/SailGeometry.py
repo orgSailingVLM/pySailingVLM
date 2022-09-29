@@ -29,13 +29,8 @@ class BaseGeometry:
         pass
 
     @abstractmethod
-    def extract_data_above_water(self, data):
-        pass
-
-    @abstractmethod
     def extract_data_above_water_to_df(self, data):
-        data_above_water = self.extract_data_above_water(data)
-        return pd.DataFrame(data=data_above_water)
+        pass
 
     def get_cp_points(self):
         return np.array([p.get_cp_position() for p in self.panels1d])
@@ -156,8 +151,8 @@ class SailGeometry(BaseGeometry):
                 [self.__n_chordwise, self.__n_spanwise], gamma_orientation=-1)
 
         # https://stackoverflow.com/questions/33356442/when-should-i-use-hstack-vstack-vs-append-vs-concatenate-vs-column-stack
-        # self.__panels = np.vstack((panels_mirror, panels)) # todo: vstack seems to be more reasonable
-        self.__panels = np.hstack((panels_mirror, panels))
+        # self.__panels = np.vstack((panels, panels_mirror)) # todo: vstack seems to be more reasonable
+        self.__panels = np.hstack((panels_mirror, panels)) # old version
         self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
 
@@ -195,19 +190,12 @@ class SailGeometry(BaseGeometry):
     def panels(self) -> np.array([Panel]):
         return self.__panels
 
-    def extract_data_above_water(self, data):
-        N = len(self.panels1d)
-        underwater_part = int(N/2)
-        data_above_water = data[underwater_part:N]
-        return data_above_water
-
-
 class SailSet(BaseGeometry):
     def __init__(self, sails: List[SailGeometry]):
         self.sails = sails
         # https://stackoverflow.com/questions/33356442/when-should-i-use-hstack-vstack-vs-append-vs-concatenate-vs-column-stack
-        # self.__panels = np.vstack([sail.panels for sail in self.sails])  # todo: vstack seems to be more reasonable
-        self.__panels = np.hstack([sail.panels for sail in self.sails])
+        # self.__panels = np.vstack([sail.panels for sail in self.sails])
+        self.__panels = np.hstack([sail.panels for sail in self.sails])  # todo: is the old hstack more reasonable?
         self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
 
@@ -235,20 +223,25 @@ class SailSet(BaseGeometry):
             y_as_girths = np.append(y_as_girths, sail.sail_cp_to_girths())
         return y_as_girths
 
-    def extract_data_by_id(self, data, sail_no):
-        sail = self.sails[sail_no]
-        n_sail = int(len(sail.panels1d))
-        n_start_of_sail = sum([len(self.sails[i].panels1d) for i in range(sail_no)])
-        sail_data = data[n_start_of_sail:n_start_of_sail+n_sail]
-        return sail_data
-
     def extract_data_above_water_by_id(self, data, sail_no):
-        sail = self.sails[sail_no]
-        n_sail = len(sail.panels1d)
-        n_start_of_sail = sum([len(self.sails[i].panels1d) for i in range(sail_no)])
-        underwater_part_of_sail = int(n_sail / 2) # TODO: this used to be buggy
-        sail_data_above_water = data[n_start_of_sail+underwater_part_of_sail:n_start_of_sail+n_sail]
-        return sail_data_above_water
+        all_cp_points = self.get_cp_points()[:, 2]
+        reference_cp_points = self.sails[sail_no].get_cp_points()[:, 2]
+        above_water_ref_cp_points = reference_cp_points[reference_cp_points > 0].transpose()
+        index_array = np.array([np.where(all_cp_points == point)[0][0] for point in above_water_ref_cp_points])
+
+        if isinstance(data, pd.DataFrame):
+            above_water_quantities = data.iloc[index_array]
+        elif isinstance(data,np.ndarray):
+            above_water_quantities = data[index_array, :]
+        else:
+            raise NotImplementedError
+
+        return above_water_quantities
+
+    def extract_data_above_water_to_df_new(self, data):
+        above_water_dfs = [pd.DataFrame(self.extract_data_above_water_by_id(data, i)) for i in range(len(self.sails))]
+        merged_df_above_water = pd.concat(above_water_dfs)
+        return merged_df_above_water
 
     def extract_data_above_water_to_df(self, data):
         above_water_dfs = [pd.DataFrame(self.extract_data_above_water_by_id(data, i)) for i in range(len(self.sails))]

@@ -2,7 +2,7 @@ numba
 numpy  # BSD 3-Clause
 scipy
 # matplotlib==v3.4.3  # Python Software Foundation License (PSFL) -> BSD-style
-matplotlib
+matplotlib==3.5.0
 codecov  # APACHE 2.0 license
 scipy  # BSD 3-Clause license
 pytest  # MIT license
