@@ -180,13 +180,24 @@ np.testing.assert_almost_equal(np.sort(inviscid_flow_results.r_above_water, axis
 
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.r_above_water, axis=0), np.sort(inviscid_flow_results_new_approach.r_above_water, axis=0))
 
+np.testing.assert_almost_equal(np.sort(inviscid_flow_results.M_xyz, axis=0), np.sort(inviscid_flow_results_new_approach.M_xyz, axis=0))
+np.testing.assert_almost_equal(np.sort(inviscid_flow_results.M_total_above_water_in_xyz_csys, axis=0), np.sort(inviscid_flow_results_new_approach.M_total_above_water_in_xyz_csys, axis=0))
+np.testing.assert_almost_equal(np.sort(inviscid_flow_results.above_water_centre_of_effort_estimate_xyz, axis=0), np.sort(inviscid_flow_results_new_approach.above_water_centre_of_effort_estimate_xyz, axis=0))
+np.testing.assert_almost_equal(np.sort(inviscid_flow_results.F_centerline, axis=0), np.sort(inviscid_flow_results_new_approach.F_centerline, axis=0))
+np.testing.assert_almost_equal(np.sort(inviscid_flow_results.F_centerline_total, axis=0), np.sort(inviscid_flow_results_new_approach.F_centerline_total, axis=0))
+np.testing.assert_almost_equal(np.sort(inviscid_flow_results.M_centerline_csys, axis=0), np.sort(inviscid_flow_results_new_approach.M_centerline_csys, axis=0))
+np.testing.assert_almost_equal(np.sort(inviscid_flow_results.M_total_above_water_in_centerline_csys, axis=0), np.sort(inviscid_flow_results_new_approach.M_total_above_water_in_centerline_csys, axis=0))
+
+###
+
+
 #dyn_dict
 inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
 
 print("Preparing visualization.")
-display_panels_xyz_and_winds(sail_set.panels1d, inlet_condition, inviscid_flow_results, hull)
+#display_panels_xyz_and_winds(myvlm, inviscid_flow_results_new_approach, sail_set.panels1d, inlet_condition, inviscid_flow_results, hull)
 
-display_panels_xyz_and_winds_new_approach(myvlm, inlet_condition, hull)
+display_panels_xyz_and_winds_new_approach(myvlm, inviscid_flow_results_new_approach, inlet_condition, hull)
 
 # df_components, df_integrals, df_inlet_IC = save_results_to_file(inviscid_flow_results, None, inlet_condition, sail_set, output_dir_name)
 # shutil.copy(os.path.join(case_dir, case_name), os.path.join(output_dir_name, case_name))

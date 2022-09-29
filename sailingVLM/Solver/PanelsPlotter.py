@@ -95,6 +95,61 @@ def display_panels_xyz(panels1d, pressure):
     return ax, cp_points, water_size
 
 
+def display_panels_xyz_new_approach(myvlm):
+    fig = plt.figure(figsize=(12, 12))
+    ax = plt.axes(projection='3d')
+    # ax.set_title('Initial location of: \n Leading Edge, Lifting Line, Control Points and Trailing Edge')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+
+    def set_ax_eq(ax, X, Y, Z):
+        # ax.set_aspect('equal') - matplotlib bug
+        # dirty hack: NotImplementedError: It is not currently possible to manually set the aspect on 3D axes
+        max_range = np.array([X.max() - X.min(), Y.max() - Y.min(), Z.max() - Z.min()]).max() / 2.0
+
+        mid_x = (X.max() + X.min()) * 0.5
+        mid_y = (Y.max() + Y.min()) * 0.5
+        mid_z = (Z.max() + Z.min()) * 0.5
+        ax.set_xlim(mid_x - max_range, mid_x + max_range)
+        ax.set_ylim(mid_y - max_range, mid_y + max_range)
+        ax.set_zlim(mid_z - max_range, mid_z + max_range)
+
+        return max_range
+
+    # Data for a three-dimensional line
+    
+    # ax.scatter3D(le_mid_points[:, 0], le_mid_points[:, 1], le_mid_points[:, 2], c=le_mid_points[:, 2], marker="<", cmap='Greys')
+    # ax.scatter3D(cp_points[:, 0], cp_points[:, 1], cp_points[:, 2], c=cp_points[:, 2], marker="o", cmap='Greens', s=2)  # s stands for size
+    # ax.scatter3D(ctr_points[:, 0], ctr_points[:, 1], ctr_points[:, 2], c=ctr_points[:, 2], marker="x", cmap='Blues')
+    # ax.scatter3D(te_mid_points[:, 0], te_mid_points[:, 1], te_mid_points[:, 2], c=te_mid_points[:, 2], marker=">", cmap='Greys')
+
+    ### plot panels and color by pressure
+    # https://stackoverflow.com/questions/15140072/how-to-map-number-to-color-using-matplotlibs-colormap
+    #panel_points = np.array([panel.get_points() for panel in myvlm])
+    norm = mpl.colors.Normalize(vmin=min(myvlm.pressure), vmax=max(myvlm.pressure))
+    cmap = cm.hot
+    m = cm.ScalarMappable(norm=norm, cmap=cmap)
+
+    for vtx, p in zip(myvlm.panels, myvlm.pressure):
+        tri = a3.art3d.Poly3DCollection([vtx])
+        tri.set_color(m.to_rgba(p))
+        tri.set_edgecolor('k')
+        ax.add_collection3d(tri)
+
+    fig.colorbar(m, ax=ax)
+    ###
+    # plot water level
+    water_size = int(1.1*math.ceil(max(max(abs(myvlm.leading_mid_points[:, 2])), max(abs(myvlm.trailing_mid_points[:, 2])))))
+    xx, yy = np.meshgrid(range(-water_size, water_size), range(-water_size, water_size))
+    zz = 0 * xx + 0 * yy
+    ax.plot_surface(xx, yy, zz, alpha=0.25)
+
+    set_ax_eq(ax, xx, yy, zz)
+    return ax, myvlm.center_of_pressure, water_size
+
+
+
 def display_hull(ax, hull: HullGeometry):
     ax.plot(hull.deck_centerline[:, 0], hull.deck_centerline[:, 1], hull.deck_centerline[:, 2], 'gray')
     ax.plot(hull.deck_port_line[:, 0], hull.deck_port_line[:, 1], hull.deck_port_line[:, 2], 'gray')
@@ -106,12 +161,14 @@ def display_hull(ax, hull: HullGeometry):
 def display_winds(ax, cp_points, water_size,  inlet_condition: InletConditions, inviscid_flow_results):
     N = len(cp_points[:, 2])
 
+    
     mean_AWA = np.mean(inlet_condition.AWA_infs_deg)
     shift_x = (-0.925) * water_size * np.cos(np.deg2rad(mean_AWA))
     shift_y = (-0.925) * water_size * np.sin(np.deg2rad(mean_AWA))
 
     V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs, inviscid_flow_results.V_app_fs]
     colors = ['green', 'blue', 'red']  # G: True wind, B: - Apparent wind, R: Apparent + Induced wind
+    zipp = zip(V_winds, colors)
     for V_wind, color in zip(V_winds, colors):
         # V_wind = V_winds[2]
         # color = colors[2]
@@ -129,17 +186,21 @@ def display_winds(ax, cp_points, water_size,  inlet_condition: InletConditions, 
             else:
                 arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.15)
             ax.add_artist(arrow)
+    # potem wywalic tego returna
+    return V_winds, ax, zipp
 
 
-def display_winds_new_approach(ax, cp_points, water_size,  inlet_condition: InletConditions, myvlm : NewVlm):
+def display_winds_new_approach(ax, cp_points, water_size,  inlet_condition: InletConditions, inviscid_flow_results):
     N = len(cp_points[:, 2])
 
+    
     mean_AWA = np.mean(inlet_condition.AWA_infs_deg)
     shift_x = (-0.925) * water_size * np.cos(np.deg2rad(mean_AWA))
     shift_y = (-0.925) * water_size * np.sin(np.deg2rad(mean_AWA))
 
-    V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs, myvlm.V_app_fs]
+    V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs, inviscid_flow_results.V_app_fs]
     colors = ['green', 'blue', 'red']  # G: True wind, B: - Apparent wind, R: Apparent + Induced wind
+    zipp = zip(V_winds, colors)
     for V_wind, color in zip(V_winds, colors):
         # V_wind = V_winds[2]
         # color = colors[2]
@@ -157,8 +218,10 @@ def display_winds_new_approach(ax, cp_points, water_size,  inlet_condition: Inle
             else:
                 arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.15)
             ax.add_artist(arrow)
+    return V_winds, ax, zipp
 
 
+    
 def display_CE_CLR(ax,
                    inviscid_flow_results: InviscidFlowResults,
                    hull: HullGeometry):
@@ -178,6 +241,8 @@ def display_CE_CLR(ax,
     F = scale * normalize(inviscid_flow_results.F_xyz_total)
     plot_vector(ce, F)
     plot_vector(clr, -F)
+    
+    return scale, clr, ce, F
 
 def display_CE_CLR_new_approach(ax,
                    myvlm : NewVlm,
@@ -218,7 +283,27 @@ def display_forces_xyz(ax, panels1d, inviscid_flow_results: InviscidFlowResults)
         plot_vector(cp, F_normalized)
 
 
-def display_panels_xyz_and_winds(panels1d,
+def display_panels_xyz_and_winds_new_approach(myvlm : NewVlm,
+                                 inviscid_flow_results: InviscidFlowResults,
+                                 inlet_condition: InletConditions,
+                                 hull: HullGeometry,
+                                 show_plot=True
+
+                                 ):
+    ax, cp_points, water_size = display_panels_xyz_new_approach(myvlm)
+    ax.set_title('Panels colored by pressure \n'
+                 'Winds: True (green), Apparent (blue), Apparent + Induced (red) \n'
+                 'Centre of Effort & Center of Lateral Resistance (black)')
+
+    display_hull(ax, hull)
+    _, _, _ = display_winds_new_approach(ax, cp_points, water_size, inlet_condition, inviscid_flow_results)
+    # display_forces_xyz(ax, panels1d, inviscid_flow_results)
+    _, _, _, _ = display_CE_CLR(ax, inviscid_flow_results, hull)
+    if show_plot:
+        plt.show()
+        
+        
+def display_panels_xyz_and_winds(myvlm, inviscid_flow_results_new: InviscidFlowResults, panels1d,
                                  inlet_condition: InletConditions,
                                  inviscid_flow_results: InviscidFlowResults,
                                  hull: HullGeometry,
@@ -226,35 +311,53 @@ def display_panels_xyz_and_winds(panels1d,
 
                                  ):
     ax, cp_points, water_size = display_panels_xyz(panels1d, inviscid_flow_results.pressure)
+    my_ax, my_cp_points, my_water_size = display_panels_xyz_new_approach(myvlm)
+
+    np.testing.assert_almost_equal(np.sort(cp_points, axis=0), np.sort(my_cp_points, axis=0))
+    np.testing.assert_equal(water_size,my_water_size)
     ax.set_title('Panels colored by pressure \n'
                  'Winds: True (green), Apparent (blue), Apparent + Induced (red) \n'
                  'Centre of Effort & Center of Lateral Resistance (black)')
 
     display_hull(ax, hull)
-    display_winds(ax, cp_points, water_size, inlet_condition, inviscid_flow_results)
-    # display_forces_xyz(ax, panels1d, inviscid_flow_results)
-    display_CE_CLR(ax, inviscid_flow_results, hull)
+    display_hull(my_ax, hull)
+    V_winds, ax, zip1 = display_winds(ax, cp_points, water_size, inlet_condition, inviscid_flow_results)
+    my_V_winds, my_ax, zip2 = display_winds_new_approach(my_ax, my_cp_points, my_water_size, inlet_condition, inviscid_flow_results_new)
+    # tests colors in zipps
+    zipped_list1 = list(zip1)
+    zipped_list2 = list(zip2)
+    
+    # green
+    np.testing.assert_almost_equal(np.sort(zipped_list1[0][0], axis=0), np.sort(zipped_list2[0][0], axis=0))
+    # blue
+    np.testing.assert_almost_equal(np.sort(zipped_list1[1][0], axis=0), np.sort(zipped_list2[1][0], axis=0))
+    # red
+    np.testing.assert_almost_equal(np.sort(zipped_list1[2][0], axis=0), np.sort(zipped_list2[2][0], axis=0))
+    
+    test = np.asarray([np.asarray(list(ax.artists[i]._verts3d)) for i in range(len(ax.artists))])
+    my_test = np.asarray([np.asarray(list(my_ax.artists[i]._verts3d)) for i in range(len(my_ax.artists))])
+    
+    np.testing.assert_almost_equal(np.sort(test, axis=0), np.sort(my_test, axis=0))
+    np.testing.assert_almost_equal(np.sort(V_winds, axis=0), np.sort(my_V_winds, axis=0))
+    
+    scale, clr, ce, F = display_CE_CLR(ax, inviscid_flow_results, hull)
+    my_scale, my_clr, my_ce, my_F = display_CE_CLR(my_ax, inviscid_flow_results_new, hull)
+    
+    #test = np.asarray([np.asarray(list(ax.artists[i]._verts3d)) for i in range(len(ax.artists))])
+    #my_test = np.asarray([np.asarray(list(my_ax.artists[i]._verts3d)) for i in range(len(my_ax.artists))])
+    
+    #np.testing.assert_almost_equal(np.sort(test, axis=0), np.sort(my_test, axis=0))
+
+    
+    
+    # np.testing.assert_almost_equal(scale, my_scale)
+    # np.testing.assert_almost_equal(np.sort(clr, axis=0), np.sort(my_clr, axis=0))
+    # np.testing.assert_almost_equal(np.sort(ce, axis=0), np.sort(my_ce, axis=0))
+    # np.testing.assert_almost_equal(np.sort(F, axis=0), np.sort(my_F, axis=0))
+    
     if show_plot:
         plt.show()
 
-def display_panels_xyz_and_winds_new_approach(myvlm : NewVlm,
-                                 inlet_condition: InletConditions,
-                                 hull: HullGeometry,
-                                 show_plot=True
-
-                                 ):
-    ax, cp_points, water_size = display_panels_xyz(myvlm.panels, myvlm.pressure)
-    ax.set_title('Panels colored by pressure \n'
-                 'Winds: True (green), Apparent (blue), Apparent + Induced (red) \n'
-                 'Centre of Effort & Center of Lateral Resistance (black)')
-
-    display_hull(ax, hull)
-    display_winds_new_approach(ax, cp_points, water_size, inlet_condition, myvlm)
-    # display_forces_xyz(ax, panels1d, inviscid_flow_results)
-    display_CE_CLR(ax, myvlm, hull)
-    if show_plot:
-        plt.show()
-        
 def display_panels_xz(panels1d):
     fig_name = f'plots/xy_initial_geometry_plot.png'
     plt.rcParams.update({'font.size': 14})

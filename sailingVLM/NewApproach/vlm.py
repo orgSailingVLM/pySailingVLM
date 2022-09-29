@@ -3,7 +3,7 @@ import numpy as np
 from sailingVLM.Inlet.InletConditions import InletConditionsNew
 from sailingVLM.NewApproach.vlm_logic import \
     get_panels_area, \
-    calculate_normals_collocations_cps_rings_spans, \
+    calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points, \
     get_influence_coefficients_spanwise, \
     solve_eq, calc_induced_velocity,  \
     is_no_flux_BC_satisfied, \
@@ -101,6 +101,8 @@ class NewVlm:
     # post init atributes
     areas : np.ndarray = field(init=False)
     normals : np.ndarray = field(init=False)
+    leading_mid_points : np.ndarray = field(init=False)
+    trailing_mid_points : np.ndarray = field(init=False)
     collocation_points : np.ndarray = field(init=False)
     center_of_pressure : np.ndarray = field(init=False)
     rings : np.ndarray = field(init=False)
@@ -120,7 +122,7 @@ class NewVlm:
         # M = wzdluz rozpoetosci skrzydel, spanwise
         # N = chordwise, linia laczaca leading i trailing
         self.areas = get_panels_area(self.panels) 
-        self.normals, self.collocation_points, self.center_of_pressure, self.rings, self.span_vectors = calculate_normals_collocations_cps_rings_spans(self.panels, self.gamma_orientation)
+        self.normals, self.collocation_points, self.center_of_pressure, self.rings, self.span_vectors, self.leading_mid_points, self.trailing_mid_points = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(self.panels, self.gamma_orientation)
         
         self.inlet_conditions = InletConditionsNew(self.wind, self.rho, self.center_of_pressure)
         
