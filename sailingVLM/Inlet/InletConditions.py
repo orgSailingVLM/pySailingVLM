@@ -44,6 +44,7 @@ class InletConditions:
         df = pd.DataFrame.from_records(obj_as_dict)
         return df
 
+# zly agrument
 class InletConditionsNew:
     def __init__(self, winds: WindBase, rho, center_of_pressure: np.ndarray):
         self.rho = rho  # fluid density [kg/m3]
