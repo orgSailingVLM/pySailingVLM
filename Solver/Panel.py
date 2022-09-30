@@ -39,6 +39,8 @@ class Panel(object):
 
         self.pressure = None
         self.force_xyz = None
+        self.V_app_fs_at_cp = None
+        self.V_induced_at_cp = None
 
         if not self._are_points_coplanar() and not Panel._are_no_coplanar_panels_reported:
             print("Panels are not coplanar (twisted).")

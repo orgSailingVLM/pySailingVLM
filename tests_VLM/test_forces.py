@@ -76,8 +76,7 @@ class TestForces(TestCase):
 
         assert is_no_flux_BC_satisfied(V_app_fw, panels)
 
-        _, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
-
+        calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
         F = get_forces_from_panels(panels)
         F = F.reshape(N, 3)
         ### compare vlm with book coeff_formulas ###
@@ -110,9 +109,9 @@ class TestForces(TestCase):
 
         assert is_no_flux_BC_satisfied(V_app_fw, panels)
 
-        F, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
+        calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
+        F = get_forces_from_panels(panels)
         F = F.reshape(N, 3)
-
         ### compare vlm with book coeff_formulas ###
         CL_vlm, CD_vlm = self.get_CL_CD_from_F(F)
 

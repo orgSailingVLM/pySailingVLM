@@ -7,7 +7,7 @@ from Solver import Panel
 from Rotations.CSYS_transformations import CSYS_transformations
 from Solver.mesher import make_panels_from_le_te_points, make_panels_from_le_points_and_chords
 from typing import List
-from Solver.forces import get_p_from_panels, get_forces_from_panels
+from Solver.forces import get_p_from_panels, get_forces_from_panels, get_V_induced_at_cp_from_panels, get_V_app_fs_at_cp_from_panels
 
 
 # np.set_printoptions(precision=3, suppress=True)
@@ -57,6 +57,14 @@ class BaseGeometry:
     @property
     def forces_xyz(self):
         return get_forces_from_panels(self.panels)
+
+    @property
+    def V_app_fs_at_cp(self):
+        return get_V_app_fs_at_cp_from_panels(self.panels)
+
+    @property
+    def V_induced_at_cp(self):
+        return get_V_induced_at_cp_from_panels(self.panels)
 
 
 class SailGeometry(BaseGeometry, ABC):

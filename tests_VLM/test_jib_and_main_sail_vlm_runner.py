@@ -13,7 +13,7 @@ from Solver.PanelsPlotter import display_panels_xyz_and_winds
 from Solver.vlm_solver import is_no_flux_BC_satisfied
 
 from Solver.vlm_solver import calc_circulation
-from ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_llt
+from ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_llt, prepare_inviscid_flow_results_vlm
 from Solver.vlm_solver import calculate_app_fs
 
 import pandas as pd
@@ -67,12 +67,26 @@ class TestVLM_Solver(TestCase):
 
     def test_calc_forces_and_moments(self):
         gamma_magnitude, v_ind_coeff = calc_circulation(self.inlet_condition.V_app_infs, self.sail_set.panels1d)
-        V_induced, V_app_fs = calculate_app_fs(self.inlet_condition, v_ind_coeff, gamma_magnitude)
-        assert is_no_flux_BC_satisfied(V_app_fs, self.sail_set.panels1d)
+        # was
+        # V_induced, V_app_fs = calculate_app_fs(self.inlet_condition, v_ind_coeff, gamma_magnitude)
+        # assert is_no_flux_BC_satisfied(V_app_fs, self.sail_set.panels1d)
+        # inviscid_flow_results = prepare_inviscid_flow_results_llt(V_app_fs, V_induced, gamma_magnitude,
+        #                                                           self.sail_set, self.inlet_condition,
+        #                                                           self.csys_transformations)
 
-        inviscid_flow_results = prepare_inviscid_flow_results_llt(V_app_fs, V_induced, gamma_magnitude,
+
+        # is
+        V_induced_at_ctrl_p, V_app_fs_at_ctrl_p = calculate_app_fs(self.inlet_condition, v_ind_coeff, gamma_magnitude)
+        assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, self.sail_set.panels1d)
+        inviscid_flow_results = prepare_inviscid_flow_results_llt(V_app_fs_at_ctrl_p, V_induced_at_ctrl_p, gamma_magnitude,
                                                                   self.sail_set, self.inlet_condition,
                                                                   self.csys_transformations)
+
+        # todo llt vs vlm
+        inviscid_flow_results_vlm_at_cp = prepare_inviscid_flow_results_vlm(gamma_magnitude,
+                                                                   self.sail_set, self.inlet_condition,
+                                                                   self.csys_transformations)
+
 
         inviscid_flow_results.estimate_heeling_moment_from_keel(self.hull.center_of_lateral_resistance)
         # display_panels_xyz_and_winds(self.sail_set.panels1d, self.inlet_condition, inviscid_flow_results, self.hull, show_plot=False)

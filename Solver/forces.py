@@ -68,7 +68,7 @@ def calc_force_LLT_xyz(V_app_fs_at_cp, gamma_magnitude, panels1d, rho):
         gamma = span_vectors[i] * gamma_magnitude[i]
         panels1d[i].force_xyz = rho * np.cross(V_app_fs_at_cp[i], gamma)
 
-def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels: List[Panel], rho):
+def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
     """
     Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     f. Secondary Computations: Pressures, Loads, Velocities, Etc
@@ -85,8 +85,11 @@ def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels: List[Panel], rho):
     V_app_fs_at_cp, V_induced_at_cp = calc_V_at_cp(V_app_infw, gamma_magnitude, panels)
 
     V_app_fs_at_cp_re = V_app_fs_at_cp.reshape(panels.shape[0], panels.shape[1], 3)
-    gamma_re = gamma_magnitude.reshape(panels.shape)
+    V_induced_at_cp_re = V_induced_at_cp.reshape(panels.shape[0], panels.shape[1], 3)
+
     force_re_xyz = np.full((panels.shape[0], panels.shape[1], 3), 0., dtype=float)
+    gamma_re = gamma_magnitude.reshape(panels.shape)
+
     for i in range(0, panels.shape[0]):
         for j in range(0, panels.shape[1]):
             if i == 0:  # leading edge only
@@ -97,10 +100,14 @@ def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels: List[Panel], rho):
             force_tmp = rho * np.cross(V_app_fs_at_cp_re[i, j], gamma)
             force_re_xyz[i, j, :] = force_tmp
             panels[i, j].force_xyz = force_tmp
+            panels[i, j].V_app_fs_at_cp = V_app_fs_at_cp_re[i, j]
+            panels[i, j].V_induced_at_cp = V_induced_at_cp_re[i, j]
+
 
     return force_re_xyz, V_app_fs_at_cp, V_induced_at_cp
 
 
+# TODO: make a dynamic getter...
 def get_p_from_panels(panels):
     p = np.zeros(shape=panels.shape)
     for i in range(panels.shape[0]):
@@ -115,6 +122,20 @@ def get_forces_from_panels(panels):
         for j in range(panels.shape[1]):
             forces[i, j, :] = panels[i, j].force_xyz
     return forces
+
+def get_V_app_fs_at_cp_from_panels(panels):
+    V_app_fs_at_cp = np.full((panels.shape[0], panels.shape[1], 3), 0., dtype=float)
+    for i in range(panels.shape[0]):
+        for j in range(panels.shape[1]):
+            V_app_fs_at_cp[i, j, :] = panels[i, j].V_app_fs_at_cp
+    return V_app_fs_at_cp
+
+def get_V_induced_at_cp_from_panels(panels):
+    V_induced_at_cp = np.full((panels.shape[0], panels.shape[1], 3), 0., dtype=float)
+    for i in range(panels.shape[0]):
+        for j in range(panels.shape[1]):
+            V_induced_at_cp[i, j, :] = panels[i, j].V_induced_at_cp
+    return V_induced_at_cp
 
 def determine_vector_from_its_dot_and_cross_product(F, r_dot_F, r_cross_F):
     # https://math.stackexchange.com/questions/246594/what-is-vector-division

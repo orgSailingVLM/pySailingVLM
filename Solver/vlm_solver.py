@@ -27,7 +27,7 @@ def assembly_sys_of_eq(V_app_infw, panels: List[Panel]):
 
         for j in range(0, N):
             # velocity induced at i-th control point by j-th vortex
-            # poza tym funkcja po kropce robi obliczenia cross, mozna cos zrobic py ta funkcja teraz sie tu liczyla szybciej
+            # poza tym funkcja po kropce robi obliczenia cross, moznaby cos zrobic aby ta funkcja teraz sie tu liczyla szybciej
             # na tablicy zawierajacej linie cyrkulacji
 
             v_ind_coeff[i][j] = panels1D[j].get_induced_velocity(ctr_p, V_app_infw[j])

@@ -5,7 +5,7 @@ from Solver.vlm_solver import calc_circulation
 from Solver.mesher import make_panels_from_le_te_points
 from Rotations.geometry_calc import rotation_matrix
 from Solver.coeff_formulas import get_CL_CD_free_wing
-from Solver.forces import calc_force_VLM_xyz
+from Solver.forces import calc_force_VLM_xyz, get_forces_from_panels
 from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
 
 ### GEOMETRY DEFINITION ###
@@ -75,7 +75,8 @@ V_app_fw_at_ctrl_p = V_app_infw + V_induced_at_ctrl_p
 assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p, panels)
 
 
-F, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho)
+_, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho)
+F = get_forces_from_panels(panels)
 F = F.reshape(N, 3)
 
 map(lambda x: x.calc_pressure(), panels.flatten())
