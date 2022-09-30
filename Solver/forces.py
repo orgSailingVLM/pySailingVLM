@@ -62,16 +62,7 @@ def calc_V_at_cp(V_app_infw, gamma_magnitude, panels):
     V_app_fs_at_cp = V_app_infw + V_induced_at_cp
     return V_app_fs_at_cp, V_induced_at_cp
 
-
-def calc_force_LLT_xyz(V_app_fs_at_cp, gamma_magnitude, span_vectors, rho):
-    N = len(gamma_magnitude)
-    force_xyz = np.full((N, 3), 0., dtype=float)
-    for i in range(0, N):
-        gamma = span_vectors[i] * gamma_magnitude[i]
-        force_xyz[i] = rho * np.cross(V_app_fs_at_cp[i], gamma)
-    return force_xyz
-
-def calc_force_LLT_xyz_new(V_app_fs_at_cp, gamma_magnitude, panels1d, rho):
+def calc_force_LLT_xyz(V_app_fs_at_cp, gamma_magnitude, panels1d, rho):
     span_vectors = np.array([p.get_span_vector() for p in panels1d])
     for i in range(0, len(gamma_magnitude)):
         gamma = span_vectors[i] * gamma_magnitude[i]

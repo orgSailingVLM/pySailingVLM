@@ -6,45 +6,9 @@ from Rotations.CSYS_transformations import CSYS_transformations
 from YachtGeometry.SailGeometry import SailSet
 
 from Inlet.InletConditions import InletConditions
-from Solver.forces import calc_force_LLT_xyz, calc_force_VLM_xyz
-
+from Solver.forces import calc_force_LLT_xyz, calc_force_VLM_xyz, get_p_from_panels, get_forces_from_panels
 
 def prepare_inviscid_flow_results_llt(V_app_fs_at_cp, V_induced, gamma_magnitude,
-                                      sail_set: SailSet,
-                                      inletConditions: InletConditions,
-                                      csys_transformations: CSYS_transformations):
-
-    spans = np.array([p.get_span_vector() for p in sail_set.panels1d])
-    force_xyz = calc_force_LLT_xyz(V_app_fs_at_cp, gamma_magnitude, spans, inletConditions.rho)  # be carefull V_app_fs shall be calculated with respect to cp
-
-
-    def calc_pressure(force, panels):
-        panels_1d = panels.flatten()
-        n = len(panels_1d)
-        p = np.zeros(shape=n)
-
-        for i in range(n):
-            area = panels_1d[i].get_panel_area()
-            n = panels_1d[i].get_normal_to_panel()
-            p[i] = np.dot(force[i], n) / area  # todo: fix sign
-            # p[i] = np.linalg.norm(force[i], axis=0)/ area  # this make a difference (due to induced drag)
-        return p
-
-    # [panel.calc_pressure() for panel in sail_set.panels1d]
-    pressure = calc_pressure(force_xyz, sail_set.panels1d)
-
-
-    panels_1d = sail_set.panels1d.flatten()
-    n = len(panels_1d)
-    for i in range(n):
-        panels_1d[i].pressure = pressure[i]
-        panels_1d[i].force_xyz = force_xyz[i]
-
-    inviscid_flow_results = InviscidFlowResults(gamma_magnitude, V_induced, V_app_fs_at_cp,
-                                                sail_set, csys_transformations)
-    return inviscid_flow_results
-
-def prepare_inviscid_flow_results_llt_new(V_app_fs_at_cp, V_induced, gamma_magnitude,
                                       sail_set: SailSet,
                                       inletConditions: InletConditions,
                                       csys_transformations: CSYS_transformations):
@@ -52,9 +16,7 @@ def prepare_inviscid_flow_results_llt_new(V_app_fs_at_cp, V_induced, gamma_magni
     # be carefull V_app_fs shall be calculated with respect to cp
     calc_force_LLT_xyz(V_app_fs_at_cp, gamma_magnitude, sail_set.panels1d, inletConditions.rho)
     [panel.calc_pressure() for panel in sail_set.panels1d]
-
-    inviscid_flow_results = InviscidFlowResults(
-        gamma_magnitude, V_induced, V_app_fs_at_cp, sail_set, csys_transformations)
+    inviscid_flow_results = InviscidFlowResults(gamma_magnitude, V_induced, V_app_fs_at_cp, sail_set, csys_transformations)
     return inviscid_flow_results
 
 
