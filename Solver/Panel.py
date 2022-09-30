@@ -37,11 +37,19 @@ class Panel(object):
         self.counter = Panel.panel_counter
         Panel.panel_counter += 1
 
+        self.pressure = None
+        self.force_xyz = None
+
         if not self._are_points_coplanar() and not Panel._are_no_coplanar_panels_reported:
             print("Panels are not coplanar (twisted).")
             Panel._are_no_coplanar_panels_reported = True
             # warnings.warn("Points on Panel are not coplanar!")
             # raise ValueError("Points on Panel are not coplanar!")
+
+    def calc_pressure(self):
+        area = self.get_panel_area()
+        n = self.get_normal_to_panel()
+        self.pressure = np.dot(self.force_xyz, n) / area  # todo: fix sign
 
     def _are_points_coplanar(self):
         # P1P2 = self.p1 - self.p2

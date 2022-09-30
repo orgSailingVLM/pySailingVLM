@@ -1,6 +1,8 @@
 import numpy as np
 from Solver.vlm_solver import calc_induced_velocity
 
+from Solver.Panel import Panel
+from typing import List
 
 
 def calc_moment_arm_in_shifted_csys(cp_points, v_from_old_2_new_csys):
@@ -69,8 +71,13 @@ def calc_force_LLT_xyz(V_app_fs_at_cp, gamma_magnitude, span_vectors, rho):
         force_xyz[i] = rho * np.cross(V_app_fs_at_cp[i], gamma)
     return force_xyz
 
+def calc_force_LLT_xyz_new(V_app_fs_at_cp, gamma_magnitude, panels1d, rho):
+    span_vectors = np.array([p.get_span_vector() for p in panels1d])
+    for i in range(0, len(gamma_magnitude)):
+        gamma = span_vectors[i] * gamma_magnitude[i]
+        panels1d[i].force_xyz = rho * np.cross(V_app_fs_at_cp[i], gamma)
 
-def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
+def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels: List[Panel], rho):
     """
     Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     f. Secondary Computations: Pressures, Loads, Velocities, Etc
@@ -79,6 +86,7 @@ def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
     force = rho* (V_app_fw_at_cp x gamma*span)
     :param V_app_infw: apparent wind
     :param gamma_magnitude: vector with circulations
+    :param panels: list
     :param rho: air density
     :return: force
     """
@@ -95,34 +103,27 @@ def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
             else:
                 gamma = panels[i, j].get_span_vector() * (gamma_re[i, j]-gamma_re[i-1, j])
 
-            force_re_xyz[i, j, :] = rho * np.cross(V_app_fs_at_cp_re[i, j], gamma)
+            force_tmp = rho * np.cross(V_app_fs_at_cp_re[i, j], gamma)
+            force_re_xyz[i, j, :] = force_tmp
+            panels[i, j].force_xyz = force_tmp
 
     return force_re_xyz, V_app_fs_at_cp, V_induced_at_cp
 
 
-def calc_pressure_xyz3d(force, panels):
-    # todo: this is a new version
+def get_p_from_panels(panels):
     p = np.zeros(shape=panels.shape)
     for i in range(panels.shape[0]):
         for j in range(panels.shape[1]):
-            area = panels[i, j].get_panel_area()
-            n = panels[i, j].get_normal_to_panel()
-            p[i, j] = np.dot(force[i, j], n) / area  # todo: fix sign
+            p[i, j] = panels[i, j].pressure
     return p
 
 
-def calc_pressure(force, panels):
-    panels_1d = panels.flatten()
-    n = len(panels_1d)
-    p = np.zeros(shape=n)
-
-    for i in range(n):
-        area = panels_1d[i].get_panel_area()
-        n = panels_1d[i].get_normal_to_panel()
-        p[i] = np.dot(force[i], n) / area  # todo: fix sign
-        # p[i] = np.linalg.norm(force[i], axis=0)/ area  # this make a difference (due to induced drag)
-    return p
-
+def get_forces_from_panels(panels):
+    forces = np.full((panels.shape[0], panels.shape[1], 3), 0., dtype=float)
+    for i in range(panels.shape[0]):
+        for j in range(panels.shape[1]):
+            forces[i, j, :] = panels[i, j].force_xyz
+    return forces
 
 def determine_vector_from_its_dot_and_cross_product(F, r_dot_F, r_cross_F):
     # https://math.stackexchange.com/questions/246594/what-is-vector-division

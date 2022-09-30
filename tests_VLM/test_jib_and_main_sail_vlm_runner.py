@@ -75,7 +75,7 @@ class TestVLM_Solver(TestCase):
                                                                   self.csys_transformations)
 
         inviscid_flow_results.estimate_heeling_moment_from_keel(self.hull.center_of_lateral_resistance)
-        display_panels_xyz_and_winds(self.sail_set.panels1d, self.inlet_condition, inviscid_flow_results, self.hull, show_plot=False)
+        # display_panels_xyz_and_winds(self.sail_set.panels1d, self.inlet_condition, inviscid_flow_results, self.hull, show_plot=False)
 
         df_components, df_integrals, df_inlet_IC = save_results_to_file(
             inviscid_flow_results, None, self.inlet_condition, self.sail_set, output_dir_name)
@@ -92,11 +92,6 @@ class TestVLM_Solver(TestCase):
         df_integrals.to_csv('expected_df_integrals.csv', index=False)
         df_inlet_IC.to_csv('expected_df_inlet_IC.csv')
 
-        expected_df_components = pd.read_csv(os.path.join(case_dir, 'expected_df_components.csv'))
-        expected_df_components.set_index('Unnamed: 0', inplace=True)  # the mirror part is not stored, thus half of the indices are cut off
-        expected_df_components.index.name = None
-        assert_frame_equal(df_components, expected_df_components)
-
         expected_df_integrals = pd.read_csv(os.path.join(case_dir, 'expected_df_integrals.csv'))
         assert_frame_equal(df_integrals, expected_df_integrals)
 
@@ -104,3 +99,8 @@ class TestVLM_Solver(TestCase):
         expected_df_inlet_ic.set_index('Unnamed: 0', inplace=True)  # the mirror part is not stored, thus half of the indices are cut off
         expected_df_inlet_ic.index.name = None
         assert_frame_equal(df_inlet_IC, expected_df_inlet_ic)
+
+        expected_df_components = pd.read_csv(os.path.join(case_dir, 'expected_df_components.csv'))
+        expected_df_components.set_index('Unnamed: 0', inplace=True)  # the mirror part is not stored, thus half of the indices are cut off
+        expected_df_components.index.name = None
+        assert_frame_equal(df_components, expected_df_components)

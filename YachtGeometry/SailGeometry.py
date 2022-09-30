@@ -1,16 +1,16 @@
 import numpy as np
 import pandas as pd
 
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from Rotations.geometry_calc import rotation_matrix
 from Solver import Panel
 from Rotations.CSYS_transformations import CSYS_transformations
 from Solver.mesher import make_panels_from_le_te_points, make_panels_from_le_points_and_chords
 from typing import List
+from Solver.forces import get_p_from_panels, get_forces_from_panels
 
 
 # np.set_printoptions(precision=3, suppress=True)
-
 
 class BaseGeometry:
     @property
@@ -32,9 +32,6 @@ class BaseGeometry:
     def extract_data_above_water_to_df(self, data):
         pass
 
-    def get_cp_points(self):
-        return np.array([p.get_cp_position() for p in self.panels1d])
-
     @abstractmethod
     def sail_cp_to_girths(self):
         pass
@@ -43,12 +40,30 @@ class BaseGeometry:
     def get_cp_points_upright(self):
         pass
 
+    def get_cp_points(self):
+        cp_points = np.zeros(shape=self.panels.shape)
+        for i in range(self.panels.shape[0]):
+            for j in range(self.panels.shape[1]):
+                cp_points[i, j] = self.panels[i, j].get_cp_position()
+        return cp_points
 
-class SailGeometry(BaseGeometry):
+    def get_cp_points1d(self):
+        return np.array([p.get_cp_position() for p in self.panels1d])
+
+    @property
+    def pressures(self):
+        return get_p_from_panels(self.panels)
+
+    @property
+    def forces_xyz(self):
+        return get_forces_from_panels(self.panels)
+
+
+class SailGeometry(BaseGeometry, ABC):
     def __init__(self, head_mounting: np.array, tack_mounting: np.array,
                  csys_transformations: CSYS_transformations,
                  n_spanwise=10, n_chordwise=1, chords=None,
-                 initial_sail_twist_deg=None, name=None, LLT_twist = None
+                 initial_sail_twist_deg=None, name=None, LLT_twist=None
                  ):
 
         self.__n_spanwise = n_spanwise  # number of panels (span-wise) - above the water
@@ -122,7 +137,8 @@ class SailGeometry(BaseGeometry):
                 axis = le_NW - le_SW  # head - tack
                 rchords_vec = self.rotate_chord_around_le(axis, rchords_vec, sail_twist_deg)
                 underwater_axis = le_NW_underwater - le_SW_underwater  # head - tack
-                frchords_vec = self.rotate_chord_around_le(underwater_axis, frchords_vec, np.flip(sail_twist_deg, axis=0))
+                frchords_vec = self.rotate_chord_around_le(underwater_axis, frchords_vec,
+                                                           np.flip(sail_twist_deg, axis=0))
                 pass
 
             panels, mesh = make_panels_from_le_points_and_chords(
@@ -152,7 +168,7 @@ class SailGeometry(BaseGeometry):
 
         # https://stackoverflow.com/questions/33356442/when-should-i-use-hstack-vstack-vs-append-vs-concatenate-vs-column-stack
         # self.__panels = np.vstack((panels, panels_mirror)) # todo: vstack seems to be more reasonable
-        self.__panels = np.hstack((panels_mirror, panels)) # old version
+        self.__panels = np.hstack((panels_mirror, panels))  # old version
         self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
 
@@ -167,7 +183,7 @@ class SailGeometry(BaseGeometry):
         return rchords_vec
 
     def get_cp_points_upright(self):
-        cp_points = self.get_cp_points()
+        cp_points = self.get_cp_points1d()
         cp_straight_yacht = np.array([self.csys_transformations.reverse_rotations_with_mirror(p) for p in cp_points])
         return cp_straight_yacht
 
@@ -189,6 +205,7 @@ class SailGeometry(BaseGeometry):
     @property
     def panels(self) -> np.array([Panel]):
         return self.__panels
+
 
 class SailSet(BaseGeometry):
     def __init__(self, sails: List[SailGeometry]):
@@ -224,14 +241,14 @@ class SailSet(BaseGeometry):
         return y_as_girths
 
     def extract_data_above_water_by_id(self, data, sail_no):
-        all_cp_points = self.get_cp_points()[:, 2]
-        reference_cp_points = self.sails[sail_no].get_cp_points()[:, 2]
+        all_cp_points = self.get_cp_points1d()[:, 2]
+        reference_cp_points = self.sails[sail_no].get_cp_points1d()[:, 2]
         above_water_ref_cp_points = reference_cp_points[reference_cp_points > 0].transpose()
         index_array = np.array([np.where(all_cp_points == point)[0][0] for point in above_water_ref_cp_points])
 
         if isinstance(data, pd.DataFrame):
             above_water_quantities = data.iloc[index_array]
-        elif isinstance(data,np.ndarray):
+        elif isinstance(data, np.ndarray):
             above_water_quantities = data[index_array, :]
         else:
             raise NotImplementedError

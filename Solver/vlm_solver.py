@@ -1,11 +1,12 @@
 import numpy as np
 from Solver.Panel import Panel
+from typing import List
 from Solver.TrailingEdgePanel import TrailingEdgePanel
 
 
 # pomyslec nad jit by kod byl kompilowany
 # to mozna zrownoleglic jakos
-def assembly_sys_of_eq(V_app_infw, panels):
+def assembly_sys_of_eq(V_app_infw, panels: List[Panel]):
     # lista paneli jest wolna - zmiejszamy ilosc wymiarow listy
     panels1D = panels.flatten()
     N = len(panels1D)
