@@ -43,7 +43,6 @@ class BaseGeometry:
     def get_cp_points(self):
         return get_stuff_from_panels(self.panels, 'cp_position', (self.panels.shape[0], self.panels.shape[1], 1))
 
-
     def get_cp_points1d(self):
         return get_stuff_from_panels(self.panels1d, 'cp_position', (self.panels1d.shape[0], 3))
 
@@ -257,7 +256,12 @@ class SailSet(BaseGeometry):
         if isinstance(data, pd.DataFrame):
             above_water_quantities = data.iloc[index_array]
         elif isinstance(data, np.ndarray):
-            above_water_quantities = data[index_array, :]
+            if len(data.shape) == 1:
+                above_water_quantities = data[index_array]
+            elif len(data.shape) == 2:
+                above_water_quantities = data[index_array, :]
+            else:
+                raise NotImplementedError
         else:
             raise NotImplementedError
 

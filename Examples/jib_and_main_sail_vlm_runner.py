@@ -92,8 +92,4 @@ print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
 
 print("Preparing visualization.")
 display_panels_xyz_and_winds(sail_set.panels1d, inlet_condition, inviscid_flow_results, hull)
-
-#
-# import matplotlib.pyplot as plt
-# plt.plot([1,2,3],[5,6,7])
-# plt.show()
+print("Finished.")
