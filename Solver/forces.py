@@ -66,7 +66,7 @@ def calc_force_LLT_xyz(V_app_fs_at_cp, gamma_magnitude, panels1d, rho):
     span_vectors = np.array([p.get_span_vector() for p in panels1d])
     for i in range(0, len(gamma_magnitude)):
         gamma = span_vectors[i] * gamma_magnitude[i]
-        panels1d[i].force_xyz = rho * np.cross(V_app_fs_at_cp[i], gamma)
+        panels1d[i].force_xyz = rho * np.cross(V_app_fs_at_cp[i], gamma)    # there is only one panel chordwise --> leading edge formula
 
 def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
     """
@@ -102,7 +102,6 @@ def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
             panels[i, j].force_xyz = force_tmp
             panels[i, j].V_app_fs_at_cp = V_app_fs_at_cp_re[i, j]
             panels[i, j].V_induced_at_cp = V_induced_at_cp_re[i, j]
-
 
     return force_re_xyz, V_app_fs_at_cp, V_induced_at_cp
 

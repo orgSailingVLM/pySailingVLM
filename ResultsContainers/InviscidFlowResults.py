@@ -8,30 +8,30 @@ from YachtGeometry.SailGeometry import SailSet
 from Inlet.InletConditions import InletConditions
 from Solver.forces import calc_force_LLT_xyz, calc_force_VLM_xyz, get_p_from_panels, get_forces_from_panels
 
-#todo: V_induced at?
-def prepare_inviscid_flow_results_llt(V_app_fs_at_cp, V_induced, gamma_magnitude,
+def prepare_inviscid_flow_results_llt(V_app_fs_at_cp, V_induced_at_cp, gamma_magnitude,
                                       sail_set: SailSet,
                                       inletConditions: InletConditions,
                                       csys_transformations: CSYS_transformations):
 
-    # be carefull V_app_fs shall be calculated with respect to cp
+    # be careful, V_app_fs shall be calculated with respect to cp
     calc_force_LLT_xyz(V_app_fs_at_cp, gamma_magnitude, sail_set.panels1d, inletConditions.rho)
     [panel.calc_pressure() for panel in sail_set.panels1d]
-    inviscid_flow_results = InviscidFlowResults(gamma_magnitude, V_induced, V_app_fs_at_cp, sail_set, csys_transformations)
+    inviscid_flow_results = InviscidFlowResults(gamma_magnitude, V_induced_at_cp, V_app_fs_at_cp, sail_set, csys_transformations)
     return inviscid_flow_results
 
-
-
-    #todo: add a unit test for prepare_inviscid_flow_results_vlm
 def prepare_inviscid_flow_results_vlm(gamma_magnitude,
                                       sail_set: SailSet,
                                       inlet_condition: InletConditions,
                                       csys_transformations: CSYS_transformations):
 
-    _, V_app_fs_at_cp, V_induced_at_cp = calc_force_VLM_xyz(inlet_condition.V_app_infs, gamma_magnitude,
+    _, _, _ = calc_force_VLM_xyz(inlet_condition.V_app_infs, gamma_magnitude,
                                                             sail_set.panels, inlet_condition.rho)
 
     [panel.calc_pressure() for panel in sail_set.panels1d]
+
+    N = len(sail_set.panels1d)
+    V_induced_at_cp = sail_set.V_induced_at_cp.reshape(N, 3)  # todo: get stuff from panels
+    V_app_fs_at_cp = sail_set.V_app_fs_at_cp.reshape(N, 3)
     inviscid_flow_results = InviscidFlowResults(gamma_magnitude, V_induced_at_cp, V_app_fs_at_cp,
                                                 sail_set, csys_transformations)
     return inviscid_flow_results
@@ -44,29 +44,19 @@ class InviscidFlowResults:
 
         cp_points = sail_set.get_cp_points1d()
 
-        N = len(sail_set.panels1d)
         self.csys_transformations = csys_transformations
         self.gamma_magnitude = gamma_magnitude
         self.pressure = sail_set.pressures.flatten()
         self.V_induced_at_cp = V_induced_at_cp
         self.V_app_fs_at_cp = V_app_fs_at_cp
 
-        self.V_induced_at_cp2 = sail_set.V_induced_at_cp.reshape(N, 3) # todo: get stuff from panels
-        self.V_app_fs_at_cp2 = sail_set.V_app_fs_at_cp.reshape(N, 3)
-
         self.V_induced_length = np.linalg.norm(self.V_induced_at_cp, axis=1)
         self.V_app_fs_length = np.linalg.norm(self.V_app_fs_at_cp, axis=1)
         self.AWA_app_fs = np.arctan(self.V_app_fs_at_cp[:, 1] / self.V_app_fs_at_cp[:, 0])
         # self.alfa_ind = alfa_app_infs - self.alfa_app_fs
 
-        self.F_xyz = sail_set.forces_xyz.reshape(len(sail_set.panels1d), 3)  # todo: may thid cause bugs when changing vstack/hstack arragment of panels in SailGeometry.py?
+        self.F_xyz = sail_set.forces_xyz.reshape(len(sail_set.panels1d), 3)  # todo: this may cause bugs when changing vstack/hstack arragment of panels in SailGeometry.py
         F_xyz_above_water, self.F_xyz_total = extract_above_water_quantities(self.F_xyz, cp_points)
-
-        # todo clean up the mess
-        # todo check the output ... and add a test
-        # F_xyz_above_water_jib = sail_set.extract_data_above_water_by_id(self.F_xyz, 0)
-        # F_xyz_above_water_jib_total = np.sum(F_xyz_above_water_jib, axis=0)
-        # xxx = sail_set.extract_data_above_water_to_df(force_xyz)
 
         r = calc_moment_arm_in_shifted_csys(cp_points, csys_transformations.v_from_original_xyz_2_reference_csys_xyz)
         r_above_water, _ = extract_above_water_quantities(r, cp_points)

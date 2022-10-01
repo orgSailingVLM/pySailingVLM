@@ -1,0 +1,40 @@
+Quantity,Value
+F_jib_total_COG.x,-52.38115844031688
+F_jib_total_COG.y,168.48119283105893
+F_jib_total_COG.z,-19.788765033047586
+F_main_sail_total_COG.x,-40.15021380034012
+F_main_sail_total_COG.y,130.93249512232592
+F_main_sail_total_COG.z,-24.905150563176953
+F_sails_total_COG.x,-92.531372240657
+F_sails_total_COG.y,299.41368795338485
+F_sails_total_COG.z,-44.69391559622454
+F_sails_total_COW.x,-118.274884795689
+F_sails_total_COW.y,290.20968800016385
+F_sails_total_COW.z,-44.693915596224564
+M_jib_total_COG.x,-695.0466097922182
+M_jib_total_COG.y,-274.3335737825365
+M_jib_total_COG.z,-367.8785915636564
+M_keel_total_COG.x,-302.5964052377702
+M_keel_total_COG.y,-91.80202998022855
+M_keel_total_COG.z,11.475303671909714
+M_keel_total_COW.x (heel),-293.4438604508184
+M_keel_total_COW.y (pitch),-117.8257099916324
+M_keel_total_COW.z (yaw - JG sign),-11.475303671909716
+M_keel_total_COW.z (yaw),11.475303671909716
+M_main_sail_total_COG.x,-783.7240918813549
+M_main_sail_total_COG.y,-208.7196981331254
+M_main_sail_total_COG.z,180.69829811181592
+M_sails_total_COG.x,-1478.770701673573
+M_sails_total_COG.y,-483.05327191566204
+M_sails_total_COG.z,-187.1802934518405
+M_sails_total_COW.x (heel),-1431.042666000128
+M_sails_total_COW.y (pitch),-610.0984672360887
+M_sails_total_COW.z (yaw - JG sign),187.18029345184056
+M_sails_total_COW.z (yaw),-187.18029345184056
+M_total_COG.x,-1781.3671069113434
+M_total_COG.y,-574.8553018958905
+M_total_COG.z,-175.70498977993077
+M_total_COW.x (heel),-1724.4865264509465
+M_total_COW.y (pitch),-727.9241772277211
+M_total_COW.z (yaw - JG sign),175.70498977993083
+M_total_COW.z (yaw),-175.70498977993083
