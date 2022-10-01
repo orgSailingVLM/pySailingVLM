@@ -41,7 +41,7 @@ class Arrow3D(FancyArrowPatch):
 
 def _prepare_geometry_data_to_display(panels1d):
     le_mid_points = np.array([panel.get_leading_edge_mid_point() for panel in panels1d])
-    cp_points = np.array([panel.get_cp_position() for panel in panels1d])
+    cp_points = np.array([panel.cp_position for panel in panels1d])
     ctr_points = np.array([panel.get_ctr_point_position() for panel in panels1d])
     te_midpoints = np.array([panel.get_trailing_edge_mid_points() for panel in panels1d])
 
@@ -175,7 +175,7 @@ def display_forces_xyz(ax, panels1d, inviscid_flow_results: InviscidFlowResults)
         ax.add_artist(arrow)
         ax.scatter3D(origin[0], origin[1], origin[2], c='black', marker="o")
 
-    cp_points = np.array([panel.get_cp_position() for panel in panels1d])
+    cp_points = np.array([panel.cp_position for panel in panels1d])
     for F, cp in zip(inviscid_flow_results.F_xyz, cp_points):
         F_normalized = scale*F/F_max
         plot_vector(cp, F_normalized)

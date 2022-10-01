@@ -6,7 +6,8 @@ from Rotations.CSYS_transformations import CSYS_transformations
 from YachtGeometry.SailGeometry import SailSet
 
 from Inlet.InletConditions import InletConditions
-from Solver.forces import calc_force_LLT_xyz, calc_force_VLM_xyz, get_p_from_panels, get_forces_from_panels
+from Solver.forces import calc_force_LLT_xyz, calc_forces_on_panels_VLM_xyz
+
 
 def prepare_inviscid_flow_results_llt(V_app_fs_at_cp, V_induced_at_cp, gamma_magnitude,
                                       sail_set: SailSet,
@@ -24,8 +25,8 @@ def prepare_inviscid_flow_results_vlm(gamma_magnitude,
                                       inlet_condition: InletConditions,
                                       csys_transformations: CSYS_transformations):
 
-    _, _, _ = calc_force_VLM_xyz(inlet_condition.V_app_infs, gamma_magnitude,
-                                                            sail_set.panels, inlet_condition.rho)
+    calc_forces_on_panels_VLM_xyz(inlet_condition.V_app_infs, gamma_magnitude,
+                                  sail_set.panels, inlet_condition.rho)
 
     [panel.calc_pressure() for panel in sail_set.panels1d]
 

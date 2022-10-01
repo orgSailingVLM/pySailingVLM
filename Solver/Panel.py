@@ -177,7 +177,8 @@ class Panel(object):
         ctr_p = le_mid_point + (3. / 4.) * tl
         return ctr_p
 
-    def get_cp_position(self):
+    @property
+    def cp_position(self):
         """
          For a given panel defined by points P1, P2, P3 and P4
          returns the position of the centre of pressure

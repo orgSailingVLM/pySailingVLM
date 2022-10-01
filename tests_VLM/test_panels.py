@@ -44,7 +44,7 @@ class TestPanels(TestCase):
         assert_almost_equal(expected_ctr_point2, ctr_point2)
 
     def test_get_cp_postion(self):
-        cp = self.panel.get_cp_position()
+        cp = self.panel.cp_position
         expected_ctr_point = [2.5, 5, 0]
 
         assert_almost_equal(expected_ctr_point, cp)
@@ -53,7 +53,7 @@ class TestPanels(TestCase):
                    np.array([-2., 6., 0]), np.array([6., 7., 0])]
 
         panel2 = Panel(*points2)
-        cp2 = panel2.get_cp_position()
+        cp2 = panel2.cp_position
         expected_cp2 = [1., 3.375, 0]
         assert_almost_equal(expected_cp2, cp2)
 

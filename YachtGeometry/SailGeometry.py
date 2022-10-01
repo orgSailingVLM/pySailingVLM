@@ -7,8 +7,8 @@ from Solver import Panel
 from Rotations.CSYS_transformations import CSYS_transformations
 from Solver.mesher import make_panels_from_le_te_points, make_panels_from_le_points_and_chords
 from typing import List
-from Solver.forces import get_p_from_panels, get_forces_from_panels, get_V_induced_at_cp_from_panels, get_V_app_fs_at_cp_from_panels
 
+from Solver.forces import get_stuff_from_panels
 
 # np.set_printoptions(precision=3, suppress=True)
 
@@ -41,30 +41,30 @@ class BaseGeometry:
         pass
 
     def get_cp_points(self):
-        cp_points = np.zeros(shape=self.panels.shape)
-        for i in range(self.panels.shape[0]):
-            for j in range(self.panels.shape[1]):
-                cp_points[i, j] = self.panels[i, j].get_cp_position()
-        return cp_points
+        return get_stuff_from_panels(self.panels, 'cp_position', (self.panels.shape[0], self.panels.shape[1], 1))
+
 
     def get_cp_points1d(self):
-        return np.array([p.get_cp_position() for p in self.panels1d])
+        return get_stuff_from_panels(self.panels1d, 'cp_position', (self.panels1d.shape[0], 3))
+
 
     @property
     def pressures(self):
-        return get_p_from_panels(self.panels)
+        return get_stuff_from_panels(self.panels, 'pressure', (self.panels.shape[0], self.panels.shape[1], 1))
 
     @property
     def forces_xyz(self):
-        return get_forces_from_panels(self.panels)
+        return get_stuff_from_panels(self.panels, 'force_xyz', (self.panels.shape[0], self.panels.shape[1], 3))
 
     @property
     def V_app_fs_at_cp(self):
-        return get_V_app_fs_at_cp_from_panels(self.panels)
+        return get_stuff_from_panels(self.panels, 'V_app_fs_at_cp', (self.panels.shape[0], self.panels.shape[1], 3))
+        # return get_V_app_fs_at_cp_from_panels(self.panels)
 
     @property
     def V_induced_at_cp(self):
-        return get_V_induced_at_cp_from_panels(self.panels)
+        return get_stuff_from_panels(self.panels, 'V_induced_at_cp', (self.panels.shape[0], self.panels.shape[1], 3))
+        # return get_V_induced_at_cp_from_panels(self.panels)
 
 
 class SailGeometry(BaseGeometry, ABC):
@@ -175,8 +175,8 @@ class SailGeometry(BaseGeometry, ABC):
                 [self.__n_chordwise, self.__n_spanwise], gamma_orientation=-1)
 
         # https://stackoverflow.com/questions/33356442/when-should-i-use-hstack-vstack-vs-append-vs-concatenate-vs-column-stack
-        # self.__panels = np.vstack((panels, panels_mirror)) # todo: vstack seems to be more reasonable
-        self.__panels = np.hstack((panels_mirror, panels))  # old version
+        # self.__panels = np.vstack((panels, panels_mirror))
+        self.__panels = np.hstack((panels_mirror, panels))  # original version
         self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
 
@@ -220,7 +220,7 @@ class SailSet(BaseGeometry):
         self.sails = sails
         # https://stackoverflow.com/questions/33356442/when-should-i-use-hstack-vstack-vs-append-vs-concatenate-vs-column-stack
         # self.__panels = np.vstack([sail.panels for sail in self.sails])
-        self.__panels = np.hstack([sail.panels for sail in self.sails])  # todo: is the old hstack more reasonable?
+        self.__panels = np.hstack([sail.panels for sail in self.sails]) # original version
         self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
 

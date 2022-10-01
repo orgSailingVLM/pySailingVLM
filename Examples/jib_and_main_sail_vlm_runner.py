@@ -17,7 +17,7 @@ from Solver.vlm_solver import calc_circulation
 from ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_vlm
 from Solver.vlm_solver import calculate_app_fs
 from ResultsContainers.InviscidFlowResults import InviscidFlowResults
-from Solver.forces import calc_force_VLM_xyz
+from Solver.forces import calc_forces_on_panels_VLM_xyz
 
 # from InputData.jib_and_main_sail_vlm_case_backflow import *
 from InputData.jib_and_main_sail_vlm_case import *

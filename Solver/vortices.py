@@ -66,7 +66,6 @@ def v_induced_by_semi_infinite_vortex_line(P: np.ndarray, A: np.array, r0: np.nd
 
 @numba.jit(nopython=True)
 def is_in_vortex_core(vector_list):
-    # todo: polepszyc to
     for vec in vector_list:
         if norm(vec) < 1e-9:
             return True
