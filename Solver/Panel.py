@@ -37,11 +37,21 @@ class Panel(object):
         self.counter = Panel.panel_counter
         Panel.panel_counter += 1
 
+        self.pressure = None
+        self.force_xyz = None
+        self.V_app_fs_at_cp = None
+        self.V_induced_at_cp = None
+
         if not self._are_points_coplanar() and not Panel._are_no_coplanar_panels_reported:
             print("Panels are not coplanar (twisted).")
             Panel._are_no_coplanar_panels_reported = True
             # warnings.warn("Points on Panel are not coplanar!")
             # raise ValueError("Points on Panel are not coplanar!")
+
+    def calc_pressure(self):
+        area = self.get_panel_area()
+        n = self.get_normal_to_panel()
+        self.pressure = np.dot(self.force_xyz, n) / area  # todo: fix sign
 
     def _are_points_coplanar(self):
         # P1P2 = self.p1 - self.p2
@@ -167,7 +177,8 @@ class Panel(object):
         ctr_p = le_mid_point + (3. / 4.) * tl
         return ctr_p
 
-    def get_cp_position(self):
+    @property
+    def cp_position(self):
         """
          For a given panel defined by points P1, P2, P3 and P4
          returns the position of the centre of pressure

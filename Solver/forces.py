@@ -2,7 +2,6 @@ import numpy as np
 from Solver.vlm_solver import calc_induced_velocity
 
 
-
 def calc_moment_arm_in_shifted_csys(cp_points, v_from_old_2_new_csys):
     dx, dy, dz = v_from_old_2_new_csys
     N = len(cp_points)
@@ -48,10 +47,10 @@ def calc_V_at_cp(V_app_infw, gamma_magnitude, panels):
     v_ind_coeff = np.full((N, N, 3), 0., dtype=float)
 
     for i in range(0, N):
-        if i % 10 == 0:
+        if i % 25 == 0:
             print(f"assembling v_ind_coeff matrix at cp {i}/{N}")
 
-        cp = panels_1d[i].get_cp_position()
+        cp = panels_1d[i].cp_position
         for j in range(0, N):
             # velocity induced at i-th control point by j-th vortex
             v_ind_coeff[i][j] = panels_1d[j].get_induced_velocity(cp, V_app_infw[j])
@@ -60,17 +59,13 @@ def calc_V_at_cp(V_app_infw, gamma_magnitude, panels):
     V_app_fs_at_cp = V_app_infw + V_induced_at_cp
     return V_app_fs_at_cp, V_induced_at_cp
 
-
-def calc_force_LLT_xyz(V_app_fs_at_cp, gamma_magnitude, span_vectors, rho):
-    N = len(gamma_magnitude)
-    force_xyz = np.full((N, 3), 0., dtype=float)
-    for i in range(0, N):
+def calc_force_LLT_xyz(V_app_fs_at_cp, gamma_magnitude, panels1d, rho):
+    span_vectors = np.array([p.get_span_vector() for p in panels1d])
+    for i in range(0, len(gamma_magnitude)):
         gamma = span_vectors[i] * gamma_magnitude[i]
-        force_xyz[i] = rho * np.cross(V_app_fs_at_cp[i], gamma)
-    return force_xyz
+        panels1d[i].force_xyz = rho * np.cross(V_app_fs_at_cp[i], gamma)    # there is only one panel chordwise --> leading edge formula
 
-
-def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
+def calc_forces_on_panels_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
     """
     Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     f. Secondary Computations: Pressures, Loads, Velocities, Etc
@@ -79,6 +74,7 @@ def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
     force = rho* (V_app_fw_at_cp x gamma*span)
     :param V_app_infw: apparent wind
     :param gamma_magnitude: vector with circulations
+    :param panels: list
     :param rho: air density
     :return: force
     """
@@ -86,8 +82,11 @@ def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
     V_app_fs_at_cp, V_induced_at_cp = calc_V_at_cp(V_app_infw, gamma_magnitude, panels)
 
     V_app_fs_at_cp_re = V_app_fs_at_cp.reshape(panels.shape[0], panels.shape[1], 3)
-    gamma_re = gamma_magnitude.reshape(panels.shape)
+    V_induced_at_cp_re = V_induced_at_cp.reshape(panels.shape[0], panels.shape[1], 3)
+
     force_re_xyz = np.full((panels.shape[0], panels.shape[1], 3), 0., dtype=float)
+    gamma_re = gamma_magnitude.reshape(panels.shape)
+
     for i in range(0, panels.shape[0]):
         for j in range(0, panels.shape[1]):
             if i == 0:  # leading edge only
@@ -95,23 +94,26 @@ def calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho):
             else:
                 gamma = panels[i, j].get_span_vector() * (gamma_re[i, j]-gamma_re[i-1, j])
 
-            force_re_xyz[i, j, :] = rho * np.cross(V_app_fs_at_cp_re[i, j], gamma)
+            force_tmp = rho * np.cross(V_app_fs_at_cp_re[i, j], gamma)
+            force_re_xyz[i, j, :] = force_tmp
+            panels[i, j].force_xyz = force_tmp
+            panels[i, j].V_app_fs_at_cp = V_app_fs_at_cp_re[i, j]
+            panels[i, j].V_induced_at_cp = V_induced_at_cp_re[i, j]
 
-    return force_re_xyz, V_app_fs_at_cp, V_induced_at_cp
+    # return force_re_xyz, V_app_fs_at_cp, V_induced_at_cp
 
+def get_stuff_from_panels(panels, stuff, shape):
+    # allows to pass 'stuff' as argument to get panels[i,j].stuff
+    tmp_array = np.full(shape, 0., dtype=float)
+    if len(shape) > 2:
+        for i in range(shape[0]):
+            for j in range(shape[1]):
+                tmp_array[i, j] = getattr(panels[i, j], stuff)
+    else:
+        for i in range(shape[0]):
+            tmp_array[i] = getattr(panels[i], stuff)
 
-def calc_pressure(force, panels):
-    panels_1d = panels.flatten()
-    n = len(panels_1d)
-    p = np.zeros(shape=n)
-
-    for i in range(n):
-        area = panels_1d[i].get_panel_area()
-        n = panels_1d[i].get_normal_to_panel()
-        p[i] = np.dot(force[i], n) / area  # todo: fix sign
-        # p[i] = np.linalg.norm(force[i], axis=0)/ area  # this make a difference (due to induced drag)
-    return p
-
+    return tmp_array
 
 def determine_vector_from_its_dot_and_cross_product(F, r_dot_F, r_cross_F):
     # https://math.stackexchange.com/questions/246594/what-is-vector-division

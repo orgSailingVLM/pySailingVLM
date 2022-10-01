@@ -17,7 +17,7 @@ from Solver.vlm_solver import calc_circulation
 from ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_vlm
 from Solver.vlm_solver import calculate_app_fs
 from ResultsContainers.InviscidFlowResults import InviscidFlowResults
-from Solver.forces import calc_force_VLM_xyz, calc_pressure
+from Solver.forces import calc_forces_on_panels_VLM_xyz
 
 # from InputData.jib_and_main_sail_vlm_case_backflow import *
 from InputData.jib_and_main_sail_vlm_case import *
@@ -73,9 +73,6 @@ assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, sail_set.panels)
 inviscid_flow_results = prepare_inviscid_flow_results_vlm(gamma_magnitude, sail_set, inlet_condition, csys_transformations)
 inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
 
-print("Preparing visualization.")
-display_panels_xyz_and_winds(sail_set.panels1d, inlet_condition, inviscid_flow_results, hull)
-
 df_components, df_integrals, df_inlet_IC = save_results_to_file(inviscid_flow_results, None, inlet_condition, sail_set, output_dir_name)
 shutil.copy(os.path.join(case_dir, case_name), os.path.join(output_dir_name, case_name))
 
@@ -92,6 +89,10 @@ print(df_integrals)
 # print(df_integrals[df_integrals['Quantity'].isin(rows_to_display)])
 
 print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
+
+print("Preparing visualization.")
+display_panels_xyz_and_winds(sail_set.panels1d, inlet_condition, inviscid_flow_results, hull)
+
 #
 # import matplotlib.pyplot as plt
 # plt.plot([1,2,3],[5,6,7])

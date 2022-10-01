@@ -4,8 +4,8 @@ from numpy.testing import assert_almost_equal
 from Solver.vlm_solver import calc_circulation
 from Solver.mesher import make_panels_from_le_te_points
 from Solver.coeff_formulas import get_CL_CD_free_wing
-from Solver.forces import calc_force_VLM_xyz, calc_pressure, determine_vector_from_its_dot_and_cross_product
-from Solver.forces import calc_force_VLM_xyz
+from Solver.forces import determine_vector_from_its_dot_and_cross_product
+from Solver.forces import calc_forces_on_panels_VLM_xyz, get_stuff_from_panels
 from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
 from Rotations.geometry_calc import rotation_matrix
 from unittest import TestCase
@@ -76,7 +76,8 @@ class TestForces(TestCase):
 
         assert is_no_flux_BC_satisfied(V_app_fw, panels)
 
-        F, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
+        calc_forces_on_panels_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
+        F = get_stuff_from_panels(panels, 'force_xyz', (panels.shape[0], panels.shape[1], 3))
         F = F.reshape(N, 3)
         ### compare vlm with book coeff_formulas ###
         CL_vlm, CD_vlm = self.get_CL_CD_from_F(F)
@@ -108,9 +109,9 @@ class TestForces(TestCase):
 
         assert is_no_flux_BC_satisfied(V_app_fw, panels)
 
-        F, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
+        calc_forces_on_panels_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
+        F = get_stuff_from_panels(panels, 'force_xyz', (panels.shape[0], panels.shape[1], 3))
         F = F.reshape(N, 3)
-
         ### compare vlm with book coeff_formulas ###
         CL_vlm, CD_vlm = self.get_CL_CD_from_F(F)
 
