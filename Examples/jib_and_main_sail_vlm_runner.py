@@ -92,4 +92,4 @@ print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
 
 print("Preparing visualization.")
 display_panels_xyz_and_winds(sail_set.panels1d, inlet_condition, inviscid_flow_results, hull)
-print("Finished.")
+print("Done.")
