@@ -38,14 +38,7 @@ def assembly_sys_of_eq(V_app_infw, panels: List[Panel]):
 
 
 def calc_circulation(V_app_ifnw, panels):
-    # it is assumed that the freestream velocity is V [vx,0,vz], where vx > 0
-
     A, RHS, v_ind_coeff = assembly_sys_of_eq(V_app_ifnw, panels)
-    # print("A")
-    # print(A)
-    # print("RHS")
-    # print(RHS)
-    # print(np.shape(A), " ", np.shape(RHS))
     gamma_magnitude = np.linalg.solve(A, RHS)
     print(f"System of equations is solved.")
     return gamma_magnitude, v_ind_coeff
