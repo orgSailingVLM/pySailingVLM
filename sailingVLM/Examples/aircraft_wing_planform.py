@@ -1,5 +1,7 @@
 import numpy as np
+import timeit
 
+<<<<<<< HEAD:sailingVLM/Examples/aircraft_wing_planform.py
 
 from sailingVLM.Solver.vlm_solver import calc_circulation
 from sailingVLM.Solver.mesher import make_panels_from_le_te_points
@@ -7,6 +9,14 @@ from sailingVLM.Rotations.geometry_calc import rotation_matrix
 from sailingVLM.Solver.coeff_formulas import get_CL_CD_free_wing
 from sailingVLM.Solver.forces import calc_pressure, calc_force_VLM_xyz, calc_force_VLM_xyz
 from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
+=======
+from Solver.vlm_solver import calc_circulation
+from Solver.mesher import make_panels_from_le_te_points
+from Rotations.geometry_calc import rotation_matrix
+from Solver.coeff_formulas import get_CL_CD_free_wing
+from Solver.forces import calc_forces_on_panels_VLM_xyz, get_stuff_from_panels
+from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
+>>>>>>> 801de37c8b548151ce8cdd70b9b1e61c86fe1d8f:Examples/aircraft_wing_planform.py
 
 ### GEOMETRY DEFINITION ###
 
@@ -29,7 +39,7 @@ from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_v
      
  
 """
-
+start = timeit.default_timer()
 np.set_printoptions(precision=3, suppress=True)
 
 ### WING DEFINITION ###
@@ -49,8 +59,8 @@ Ry = rotation_matrix([0, 1, 0], np.deg2rad(AoA_deg))
 # we are going to rotate the geometry
 
 ### MESH DENSITY ###
-ns = 10    # number of panels (spanwise)
-nc = 5   # number of panels (chordwise)
+ns = 15    # number of panels (spanwise)
+nc = 15   # number of panels (chordwise)
 
 # for testing my own verison
 
@@ -81,11 +91,16 @@ V_app_fw_at_ctrl_p = V_app_infw + V_induced_at_ctrl_p
 assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p, panels)
 
 
+<<<<<<< HEAD:sailingVLM/Examples/aircraft_wing_planform.py
 
 F, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho)
+=======
+calc_forces_on_panels_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho)
+F = get_stuff_from_panels(panels, "force_xyz", (panels.shape[0], panels.shape[1], 3))
+>>>>>>> 801de37c8b548151ce8cdd70b9b1e61c86fe1d8f:Examples/aircraft_wing_planform.py
 F = F.reshape(N, 3)
 
-p = calc_pressure(F, panels)
+map(lambda x: x.calc_pressure(), panels.flatten())
 
 print("gamma_magnitude: \n")
 print(gamma_magnitude)
@@ -108,6 +123,8 @@ print(f"CL_vlm      {CL_vlm:.6f}  \t CD_vlm          {CD_vlm:.6f}")
 
 print(f"\n\ntotal_F {str(total_F)}")
 print("=== END ===")
+
+print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
 
 
 # po dodaniu TrailingEdge wyniki powinny byc o okolo kilkanacsie procent inne

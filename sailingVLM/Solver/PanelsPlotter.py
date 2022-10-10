@@ -2,6 +2,8 @@
 import numpy as np
 import math
 
+import matplotlib
+# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 from sailingVLM.Solver.vortices import normalize
@@ -24,6 +26,13 @@ class Arrow3D(FancyArrowPatch):
         FancyArrowPatch.__init__(self, (0, 0), (0, 0), *args, **kwargs)
         self._verts3d = xs, ys, zs
 
+    def do_3d_projection(self, renderer=None):
+        xs3d, ys3d, zs3d = self._verts3d
+        xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, self.axes.M)
+        self.set_positions((xs[0],ys[0]),(xs[1],ys[1]))
+
+        return np.min(zs)
+
     def draw(self, renderer):
         xs3d, ys3d, zs3d = self._verts3d
         xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, self.axes.M)
@@ -33,14 +42,15 @@ class Arrow3D(FancyArrowPatch):
 
 def _prepare_geometry_data_to_display(panels1d):
     le_mid_points = np.array([panel.get_leading_edge_mid_point() for panel in panels1d])
-    cp_points = np.array([panel.get_cp_position() for panel in panels1d])
+    cp_points = np.array([panel.cp_position for panel in panels1d])
     ctr_points = np.array([panel.get_ctr_point_position() for panel in panels1d])
     te_midpoints = np.array([panel.get_trailing_edge_mid_points() for panel in panels1d])
 
     return le_mid_points, cp_points, ctr_points, te_midpoints
 
 
-def display_panels_xyz(panels1d, pressure):
+def display_panels_xyz(panels1d):
+
     fig = plt.figure(figsize=(12, 12))
     ax = plt.axes(projection='3d')
     # ax.set_title('Initial location of: \n Leading Edge, Lifting Line, Control Points and Trailing Edge')
@@ -71,14 +81,16 @@ def display_panels_xyz(panels1d, pressure):
 
     ### plot panels and color by pressure
     # https://stackoverflow.com/questions/15140072/how-to-map-number-to-color-using-matplotlibs-colormap
-    panel_points = np.array([panel.get_points() for panel in panels1d])
-    norm = mpl.colors.Normalize(vmin=min(pressure), vmax=max(pressure))
+
+    pressures = np.array([panel.pressure for panel in panels1d])
+    norm = mpl.colors.Normalize(vmin=min(pressures), vmax=max(pressures))
     cmap = cm.hot
     m = cm.ScalarMappable(norm=norm, cmap=cmap)
 
-    for vtx, p in zip(panel_points, pressure):
+    for panel in panels1d:
+        vtx = panel.get_points()
         tri = a3.art3d.Poly3DCollection([vtx])
-        tri.set_color(m.to_rgba(p))
+        tri.set_color(m.to_rgba(panel.pressure))
         tri.set_edgecolor('k')
         ax.add_collection3d(tri)
 
@@ -109,7 +121,7 @@ def display_winds(ax, cp_points, water_size,  inlet_condition: InletConditions, 
     shift_x = (-0.925) * water_size * np.cos(np.deg2rad(mean_AWA))
     shift_y = (-0.925) * water_size * np.sin(np.deg2rad(mean_AWA))
 
-    V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs, inviscid_flow_results.V_app_fs]
+    V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs, inviscid_flow_results.V_app_fs_at_cp]
     colors = ['green', 'blue', 'red']  # G: True wind, B: - Apparent wind, R: Apparent + Induced wind
     for V_wind, color in zip(V_winds, colors):
         # V_wind = V_winds[2]
@@ -164,7 +176,7 @@ def display_forces_xyz(ax, panels1d, inviscid_flow_results: InviscidFlowResults)
         ax.add_artist(arrow)
         ax.scatter3D(origin[0], origin[1], origin[2], c='black', marker="o")
 
-    cp_points = np.array([panel.get_cp_position() for panel in panels1d])
+    cp_points = np.array([panel.cp_position for panel in panels1d])
     for F, cp in zip(inviscid_flow_results.F_xyz, cp_points):
         F_normalized = scale*F/F_max
         plot_vector(cp, F_normalized)
@@ -177,7 +189,7 @@ def display_panels_xyz_and_winds(panels1d,
                                  show_plot=True
 
                                  ):
-    ax, cp_points, water_size = display_panels_xyz(panels1d, inviscid_flow_results.pressure)
+    ax, cp_points, water_size = display_panels_xyz(panels1d)
     ax.set_title('Panels colored by pressure \n'
                  'Winds: True (green), Apparent (blue), Apparent + Induced (red) \n'
                  'Centre of Effort & Center of Lateral Resistance (black)')
@@ -186,6 +198,7 @@ def display_panels_xyz_and_winds(panels1d,
     display_winds(ax, cp_points, water_size, inlet_condition, inviscid_flow_results)
     # display_forces_xyz(ax, panels1d, inviscid_flow_results)
     display_CE_CLR(ax, inviscid_flow_results, hull)
+
     if show_plot:
         plt.show()
 

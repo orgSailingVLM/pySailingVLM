@@ -17,11 +17,11 @@ class TestVLM_Solver(TestCase):
         # Parameters
         c_root = 2.0  # root chord length
         c_tip = 2.0  # tip chord length
-        half_wing_span = 10  # wing span length
+        half_wing_span = 10.  # wing span length
 
         # Points defining wing
-        le_root_coord = np.array([0, -half_wing_span, 0])
-        le_tip_coord = np.array([0, half_wing_span, 0])
+        le_root_coord = np.array([0., -half_wing_span, 0.])
+        le_tip_coord = np.array([0., half_wing_span, 0])
 
         te_root_coord = np.array([c_root, -half_wing_span, 0])
         te_tip_coord = np.array([c_tip, half_wing_span, 0])
@@ -49,7 +49,7 @@ class TestVLM_Solver(TestCase):
 
     def test_calc_circulation(self):
         V = [10, 0, -1]  # [m/s] wind speed
-        V_free_stream = np.array([V for i in range(self.N)])
+        V_free_stream = np.array([V for i in range(self.N)], dtype=np.float64)
 
         gamma_magnitude, v_ind_coeff, A = calc_circulation(V_free_stream, self.panels)
 
