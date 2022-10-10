@@ -9,7 +9,7 @@ from sailingVLM.Solver.TrailingEdgePanel import TrailingEdgePanel
 from sailingVLM.Solver.mesher import make_panels_from_le_te_points, make_panels_from_le_points_and_chords
 from typing import List
 
-from Solver.forces import get_stuff_from_panels
+from sailingVLM.Solver.forces import get_stuff_from_panels
 
 # np.set_printoptions(precision=3, suppress=True)
 

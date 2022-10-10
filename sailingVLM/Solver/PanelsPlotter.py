@@ -178,7 +178,7 @@ def display_winds(ax, cp_points, water_size,  inlet_condition: InletConditions, 
     shift_x = (-0.925) * water_size * np.cos(np.deg2rad(mean_AWA))
     shift_y = (-0.925) * water_size * np.sin(np.deg2rad(mean_AWA))
 
-    V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs, inviscid_flow_results.V_app_fs]
+    V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs, inviscid_flow_results.V_app_fs_at_cp]
     colors = ['green', 'blue', 'red']  # G: True wind, B: - Apparent wind, R: Apparent + Induced wind
    
     zipp = zip(V_winds, colors)
@@ -325,7 +325,8 @@ def display_panels_xyz_and_winds(myvlm, inviscid_flow_results_new: InviscidFlowR
                                  show_plot=True
 
                                  ):
-    ax, cp_points, water_size = display_panels_xyz(panels1d, inviscid_flow_results.pressure)
+    ax, cp_points, water_size = display_panels_xyz(panels1d)
+    #ax, cp_points, water_size = display_panels_xyz(panels1d, inviscid_flow_results.pressure)
     my_ax, my_cp_points, my_water_size = display_panels_xyz_new_approach(myvlm)
 
     np.testing.assert_almost_equal(np.sort(cp_points, axis=0), np.sort(my_cp_points, axis=0))

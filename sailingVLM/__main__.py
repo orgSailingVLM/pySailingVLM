@@ -18,7 +18,6 @@ from sailingVLM.Solver.vlm_solver import calc_circulation
 from sailingVLM.ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_vlm, prepare_inviscid_flow_results_vlm_new_approach
 from sailingVLM.Solver.vlm_solver import calculate_app_fs
 from sailingVLM.ResultsContainers.InviscidFlowResults import InviscidFlowResults
-from sailingVLM.Solver.forces import calc_force_VLM_xyz, calc_pressure
 
 # from InputData.jib_and_main_sail_vlm_case_backflow import *
 from sailingVLM.Examples.InputData.jib_and_main_sail_vlm_case import *
@@ -93,7 +92,7 @@ horseshoe_info_panels = []
 for item in sail_set.panels:
     for panel in item:
         panels_good.append(panel.get_points())
-        cp_good.append(panel.get_cp_position())
+        cp_good.append(panel.cp_position)
         ctr_good.append(panel.get_ctr_point_position())
         normals_good.append(panel.get_normal_to_panel())
         area_good.append(panel.get_panel_area())
@@ -168,13 +167,14 @@ np.testing.assert_almost_equal(np.sort(inviscid_flow_results.gamma_magnitude, ax
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.pressure, axis=0), np.sort(myvlm.pressure, axis=0))
 
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.pressure, axis=0), np.sort(inviscid_flow_results_new_approach.pressure, axis=0))
-np.testing.assert_almost_equal(np.sort(inviscid_flow_results.V_induced, axis=0), np.sort(inviscid_flow_results_new_approach.V_induced, axis=0))
+np.testing.assert_almost_equal(np.sort(inviscid_flow_results.V_induced_at_cp, axis=0), np.sort(inviscid_flow_results_new_approach.V_induced_at_cp, axis=0))
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.V_induced_length, axis=0), np.sort(inviscid_flow_results_new_approach.V_induced_length, axis=0))
-np.testing.assert_almost_equal(np.sort(inviscid_flow_results.V_app_fs, axis=0), np.sort(inviscid_flow_results_new_approach.V_app_fs, axis=0))
+np.testing.assert_almost_equal(np.sort(inviscid_flow_results.V_app_fs_at_cp, axis=0), np.sort(inviscid_flow_results_new_approach.V_app_fs_at_cp, axis=0))
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.V_app_fs_length, axis=0), np.sort(inviscid_flow_results_new_approach.V_app_fs_length, axis=0))
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.AWA_app_fs, axis=0), np.sort(inviscid_flow_results_new_approach.AWA_app_fs, axis=0))
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.F_xyz, axis=0), np.sort(inviscid_flow_results_new_approach.F_xyz, axis=0))
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.F_xyz_total, axis=0), np.sort(inviscid_flow_results_new_approach.F_xyz_total, axis=0))
+# ogarnac
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.F_xyz_above_water, axis=0), np.sort(inviscid_flow_results_new_approach.F_xyz_above_water, axis=0))
 
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.r, axis=0), np.sort(inviscid_flow_results_new_approach.r, axis=0))

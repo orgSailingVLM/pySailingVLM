@@ -1,8 +1,8 @@
 import numpy as np
 from typing import List
-from Solver.Panel import Panel
+from sailingVLM.Solver.Panel import Panel
 from typing import List
-from Solver.TrailingEdgePanel import TrailingEdgePanel
+from sailingVLM.Solver.TrailingEdgePanel import TrailingEdgePanel
 
 
 # pomyslec nad jit by kod byl kompilowany

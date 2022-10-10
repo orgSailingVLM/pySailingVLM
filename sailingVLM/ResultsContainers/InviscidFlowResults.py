@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from sailingVLM.Solver.forces import calc_moments, extract_above_water_quantities, calc_moment_arm_in_shifted_csys
-from sailingVLM.Solver.forces import determine_vector_from_its_dot_and_cross_product, calc_pressure
+from sailingVLM.Solver.forces import determine_vector_from_its_dot_and_cross_product
 from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
 from sailingVLM.YachtGeometry.SailGeometry import SailSet
 
@@ -82,16 +82,19 @@ class InviscidFlowResults:
         # self.alfa_ind = alfa_app_infs - self.alfa_app_fs
 
         self.F_xyz = sail_set.forces_xyz.reshape(len(sail_set.panels1d), 3)  # todo: this may cause bugs when changing vstack/hstack arragment of panels in SailGeometry.py
-        F_xyz_above_water, self.F_xyz_total = extract_above_water_quantities(self.F_xyz, cp_points)
+        # to nie jest selfem
+        # F_xyz_above_water
+        self.F_xyz_above_water, self.F_xyz_total = extract_above_water_quantities(self.F_xyz, cp_points)
 
-        r = calc_moment_arm_in_shifted_csys(cp_points, csys_transformations.v_from_original_xyz_2_reference_csys_xyz)
-        r_above_water, _ = extract_above_water_quantities(r, cp_points)
+        # usunac z r i r_above_waterself
+        self.r = calc_moment_arm_in_shifted_csys(cp_points, csys_transformations.v_from_original_xyz_2_reference_csys_xyz)
+        self.r_above_water, _ = extract_above_water_quantities(self.r, cp_points)
 
         dyn_dict = {}
         for i in range(len(sail_set.sails)):
             # to funkcja ma buga
             F_xyz_above_water_tmp = sail_set.extract_data_above_water_by_id(self.F_xyz, i)
-            r_tmp = sail_set.extract_data_above_water_by_id(r, i)
+            r_tmp = sail_set.extract_data_above_water_by_id(self.r, i)
 
             F_xyz_above_water_tmp_total = np.sum(F_xyz_above_water_tmp, axis=0)
             dyn_dict[f"F_{sail_set.sails[i].name}_total_COG.x"] = F_xyz_above_water_tmp_total[0]
@@ -106,10 +109,10 @@ class InviscidFlowResults:
 
         self.dyn_dict = dyn_dict
 
-        self.M_xyz = calc_moments(r, self.F_xyz)
+        self.M_xyz = calc_moments(self.r, self.F_xyz)
         _, self.M_total_above_water_in_xyz_csys = extract_above_water_quantities(self.M_xyz, cp_points)
 
-        r_dot_F = np.array([np.dot(r[i], self.F_xyz[i]) for i in range(len(self.F_xyz))])
+        r_dot_F = np.array([np.dot(self.r[i], self.F_xyz[i]) for i in range(len(self.F_xyz))])
         _, r_dot_F_total_above_water = extract_above_water_quantities(r_dot_F, cp_points)
 
         self.above_water_centre_of_effort_estimate_xyz \
@@ -215,10 +218,10 @@ class InviscidFlowResultsNew:
         self.csys_transformations = csys_transformations
         self.gamma_magnitude = myvlm.gamma_magnitude
         self.pressure = myvlm.pressure
-        self.V_induced = myvlm.V_induced_at_cp#V_induced
-        self.V_induced_length = np.linalg.norm(self.V_induced, axis=1)
-        self.V_app_fs = myvlm.V_app_fs_at_cp#V_app_fs
-        self.V_app_fs_length = np.linalg.norm(self.V_app_fs, axis=1)
+        self.V_induced_at_cp = myvlm.V_induced_at_cp#V_induced
+        self.V_induced_length = np.linalg.norm(self.V_induced_at_cp, axis=1)
+        self.V_app_fs_at_cp = myvlm.V_app_fs_at_cp#V_app_fs
+        self.V_app_fs_length = np.linalg.norm(self.V_app_fs_at_cp, axis=1)
         self.AWA_app_fs = np.arctan(myvlm.V_app_fs_at_cp[:, 1] / myvlm.V_app_fs_at_cp[:, 0])
   
         self.F_xyz = myvlm.force
