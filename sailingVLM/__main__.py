@@ -216,13 +216,18 @@ np.testing.assert_almost_equal(inviscid_flow_results.dyn_dict['M_main_sail_total
 
 #dyn_dict
 inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
+inviscid_flow_results_new_approach.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
+
 
 print("Preparing visualization.")
 display_panels_xyz_and_winds(myvlm, inviscid_flow_results_new_approach, sail_set.panels1d, inlet_condition, myvlm.inlet_conditions, inviscid_flow_results, hull)
 
 #display_panels_xyz_and_winds_new_approach(myvlm, inviscid_flow_results_new_approach, inlet_condition, hull)
 
-# df_components, df_integrals, df_inlet_IC = save_results_to_file(inviscid_flow_results, None, inlet_condition, sail_set, output_dir_name)
+# tu spawdzic
+# assert zrobic, na bank nie przejdzie bo save_results_to_file needs changes
+df_components, df_integrals, df_inlet_IC = save_results_to_file(inviscid_flow_results, None, inlet_condition, sail_set, output_dir_name)
+new_df_components, new_df_integrals, new_df_inlet_IC = save_results_to_file(inviscid_flow_results_new_approach, None, myvlm.inlet_conditions, sail_set, output_dir_name)
 # shutil.copy(os.path.join(case_dir, case_name), os.path.join(output_dir_name, case_name))
 
 # print(f"-------------------------------------------------------------")

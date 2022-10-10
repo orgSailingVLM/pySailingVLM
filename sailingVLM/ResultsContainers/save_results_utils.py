@@ -12,7 +12,7 @@ def save_results_to_file(inviscid_flow_results: InviscidFlowResults,
                          inlet_conditions: InletConditions,
                          sail_set: SailSet,
                          output_dir="output"):
-
+    # tu trzeba poprawic
     girths_as_dict = {'girths': sail_set.sail_cp_to_girths()}
     df_girths = sail_set.extract_data_above_water_to_df(pd.DataFrame.from_records(girths_as_dict))
     df_sail_names = sail_set.extract_data_above_water_to_df(sail_set.get_sail_name_for_each_element())

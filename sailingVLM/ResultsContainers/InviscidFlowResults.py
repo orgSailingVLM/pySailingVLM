@@ -134,8 +134,7 @@ class InviscidFlowResults:
 
     def estimate_heeling_moment_from_keel(self, underwater_centre_of_effort_xyz):
         self.M_xyz_underwater_estimate_total = np.cross(underwater_centre_of_effort_xyz, -self.F_xyz_total)
-        self.M_centerline_csys_underwater_estimate_total = \
-        self.csys_transformations.from_xyz_to_centerline_csys([self.M_xyz_underwater_estimate_total])[0]
+        self.M_centerline_csys_underwater_estimate_total = self.csys_transformations.from_xyz_to_centerline_csys([self.M_xyz_underwater_estimate_total])[0]
 
     def __iter__(self):
         yield 'Circulation_magnitude', self.gamma_magnitude
@@ -184,20 +183,40 @@ class InviscidFlowResults:
 
         if hasattr(self, 'M_xyz_underwater_estimate_total'):
             tmp = {
+                # 'M_keel_total_COG.x': self.M_xyz_underwater_estimate_total[0],
+                # 'M_keel_total_COG.y': self.M_xyz_underwater_estimate_total[1],
+                # 'M_keel_total_COG.z': self.M_xyz_underwater_estimate_total[2],
+                # 'M_keel_total_COW.x (heel)': self.M_centerline_csys_underwater_estimate_total[0],
+                # 'M_keel_total_COW.y (pitch)': self.M_centerline_csys_underwater_estimate_total[1],
+                # 'M_keel_total_COW.z (yaw)': self.M_centerline_csypressures_underwater_estimate_total[2],
+                # 'M_keel_total_COW.z (yaw - JG sign)': -self.M_centerline_csys_underwater_estimate_total[2],
+                # 'M_total_COG.x': self.M_total_above_water_in_xyz_csys[0] + self.M_xyz_underwater_estimate_total[0],
+                # 'M_total_COG.y': self.M_total_above_water_in_xyz_csys[1] + self.M_xyz_underwater_estimate_total[1],
+                # 'M_total_COG.z': self.M_total_above_water_in_xyz_csys[2] + self.M_xyz_underwater_estimate_total[2],
+                # 'M_total_COW.x (heel)': self.M_total_above_water_in_centerline_csys[0] + self.M_centerline_csys_underwater_estimate_total[0],
+                # 'M_total_COW.y (pitch)': self.M_total_above_water_in_centerline_csys[1] + self.M_centerline_csys_underwater_estimate_total[1],
+                # 'M_total_COW.z (yaw)': self.M_total_above_water_in_centerline_csys[2] + self.M_centerline_csys_underwater_estimate_total[2],
+                # 'M_total_COW.z (yaw - JG sign)': -(self.M_total_above_water_in_centerline_csys[2] + self.M_centerline_csys_underwater_estimate_total[2]),
+
                 'M_keel_total_COG.x': self.M_xyz_underwater_estimate_total[0],
                 'M_keel_total_COG.y': self.M_xyz_underwater_estimate_total[1],
                 'M_keel_total_COG.z': self.M_xyz_underwater_estimate_total[2],
                 'M_keel_total_COW.x (heel)': self.M_centerline_csys_underwater_estimate_total[0],
                 'M_keel_total_COW.y (pitch)': self.M_centerline_csys_underwater_estimate_total[1],
-                'M_keel_total_COW.z (yaw)': self.M_centerline_csypressures_underwater_estimate_total[2],
+                'M_keel_total_COW.z (yaw)': self.M_centerline_csys_underwater_estimate_total[2],
                 'M_keel_total_COW.z (yaw - JG sign)': -self.M_centerline_csys_underwater_estimate_total[2],
                 'M_total_COG.x': self.M_total_above_water_in_xyz_csys[0] + self.M_xyz_underwater_estimate_total[0],
                 'M_total_COG.y': self.M_total_above_water_in_xyz_csys[1] + self.M_xyz_underwater_estimate_total[1],
                 'M_total_COG.z': self.M_total_above_water_in_xyz_csys[2] + self.M_xyz_underwater_estimate_total[2],
-                'M_total_COW.x (heel)': self.M_total_above_water_in_centerline_csys[0] + self.M_centerline_csys_underwater_estimate_total[0],
-                'M_total_COW.y (pitch)': self.M_total_above_water_in_centerline_csys[1] + self.M_centerline_csys_underwater_estimate_total[1],
-                'M_total_COW.z (yaw)': self.M_total_above_water_in_centerline_csys[2] + self.M_centerline_csys_underwater_estimate_total[2],
-                'M_total_COW.z (yaw - JG sign)': -(self.M_total_above_water_in_centerline_csys[2] + self.M_centerline_csys_underwater_estimate_total[2]),
+                'M_total_COW.x (heel)': self.M_total_above_water_in_centerline_csys[0] +
+                                        self.M_centerline_csys_underwater_estimate_total[0],
+                'M_total_COW.y (pitch)': self.M_total_above_water_in_centerline_csys[1] +
+                                         self.M_centerline_csys_underwater_estimate_total[1],
+                'M_total_COW.z (yaw)': self.M_total_above_water_in_centerline_csys[2] +
+                                       self.M_centerline_csys_underwater_estimate_total[2],
+                'M_total_COW.z (yaw - JG sign)': -(self.M_total_above_water_in_centerline_csys[2] +
+                                                   self.M_centerline_csys_underwater_estimate_total[2]),
+           
             }
             obj_as_dict.update(tmp)
 
@@ -292,13 +311,13 @@ class InviscidFlowResultsNew:
 
     def __iter__(self):
         yield 'Circulation_magnitude', self.gamma_magnitude
-        yield 'V_induced_COG.x', self.V_induced[:, 0]
-        yield 'V_induced_COG.y', self.V_induced[:, 1]
-        yield 'V_induced_COG.z', self.V_induced[:, 2]
+        yield 'V_induced_COG.x', self.V_induced_at_cp[:, 0]
+        yield 'V_induced_COG.y', self.V_induced_at_cp[:, 1]
+        yield 'V_induced_COG.z', self.V_induced_at_cp[:, 2]
         yield 'V_induced_length', self.V_induced_length
-        yield 'V_app_fs_COG.x', self.V_app_fs[:, 0]
-        yield 'V_app_fs_COG.y', self.V_app_fs[:, 1]
-        yield 'V_app_fs_COG.z', self.V_app_fs[:, 2]
+        yield 'V_app_fs_COG.x', self.V_app_fs_at_cp[:, 0]
+        yield 'V_app_fs_COG.y', self.V_app_fs_at_cp[:, 1]
+        yield 'V_app_fs_COG.z', self.V_app_fs_at_cp[:, 2]
         yield 'V_app_fs_length', self.V_app_fs_length
         yield 'AWA_fs_COG_deg', np.rad2deg(self.AWA_app_fs)
         yield 'AWA_fs_COW_deg', np.rad2deg(self.AWA_app_fs) - self.csys_transformations.leeway_deg
@@ -337,7 +356,7 @@ class InviscidFlowResultsNew:
 
         if hasattr(self, 'M_xyz_underwater_estimate_total'):
             tmp = {
-                'M_keel_total_COG.x': self.M_xyz_underwater_estimate_total[0],
+               'M_keel_total_COG.x': self.M_xyz_underwater_estimate_total[0],
                 'M_keel_total_COG.y': self.M_xyz_underwater_estimate_total[1],
                 'M_keel_total_COG.z': self.M_xyz_underwater_estimate_total[2],
                 'M_keel_total_COW.x (heel)': self.M_centerline_csys_underwater_estimate_total[0],
@@ -355,6 +374,7 @@ class InviscidFlowResultsNew:
                                        self.M_centerline_csys_underwater_estimate_total[2],
                 'M_total_COW.z (yaw - JG sign)': -(self.M_total_above_water_in_centerline_csys[2] +
                                                    self.M_centerline_csys_underwater_estimate_total[2]),
+           
             }
             obj_as_dict.update(tmp)
 
