@@ -9,7 +9,7 @@ class InletConditions:
     def __init__(self, winds: WindBase, rho, panels1D: np.array([Panel])):
         self.rho = rho  # fluid density [kg/m3]
         self.winds = winds
-        self.cp_points = np.array([panel.get_cp_position() for panel in panels1D])
+        self.cp_points = np.array([panel.cp_position for panel in panels1D])
         self.tws_at_cp = np.array\
             ([self.winds.get_true_wind_speed_at_h(abs(cp_point[2])) for cp_point in self.cp_points])
         self.tws_length_at_ctr_points = np.linalg.norm(self.tws_at_cp, axis=1)

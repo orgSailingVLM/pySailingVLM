@@ -1,20 +1,16 @@
 
 import numpy as np
 from numpy.linalg import norm
+import numba
 
-
+@numba.jit(numba.float64[::1](numba.float64[::1]), nopython=True, debug=False)
 def normalize(x):
-    xn = x / norm(x)
+    # xn = x / norm(x)
+    xn = x / np.linalg.norm(x)
     return xn
 
-
-def is_in_vortex_core(tab):
-    for t in tab:
-        if norm(t) < 1e-9:
-            return True
-
-
-def v_induced_by_semi_infinite_vortex_line(P, A, r0, gamma=1):
+@numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.int32)), nopython=True, debug=False)
+def v_induced_by_semi_infinite_vortex_line(P: np.ndarray, A: np.array, r0: np.ndarray, gamma: int = 1):
     """
     Biot-Savart law,
     Formula from Katz & Plotkin eq 2.69 p39
@@ -60,15 +56,24 @@ def v_induced_by_semi_infinite_vortex_line(P, A, r0, gamma=1):
     #formula from "Modern Adaption of Prandtl’s Classic Lifting-Line Theory" by Philips & Snyder
 
     u_inf = normalize(r0)
-    ap = P - A
+    ap = np.asarray(P - A)
     norm_ap = norm(ap)
 
-    v_ind = np.cross(u_inf, ap) / (norm_ap *(norm_ap - np.dot(u_inf, ap)))  # todo: consider checking is_in_vortex_core
+    v_ind = np.cross(u_inf, ap) / (norm_ap * (norm_ap - np.dot(u_inf, ap)))  # todo: consider checking is_in_vortex_core
     v_ind *= gamma/(4.*np.pi)
     return v_ind
 
 
-def v_induced_by_finite_vortex_line(P, A, B, gamma=1):
+@numba.jit(nopython=True)
+def is_in_vortex_core(vector_list):
+    for vec in vector_list:
+        if norm(vec) < 1e-9:
+            return True
+    return False
+
+
+@numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.int32)), nopython=True, debug=False)
+def v_induced_by_finite_vortex_line(P, A, B, gamma: 1) -> np.array:
     """
     Biot-Savart law,
     Formua from Katz & Plotkin eq 2.72 p41
@@ -90,21 +95,22 @@ def v_induced_by_finite_vortex_line(P, A, B, gamma=1):
     -------
     v : float
     """
-    BA = np.array(B-A)
-    PA = np.array(P-A)
-    PB = np.array(P-B)
+    BA = np.asarray(B-A)
+    PA = np.asarray(P-A)
+    PB = np.asarray(P-B)
 
     PA_cross_PB = np.cross(PA, PB)
 
-    if is_in_vortex_core([PA, PB, PA_cross_PB]):
-        return [0, 0, 0]
+    v_ind = np.array([0.0, 0.0, 0.0], dtype=np.float64)
+    # in nonpython mode must be list reflection to convert list to non python type
+    # nested python oject can be badly converted -> recommend to use numba.typed.List
 
-    else:
+    if not is_in_vortex_core(numba.typed.List([PA, PB, PA_cross_PB])):
         v_ind = PA_cross_PB / np.square(norm(PA_cross_PB))
         v_ind *= np.dot(BA, (normalize(PA) - normalize(PB)))
         v_ind *= gamma / (4*np.pi)
 
-        return v_ind
+    return v_ind
 
 def v_induced_by_horseshoe_vortex(P, A, B, r0, gamma=1):
     """
@@ -137,7 +143,7 @@ def v_induced_by_horseshoe_vortex(P, A, B, r0, gamma=1):
 
     vB = v_induced_by_semi_infinite_vortex_line(P, B, r0, gamma=gamma)
     vAB = v_induced_by_finite_vortex_line(P, A, B, gamma=gamma)
-    vA = v_induced_by_semi_infinite_vortex_line(P, A, r0, gamma=-1*gamma)
+    vA = v_induced_by_semi_infinite_vortex_line(P, A, r0, gamma=-1 * gamma)
 
     v = vA + vB + vAB
     return v
