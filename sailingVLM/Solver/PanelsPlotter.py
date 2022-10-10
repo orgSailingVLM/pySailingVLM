@@ -188,7 +188,7 @@ def display_winds(ax, cp_points, water_size,  inlet_condition: InletConditions, 
                 arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.15)
             ax.add_artist(arrow)
     # potem wywalic tego returna
-    return V_winds, ax, zipp
+    return V_winds
 
 
 def display_winds_new_approach(ax, cp_points, water_size,  inlet_condition: InletConditions, inviscid_flow_results):
@@ -320,45 +320,29 @@ def display_panels_xyz_and_winds(myvlm, inviscid_flow_results_new: InviscidFlowR
     ax.set_title('Panels colored by pressure \n'
                  'Winds: True (green), Apparent (blue), Apparent + Induced (red) \n'
                  'Centre of Effort & Center of Lateral Resistance (black)')
+    
+    my_ax.set_title('New approach')
 
-    #display_hull(ax, hull)
+
+    display_hull(ax, hull)
     display_hull(my_ax, hull)
-    V_winds, ax, zip1 = display_winds(ax, cp_points, water_size, inlet_condition, inviscid_flow_results)
-    my_V_winds, my_ax, zip2 = display_winds(my_ax, my_cp_points, my_water_size, my_inlet_condition, inviscid_flow_results_new)
-    #my_V_winds, my_ax, zip2 = display_winds_new_approach(my_ax, my_cp_points, my_water_size, inlet_condition, inviscid_flow_results_new)
-    # tests colors in zipps
-    zipped_list1 = list(zip1)
-    zipped_list2 = list(zip2)
+    V_winds = display_winds(ax, cp_points, water_size, inlet_condition, inviscid_flow_results)
+    my_V_winds = display_winds(my_ax, my_cp_points, my_water_size, my_inlet_condition, inviscid_flow_results_new)
+
     
-    # green
-    np.testing.assert_almost_equal(np.sort(zipped_list1[0][0], axis=0), np.sort(zipped_list2[0][0], axis=0))
-    # blue
-    # np.testing.assert_almost_equal(np.sort(zipped_list1[1][0], axis=0), np.sort(zipped_list2[1][0], axis=0))
-    # red
-    # np.testing.assert_almost_equal(np.sort(zipped_list1[2][0], axis=0), np.sort(zipped_list2[2][0], axis=0))
-    
-    test = np.asarray([np.asarray(list(ax.artists[i]._verts3d)) for i in range(len(ax.artists))])
-    my_test = np.asarray([np.asarray(list(my_ax.artists[i]._verts3d)) for i in range(len(my_ax.artists))])
-    
-    np.testing.assert_almost_equal(np.sort(test, axis=0), np.sort(my_test, axis=0))
-    my_V_winds = np.asarray(my_V_winds)
-    V_winds = np.asarray(V_winds)
+
+    my_V_winds = np.asarray(my_V_winds).flatten()
+    V_winds = np.asarray(V_winds).flatten()
     np.testing.assert_almost_equal(np.sort(V_winds, axis=0), np.sort(my_V_winds, axis=0))
     
-    #scale, clr, ce, F = display_CE_CLR(ax, inviscid_flow_results, hull)
+    scale, clr, ce, F = display_CE_CLR(ax, inviscid_flow_results, hull)
     my_scale, my_clr, my_ce, my_F = display_CE_CLR(my_ax, inviscid_flow_results_new, hull)
     
-    #test = np.asarray([np.asarray(list(ax.artists[i]._verts3d)) for i in range(len(ax.artists))])
-    #my_test = np.asarray([np.asarray(list(my_ax.artists[i]._verts3d)) for i in range(len(my_ax.artists))])
     
-    #np.testing.assert_almost_equal(np.sort(test, axis=0), np.sort(my_test, axis=0))
-
-    
-    
-    # np.testing.assert_almost_equal(scale, my_scale)
-    # np.testing.assert_almost_equal(np.sort(clr, axis=0), np.sort(my_clr, axis=0))
-    # np.testing.assert_almost_equal(np.sort(ce, axis=0), np.sort(my_ce, axis=0))
-    # np.testing.assert_almost_equal(np.sort(F, axis=0), np.sort(my_F, axis=0))
+    np.testing.assert_almost_equal(scale, my_scale)
+    np.testing.assert_almost_equal(np.sort(clr, axis=0), np.sort(my_clr, axis=0))
+    np.testing.assert_almost_equal(np.sort(ce, axis=0), np.sort(my_ce, axis=0))
+    np.testing.assert_almost_equal(np.sort(F, axis=0), np.sort(my_F, axis=0))
     
     if show_plot:
         plt.show()
