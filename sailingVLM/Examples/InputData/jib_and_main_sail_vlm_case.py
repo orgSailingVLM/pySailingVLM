@@ -11,10 +11,7 @@ output_dir_name = os.path.join("results_example_jib_and_mainsail_vlm", time_stam
 
 # SOLVER SETTINGS
 n_spanwise = 15  # No of control points (above the water) per sail, recommended: 50
-n_chordwise = 3  # No of control points (above the water) per sail, recommended: 50
-AoA_0lift_iterations = 10 # recommended range [10-20] note that running 1 iteration produce a shape without AoA_0lift constraint
-AoA_0lift_max_change_per_iteration_deg = 0.05  # [deg] recommended range [0.1 - 0.01]
-wind_sub_iterations = 3  # recommended value 3 - enough to converge CL and Heeling moment constrains
+n_chordwise = 5  # No of control points (above the water) per sail, recommended: 50
 interpolation_type = "spline"  # either "spline" or "linear"
 LLT_twist = "real_twist"  # defines how the Lifting Line discretize the sail twist.
 # It can be "sheeting_angle_const" or "average_const" or "real_twist"
@@ -23,7 +20,7 @@ LLT_twist = "real_twist"  # defines how the Lifting Line discretize the sail twi
 leeway_deg = 5.    # [deg]
 heel_deg = 10.     # [deg]
 SOG_yacht = 4.63   # [m/s] yacht speed - speed over ground (leeway is a separate variable)
-tws_ref = 4.63   # [m/s] true wind speed
+tws_ref = 4.63     # [m/s] true wind speed
 alpha_true_wind_deg = 50.   # [deg] true wind angle (with reference to course over ground) => Course Wind Angle to the boat track = true wind angle to centerline + Leeway
 reference_water_level_for_wind_profile = -0.  # [m] this is an attempt to mimick the deck effect
 # by lowering the sheer_above_waterline
