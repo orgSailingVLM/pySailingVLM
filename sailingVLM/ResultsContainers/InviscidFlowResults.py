@@ -236,11 +236,13 @@ class InviscidFlowResultsNew:
         dyn_dict = {}
         # for jib and main, quantities is always dividable by 2
         half = int(myvlm.force.shape[0] / 2)
-        forces_above = self.F_xyz[0:half]
+        
         r_above = r[0:half]
         # dla jiba i maina mamy: jib above, main_above
+        # self.F_xyz[0:half] - gorna polowa paneli czyli ta nad woda
+        # forces_chunks_above - gorne panele podzielone na chanki, 0 - jib, 1 - main
         forces_chunks_above = np.array_split(self.F_xyz[0:half], len(sail_set.sails))
-        r_chunks_above = np.array_split(self.F_xyz[0:half], len(sail_set.sails))
+        r_chunks_above = np.array_split(self.r[0:half], len(sail_set.sails))
         #sprawdzic split  i kolejnosc jiba i maina
         for i in range(len(sail_set.sails)):
             # to be done

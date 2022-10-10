@@ -190,6 +190,27 @@ np.testing.assert_almost_equal(np.sort(inviscid_flow_results.F_centerline_total,
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.M_centerline_csys, axis=0), np.sort(inviscid_flow_results_new_approach.M_centerline_csys, axis=0))
 np.testing.assert_almost_equal(np.sort(inviscid_flow_results.M_total_above_water_in_centerline_csys, axis=0), np.sort(inviscid_flow_results_new_approach.M_total_above_water_in_centerline_csys, axis=0))
 
+
+np.testing.assert_almost_equal(inviscid_flow_results.dyn_dict['F_jib_total_COG.x'],inviscid_flow_results_new_approach.dyn_dict['F_jib_total_COG.x'])
+np.testing.assert_almost_equal(inviscid_flow_results.dyn_dict['F_jib_total_COG.y'],inviscid_flow_results_new_approach.dyn_dict['F_jib_total_COG.y'])
+np.testing.assert_almost_equal(inviscid_flow_results.dyn_dict['F_jib_total_COG.z'],inviscid_flow_results_new_approach.dyn_dict['F_jib_total_COG.z'])
+
+np.testing.assert_almost_equal(inviscid_flow_results.dyn_dict['F_main_sail_total_COG.x'],inviscid_flow_results_new_approach.dyn_dict['F_main_sail_total_COG.x'])
+np.testing.assert_almost_equal(inviscid_flow_results.dyn_dict['F_main_sail_total_COG.y'],inviscid_flow_results_new_approach.dyn_dict['F_main_sail_total_COG.y'])
+np.testing.assert_almost_equal(inviscid_flow_results.dyn_dict['F_main_sail_total_COG.z'],inviscid_flow_results_new_approach.dyn_dict['F_main_sail_total_COG.z'])
+
+
+
+np.testing.assert_almost_equal(inviscid_flow_results.dyn_dict['M_jib_total_COG.x'],inviscid_flow_results_new_approach.dyn_dict['M_jib_total_COG.x'])
+np.testing.assert_almost_equal(inviscid_flow_results.dyn_dict['M_jib_total_COG.y'],inviscid_flow_results_new_approach.dyn_dict['M_jib_total_COG.y'])
+np.testing.assert_almost_equal(inviscid_flow_results.dyn_dict['M_jib_total_COG.z'],inviscid_flow_results_new_approach.dyn_dict['M_jib_total_COG.z'])
+
+np.testing.assert_almost_equal(inviscid_flow_results.dyn_dict['M_main_sail_total_COG.x'],inviscid_flow_results_new_approach.dyn_dict['M_main_sail_total_COG.x'])
+np.testing.assert_almost_equal(inviscid_flow_results.dyn_dict['M_main_sail_total_COG.y'],inviscid_flow_results_new_approach.dyn_dict['M_main_sail_total_COG.y'])
+np.testing.assert_almost_equal(inviscid_flow_results.dyn_dict['M_main_sail_total_COG.z'],inviscid_flow_results_new_approach.dyn_dict['M_main_sail_total_COG.z'])
+
+
+
 ###
 
 
