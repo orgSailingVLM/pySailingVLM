@@ -10,7 +10,7 @@ time_stamp = time.strftime("%Y-%m-%d_%Hh%Mm%Ss")
 output_dir_name = os.path.join("results_example_jib_and_mainsail_vlm", time_stamp)
 
 # SOLVER SETTINGS
-n_spanwise =  3# No of control points (above the water) per sail, recommended: 50
+n_spanwise =  2# No of control points (above the water) per sail, recommended: 50
 n_chordwise = 2  # No of control points (above the water) per sail, recommended: 50
 interpolation_type = "spline"  # either "spline" or "linear"
 LLT_twist = "real_twist"  # defines how the Lifting Line discretize the sail twist.

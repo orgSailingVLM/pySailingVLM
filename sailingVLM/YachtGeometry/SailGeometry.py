@@ -182,11 +182,13 @@ class SailGeometry(BaseGeometry, ABC):
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
         
         # moje dodatki w ramach eksperymentow
-        # panale nad woda, panele pod woda (2*M*N, 4, 3)
-        #self.my_panels = np.concatenate([new_approach_panels, new_approach_panels_mirror])
         
         self.panels_above = new_approach_panels
         self.panels_under = new_approach_panels_mirror
+        
+        
+        #self.my_panels = np.concatenate([self.panels_above, self.panels_under])
+        
         # both trailing_edge_info and leading_edge_info are the same for above and underwater
         self.trailing_edge_info = trailing_edge_info
         self.leading_edge_info = leading_edge_info

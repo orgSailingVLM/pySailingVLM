@@ -8,7 +8,7 @@ from sailingVLM.Rotations.geometry_calc import rotation_matrix
 import numba
 
 from sailingVLM.YachtGeometry.SailGeometry import SailGeometry, SailSet
-
+from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
 
 
 def get_leading_edge_mid_point(p2: np.ndarray, p3: np.ndarray) -> np.ndarray:
@@ -483,3 +483,76 @@ def extract_above_water_quantities_new_approach(quantities, cp_points):
     total_above_water_quantities = np.sum(above_water_quantities, axis=0)  # heeling, sway, yaw (z-axis)
     return above_water_quantities, total_above_water_quantities
 
+
+
+# to mozna gdzie s przenesc 
+# było uprzednio w pliku sail geometry (208)
+
+# def get_cp_straight_yacht(cp_points, csys_transformations):
+#     cp_straight_yacht = np.array([csys_transformations.reverse_rotations_with_mirror(p) for p in cp_points])
+#     return cp_straight_yacht
+
+# # sail_cp_to_girths
+# def get_y_as_girths(cp_points, csys_transformations, tack_mounting):
+#     sail_cp_straight_yacht = get_cp_straight_yacht(cp_points, csys_transformations)
+#     tack_mounting = tack_mounting
+#     y = sail_cp_straight_yacht[:, 2]
+#     y_as_girths = (y - tack_mounting[2]) / (max(y) - tack_mounting[2])
+#     return y_as_girths
+
+# # set
+# def sail_cp_to_girths(self):
+#         y_as_girths = np.array([])
+#         for sail in self.sails:
+#             y_as_girths = np.append(y_as_girths, sail.sail_cp_to_girths())
+#         return y_as_girths
+
+# # sail
+
+# def sail_cp_to_girths(self):
+#     sail_cp_straight_yacht = self.get_cp_points_upright()
+#     tack_mounting = self.tack_mounting
+#     y = sail_cp_straight_yacht[:, 2]
+#     y_as_girths = (y - tack_mounting[2]) / (max(y) - tack_mounting[2])
+#     return y_as_girths
+    
+# def get_cp_points_upright(cp_points):
+#     cp_straight_yacht = np.array([self.csys_transformations.reverse_rotations_with_mirror(p) for p in cp_points])
+#     return cp_straight_yacht
+
+
+####
+
+def sail_cp_to_girths(sail_cp_points, csys_transformations, sail_tack_mounting):
+    sail_cp_straight_yacht = np.array([csys_transformations.reverse_rotations_with_mirror(p) for p in sail_cp_points])
+    y = sail_cp_straight_yacht[:, 2]
+    y_as_girths = (y - sail_tack_mounting[2]) / (max(y) - sail_tack_mounting[2])
+    return y_as_girths
+
+# def sail_cp_to_girths(self):
+#     y_as_girths = np.array([])
+#     for sail in self.sails:
+#         y_as_girths = np.append(y_as_girths, sail.sail_cp_to_girths())
+#     return y_as_girths
+def get_y_as_girths(sail_set : SailSet, csys_transformations : CSYS_transformations, center_of_pressure : np.ndarray) -> np.ndarray: 
+    """
+    get_y_as_girths get y as girths
+
+    :param SailSet sail_set: Sail set object
+    :param CSYS_transformations csys_transformations: csys transformations
+    :param np.ndarray center_of_pressure: array with all center of pressure points (for all sails and for above and under water)
+
+    :return np.ndarray: y_as_girths for all sails (with above and under water points)
+    """
+   
+    # 2* bo mamy odpicie lustrzane 
+    chunks_cp_points = np.array_split(center_of_pressure, 2 * len(sail_set.sails))
+     
+    n = len(sail_set.sails)
+    y_as_girths = np.array([])
+    for i in range(len(sail_set.sails)):
+        sail_cp_points = np.concatenate([chunks_cp_points[i], chunks_cp_points[i+n]])
+        sail_y_girths = sail_cp_to_girths(sail_cp_points, csys_transformations, sail_set.sails[i].tack_mounting)
+        y_as_girths = np.append(y_as_girths, sail_y_girths)
+    
+    return y_as_girths

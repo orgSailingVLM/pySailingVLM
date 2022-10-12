@@ -226,8 +226,10 @@ display_panels_xyz_and_winds(myvlm, inviscid_flow_results_new_approach, sail_set
 
 # tu spawdzic
 # assert zrobic, na bank nie przejdzie bo save_results_to_file needs changes
-df_components, df_integrals, df_inlet_IC = save_results_to_file(inviscid_flow_results, None, inlet_condition, sail_set, output_dir_name)
-new_df_components, new_df_integrals, new_df_inlet_IC = save_results_to_file(inviscid_flow_results_new_approach, None, myvlm.inlet_conditions, sail_set, output_dir_name)
+df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, inviscid_flow_results_new_approach, None, inlet_condition, myvlm.inlet_conditions, sail_set, output_dir_name, )
+
+#df_components, df_integrals, df_inlet_IC = save_results_to_file(inviscid_flow_results, None, inlet_condition, sail_set, output_dir_name)
+#new_df_components, new_df_integrals, new_df_inlet_IC = save_results_to_file(inviscid_flow_results_new_approach, None, myvlm.inlet_conditions, sail_set, output_dir_name)
 # shutil.copy(os.path.join(case_dir, case_name), os.path.join(output_dir_name, case_name))
 
 # print(f"-------------------------------------------------------------")

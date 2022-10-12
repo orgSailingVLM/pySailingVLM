@@ -1,19 +1,29 @@
 import pandas as pd
 import os
-
+import numpy as np
 from sailingVLM.ResultsContainers.InviscidFlowResults import InviscidFlowResults
 # from LLT_optimizer.SectionShapeResults import SectionShapeResults
 from sailingVLM.Inlet.InletConditions import InletConditions
 from sailingVLM.YachtGeometry.SailGeometry import SailSet
 
+from sailingVLM.NewApproach.vlm_logic import get_y_as_girths
 
-def save_results_to_file(inviscid_flow_results: InviscidFlowResults,
+
+def save_results_to_file(myvlm, csys_transformations, inviscid_flow_results: InviscidFlowResults,
+                         inviscid_flow_results_new: InviscidFlowResults,
                          section_results,
                          inlet_conditions: InletConditions,
+                         inlet_conditions_new: InletConditions,
                          sail_set: SailSet,
                          output_dir="output"):
     # tu trzeba poprawic
     girths_as_dict = {'girths': sail_set.sail_cp_to_girths()}
+    
+    y_as_girths = get_y_as_girths(sail_set, csys_transformations, myvlm.center_of_pressure)     
+    
+    np.testing.assert_almost_equal(np.sort(girths_as_dict['girths'], axis=0), np.sort(y_as_girths, axis=0))
+    girths_as_dict_my = {'girths': y_as_girths}
+    # dtutaj zaczac jutro 
     df_girths = sail_set.extract_data_above_water_to_df(pd.DataFrame.from_records(girths_as_dict))
     df_sail_names = sail_set.extract_data_above_water_to_df(sail_set.get_sail_name_for_each_element())
 
