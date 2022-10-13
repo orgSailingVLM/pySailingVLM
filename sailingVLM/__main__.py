@@ -220,7 +220,7 @@ inviscid_flow_results_new_approach.estimate_heeling_moment_from_keel(hull.center
 
 
 print("Preparing visualization.")
-display_panels_xyz_and_winds(myvlm, inviscid_flow_results_new_approach, sail_set.panels1d, inlet_condition, myvlm.inlet_conditions, inviscid_flow_results, hull)
+display_panels_xyz_and_winds(myvlm, inviscid_flow_results_new_approach, sail_set.panels1d, inlet_condition, myvlm.inlet_conditions, inviscid_flow_results, hull, show_plot=False)
 
 #display_panels_xyz_and_winds_new_approach(myvlm, inviscid_flow_results_new_approach, inlet_condition, hull)
 

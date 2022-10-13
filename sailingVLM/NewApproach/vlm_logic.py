@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from typing import List, Tuple
 from numpy.linalg import norm
 
@@ -523,18 +524,20 @@ def extract_above_water_quantities_new_approach(quantities, cp_points):
 
 ####
 
+
+
 def sail_cp_to_girths(sail_cp_points, csys_transformations, sail_tack_mounting):
     sail_cp_straight_yacht = np.array([csys_transformations.reverse_rotations_with_mirror(p) for p in sail_cp_points])
     y = sail_cp_straight_yacht[:, 2]
     y_as_girths = (y - sail_tack_mounting[2]) / (max(y) - sail_tack_mounting[2])
-    return y_as_girths
+    return sail_cp_straight_yacht, y_as_girths
 
 # def sail_cp_to_girths(self):
 #     y_as_girths = np.array([])
 #     for sail in self.sails:
 #         y_as_girths = np.append(y_as_girths, sail.sail_cp_to_girths())
 #     return y_as_girths
-def get_y_as_girths(sail_set : SailSet, csys_transformations : CSYS_transformations, center_of_pressure : np.ndarray) -> np.ndarray: 
+def get_y_as_girths_all(sail_set : SailSet, csys_transformations : CSYS_transformations, center_of_pressure : np.ndarray) -> np.ndarray: 
     """
     get_y_as_girths get y as girths
 
@@ -549,10 +552,36 @@ def get_y_as_girths(sail_set : SailSet, csys_transformations : CSYS_transformati
     chunks_cp_points = np.array_split(center_of_pressure, 2 * len(sail_set.sails))
      
     n = len(sail_set.sails)
-    y_as_girths = np.array([])
+    y_as_girths_all = np.array([])
+
+    cp_straight_yacht_all = [] 
     for i in range(len(sail_set.sails)):
         sail_cp_points = np.concatenate([chunks_cp_points[i], chunks_cp_points[i+n]])
-        sail_y_girths = sail_cp_to_girths(sail_cp_points, csys_transformations, sail_set.sails[i].tack_mounting)
-        y_as_girths = np.append(y_as_girths, sail_y_girths)
+        sail_cp_straight_yacht, sail_y_girths = sail_cp_to_girths(sail_cp_points, csys_transformations, sail_set.sails[i].tack_mounting)
+        y_as_girths_all = np.append(y_as_girths_all, sail_y_girths)
+        cp_straight_yacht_all.append(sail_cp_straight_yacht)
     
-    return y_as_girths
+    cp_straight_yacht_all = np.concatenate(cp_straight_yacht_all)
+    return cp_straight_yacht_all, y_as_girths_all
+
+
+# to policzyc dla wszystkich cpsow
+# potem wziac gorna czesc czyli pierwsza polowe by miec nad woda
+
+def get_y_as_girths_all_above(y_as_girths_all : np.ndarray, sail_set : SailSet):
+    # 2 bo mamy odbicie 
+    # parzyste numery to sa te nad woda
+    n = 2 * len(sail_set.sails)
+    y_splitted = np.split(y_as_girths_all, n)
+    
+    y_as_girths_all_above = np.array([])
+    names_all_above = np.array([])
+    counter = 0
+    for i in range(n):
+        if i % 2 == 0:
+            y_as_girths_all_above = np.append(y_as_girths_all_above, y_splitted[i])
+            names = np.full(y_splitted[i].shape, sail_set.sails[counter].name)
+            names_all_above = np.append(names_all_above, names)
+            counter += 1
+            
+    return y_as_girths_all_above, names_all_above

@@ -6,7 +6,7 @@ from sailingVLM.ResultsContainers.InviscidFlowResults import InviscidFlowResults
 from sailingVLM.Inlet.InletConditions import InletConditions
 from sailingVLM.YachtGeometry.SailGeometry import SailSet
 
-from sailingVLM.NewApproach.vlm_logic import get_y_as_girths
+from sailingVLM.NewApproach.vlm_logic import get_y_as_girths_all, get_y_as_girths_all_above
 
 
 def save_results_to_file(myvlm, csys_transformations, inviscid_flow_results: InviscidFlowResults,
@@ -18,18 +18,34 @@ def save_results_to_file(myvlm, csys_transformations, inviscid_flow_results: Inv
                          output_dir="output"):
     # tu trzeba poprawic
     girths_as_dict = {'girths': sail_set.sail_cp_to_girths()}
-    
-    y_as_girths = get_y_as_girths(sail_set, csys_transformations, myvlm.center_of_pressure)     
-    
-    np.testing.assert_almost_equal(np.sort(girths_as_dict['girths'], axis=0), np.sort(y_as_girths, axis=0))
-    girths_as_dict_my = {'girths': y_as_girths}
+    cp_straight_yacht_all, y_as_girths_all = get_y_as_girths_all(sail_set, csys_transformations, myvlm.center_of_pressure)
+ 
+    np.testing.assert_almost_equal(np.sort(girths_as_dict['girths'], axis=0), np.sort(y_as_girths_all, axis=0))
+    girths_as_dict_my = {'girths': y_as_girths_all}
     # dtutaj zaczac jutro 
+    y_as_girths_all_above, names_all_above = get_y_as_girths_all_above(y_as_girths_all, sail_set)
     df_girths = sail_set.extract_data_above_water_to_df(pd.DataFrame.from_records(girths_as_dict))
+    # to ma byc above water
+    np.testing.assert_almost_equal(np.sort(df_girths['girths'], axis=0), np.sort(y_as_girths_all_above, axis=0))
+    
     df_sail_names = sail_set.extract_data_above_water_to_df(sail_set.get_sail_name_for_each_element())
-
+    np.testing.assert_equal(np.sort(df_sail_names['sail_name'].to_numpy().astype('<U32'), axis=0), np.sort(names_all_above, axis=0))
+    
+    # wspolrzedna z wszystkich punktow
     cp_points_upright_as_dict = {'cp_points_upright.z': sail_set.get_cp_points_upright()[:, 2]}
+    cp_points_upright_as_dict_my = cp_straight_yacht_all[:, 2]
+    np.testing.assert_equal(np.sort(sail_set.get_cp_points_upright()[:, 2], axis=0), np.sort(cp_straight_yacht_all[:, 2], axis=0))
+    
+    
+
+    # above water
     df_cp_points_upright = sail_set.extract_data_above_water_to_df(pd.DataFrame.from_records(cp_points_upright_as_dict))
 
+    # tu sie wywala
+    # co to jest df_cp_points_upright['cp_points_upright.z']??
+    # z czym to porownac
+    #np.testing.assert_equal(np.sort(df_cp_points_upright['cp_points_upright.z'], axis=0), np.sort(cp_straight_yacht_all_above, axis=0))
+    
     df_inlet_conditions = sail_set.extract_data_above_water_to_df(inlet_conditions.to_df_full(sail_set.sails[0].csys_transformations))
     df_inviscid_flow = sail_set.extract_data_above_water_to_df(inviscid_flow_results.to_df_full())
     list_of_df = [df_inviscid_flow, df_inlet_conditions, df_cp_points_upright, df_girths, df_sail_names]

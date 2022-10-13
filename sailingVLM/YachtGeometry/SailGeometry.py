@@ -187,13 +187,14 @@ class SailGeometry(BaseGeometry, ABC):
         self.panels_under = new_approach_panels_mirror
         
         
-        #self.my_panels = np.concatenate([self.panels_above, self.panels_under])
+        self.my_panels = np.concatenate([self.panels_above, self.panels_under])
         
         # both trailing_edge_info and leading_edge_info are the same for above and underwater
         self.trailing_edge_info = trailing_edge_info
         self.leading_edge_info = leading_edge_info
     
 
+        self.tack_mounting_arr = np.array([self.tack_mounting for i in range(self.__n_chordwise * self.__n_spanwise)])
         print()
         
         
@@ -260,7 +261,11 @@ class SailSet(BaseGeometry):
         leading_info_above = np.concatenate([sail.leading_edge_info for sail in self.sails])
         leading_info_under = np.concatenate([sail.leading_edge_info for sail in self.sails])
         self.leading_edge_info = np.concatenate([leading_info_above, leading_info_under])
-    
+
+        tack_mounting_arr_above = np.concatenate([sail.tack_mounting_arr for sail in self.sails])
+        tack_mounting_arr_under = np.concatenate([sail.tack_mounting_arr for sail in self.sails])
+        self.tack_mounting_arr = np.concatenate([tack_mounting_arr_above, tack_mounting_arr_under])
+        
         print()
     @property
     def panels1d(self):
