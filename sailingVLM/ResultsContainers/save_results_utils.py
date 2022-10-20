@@ -6,9 +6,9 @@ from sailingVLM.ResultsContainers.InviscidFlowResults import InviscidFlowResults
 from sailingVLM.Inlet.InletConditions import InletConditions
 from sailingVLM.YachtGeometry.SailGeometry import SailSet
 
-from sailingVLM.NewApproach.vlm_logic import get_y_as_girths_all, get_y_as_girths_all_above
+from sailingVLM.NewApproach.vlm_logic import get_cp_z_as_girths_all, get_cp_z_as_girths_all_above
 
-
+# jak juz bedzie dzialac to zrzucic jakis przypadek z excela i porownywac w unittestach
 def save_results_to_file(myvlm, csys_transformations, inviscid_flow_results: InviscidFlowResults,
                          inviscid_flow_results_new: InviscidFlowResults,
                          section_results,
@@ -18,22 +18,23 @@ def save_results_to_file(myvlm, csys_transformations, inviscid_flow_results: Inv
                          output_dir="output"):
     # tu trzeba poprawic
     girths_as_dict = {'girths': sail_set.sail_cp_to_girths()}
-    cp_straight_yacht_all, y_as_girths_all = get_y_as_girths_all(sail_set, csys_transformations, myvlm.center_of_pressure)
+    cp_z_as_girths_all, cp_straight_yacht_all = get_cp_z_as_girths_all(sail_set, csys_transformations, myvlm.center_of_pressure)
  
-    np.testing.assert_almost_equal(np.sort(girths_as_dict['girths'], axis=0), np.sort(y_as_girths_all, axis=0))
-    girths_as_dict_my = {'girths': y_as_girths_all}
+    np.testing.assert_almost_equal(np.sort(girths_as_dict['girths'], axis=0), np.sort(cp_z_as_girths_all, axis=0))
+    girths_as_dict_my = {'girths': cp_z_as_girths_all}
     # dtutaj zaczac jutro 
-    y_as_girths_all_above, names_all_above = get_y_as_girths_all_above(y_as_girths_all, sail_set)
+    cp_z_as_girths_all_above, names_all_above = get_cp_z_as_girths_all_above(cp_z_as_girths_all, sail_set)
     df_girths = sail_set.extract_data_above_water_to_df(pd.DataFrame.from_records(girths_as_dict))
     # to ma byc above water
-    np.testing.assert_almost_equal(np.sort(df_girths['girths'], axis=0), np.sort(y_as_girths_all_above, axis=0))
+    np.testing.assert_almost_equal(np.sort(df_girths['girths'], axis=0), np.sort(cp_z_as_girths_all_above, axis=0))
     
     df_sail_names = sail_set.extract_data_above_water_to_df(sail_set.get_sail_name_for_each_element())
     np.testing.assert_equal(np.sort(df_sail_names['sail_name'].to_numpy().astype('<U32'), axis=0), np.sort(names_all_above, axis=0))
     
-    # wspolrzedna z wszystkich punktow
+    # wspolrzedne cisnienia (z) w ukladzie z pomostem (mozna to zrobic w jednej funkcji)
+    # wszytskie punkty
     cp_points_upright_as_dict = {'cp_points_upright.z': sail_set.get_cp_points_upright()[:, 2]}
-    cp_points_upright_as_dict_my = cp_straight_yacht_all[:, 2]
+    #cp_points_upright_as_dict_my = cp_straight_yacht_all[:, 2]
     np.testing.assert_equal(np.sort(sail_set.get_cp_points_upright()[:, 2], axis=0), np.sort(cp_straight_yacht_all[:, 2], axis=0))
     
     
@@ -44,12 +45,33 @@ def save_results_to_file(myvlm, csys_transformations, inviscid_flow_results: Inv
     # tu sie wywala
     # co to jest df_cp_points_upright['cp_points_upright.z']??
     # z czym to porownac
-    #np.testing.assert_equal(np.sort(df_cp_points_upright['cp_points_upright.z'], axis=0), np.sort(cp_straight_yacht_all_above, axis=0))
     
+    # nad woda(dataframe z wszystkimi rzezcami z inlet condition)
     df_inlet_conditions = sail_set.extract_data_above_water_to_df(inlet_conditions.to_df_full(sail_set.sails[0].csys_transformations))
+    
+    df_inlet_conditions_my = np.array_split(myvlm.inlet_conditions.to_df_full(sail_set.sails[0].csys_transformations), 2)
+    df_inlet_conditions_my_above = df_inlet_conditions_my[0]
+    
+    for i in range(df_inlet_conditions.shape[1]):
+        arr1 = np.asarray(df_inlet_conditions.iloc[:, 0])
+        arr2 = np.asarray(df_inlet_conditions_my_above.iloc[:, 0])
+        np.testing.assert_almost_equal(np.sort(arr1, axis=0), np.sort(arr2, axis=0))
+    
+    
+    
     df_inviscid_flow = sail_set.extract_data_above_water_to_df(inviscid_flow_results.to_df_full())
+    df_inviscid_flow_my = np.array_split(inviscid_flow_results_new.to_df_full(), 2)
+    df_inviscid_flow_my_above = df_inviscid_flow_my[0]
+    
+    for i in range(df_inviscid_flow.shape[1]):
+        arr1 = np.asarray(df_inviscid_flow.iloc[:, 0])
+        arr2 = np.asarray(df_inviscid_flow_my_above.iloc[:, 0])
+        np.testing.assert_almost_equal(np.sort(arr1, axis=0), np.sort(arr2, axis=0))
+    
+    # do tego miejsa jest okej :)
     list_of_df = [df_inviscid_flow, df_inlet_conditions, df_cp_points_upright, df_girths, df_sail_names]
 
+    # do wywalenia
     if section_results is not None:
         df_section_results = sail_set.extract_data_above_water_to_df(section_results.to_df_full())
         list_of_df.append(df_section_results)

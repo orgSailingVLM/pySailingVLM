@@ -36,7 +36,7 @@ class InletConditions:
 
     def to_df_full(self, csys_transformations: CSYS_transformations):
         obj_as_dict = dict(self)  # this calls __iter__
-
+        # apparent - leeway (zilony - szary)
         tmp = {
             'AWA_infs_COW_deg': self.AWA_infs_deg - csys_transformations.leeway_deg,  # COW = centerline
         }

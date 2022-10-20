@@ -207,7 +207,7 @@ class SailGeometry(BaseGeometry, ABC):
             np.dot(rotation_matrix(axis, np.deg2rad(t)), c) for t, c in zip(sail_twist_deg_vec, chords_vec)])
 
         return rchords_vec
-
+# powrot zagla do ukladu przy pomoscie 
     def get_cp_points_upright(self):
         cp_points = self.get_cp_points1d()
         cp_straight_yacht = np.array([self.csys_transformations.reverse_rotations_with_mirror(p) for p in cp_points])
@@ -215,8 +215,10 @@ class SailGeometry(BaseGeometry, ABC):
 
     def sail_cp_to_girths(self):
         sail_cp_straight_yacht = self.get_cp_points_upright()
+        # rog helsowy 
         tack_mounting = self.tack_mounting
         y = sail_cp_straight_yacht[:, 2]
+        # ciesnienie w procentach (girths) liczac od rogu
         y_as_girths = (y - tack_mounting[2]) / (max(y) - tack_mounting[2])
         return y_as_girths
 
