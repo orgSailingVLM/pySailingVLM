@@ -1,8 +1,8 @@
 import numpy as np
 from typing import List
-from Solver.Panel import Panel
+from sailingVLM.Solver.Panel import Panel
 from typing import List
-from Solver.TrailingEdgePanel import TrailingEdgePanel
+from sailingVLM.Solver.TrailingEdgePanel import TrailingEdgePanel
 
 
 # pomyslec nad jit by kod byl kompilowany
@@ -42,7 +42,7 @@ def calc_circulation(V_app_ifnw, panels):
     A, RHS, v_ind_coeff = assembly_sys_of_eq(V_app_ifnw, panels)
     gamma_magnitude = np.linalg.solve(A, RHS)
 
-    return gamma_magnitude, v_ind_coeff, A
+    return gamma_magnitude, v_ind_coeff, A, RHS
 
 
 def calc_induced_velocity(v_ind_coeff, gamma_magnitude):
@@ -77,7 +77,7 @@ def is_no_flux_BC_satisfied(V_app_fw, panels):
     return True
 
 
-def calculate_app_fs(inletConditions, v_ind_coeff, gamma_magnitude):
+def calculate_app_fs(V_app_infs, v_ind_coeff, gamma_magnitude):
     V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
-    V_app_fs = inletConditions.V_app_infs + V_induced
+    V_app_fs = V_app_infs + V_induced
     return V_induced, V_app_fs

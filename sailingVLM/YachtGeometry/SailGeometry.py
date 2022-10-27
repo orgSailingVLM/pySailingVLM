@@ -5,10 +5,11 @@ from abc import abstractmethod, ABC
 from sailingVLM.Rotations.geometry_calc import rotation_matrix
 from sailingVLM.Solver import Panel
 from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
+from sailingVLM.Solver.TrailingEdgePanel import TrailingEdgePanel
 from sailingVLM.Solver.mesher import make_panels_from_le_te_points, make_panels_from_le_points_and_chords
 from typing import List
 
-from Solver.forces import get_stuff_from_panels
+from sailingVLM.Solver.forces import get_stuff_from_panels
 
 # np.set_printoptions(precision=3, suppress=True)
 
@@ -147,13 +148,14 @@ class SailGeometry(BaseGeometry, ABC):
                 frchords_vec = self.rotate_chord_around_le(underwater_axis, frchords_vec,
                                                            np.flip(sail_twist_deg, axis=0))
                 pass
+            # inicjalizacja zmiennych? sa w ifie przeciez
 
-            panels, mesh = make_panels_from_le_points_and_chords(
+            panels, mesh, new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
                 [le_SW, le_NW],
                 [self.__n_chordwise, self.__n_spanwise],
                 rchords_vec, gamma_orientation=-1)
 
-            panels_mirror, mesh_mirror = make_panels_from_le_points_and_chords(
+            panels_mirror, mesh_mirror, new_approach_panels_mirror, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
                 [le_SW_underwater, le_NW_underwater],
                 [self.__n_chordwise, self.__n_spanwise],
                 frchords_vec, gamma_orientation=-1)
@@ -162,14 +164,14 @@ class SailGeometry(BaseGeometry, ABC):
             te_NE = le_NW  # trailing edge North - East coordinate
             te_SE = le_SW  # trailing edge South - East coordinate
 
-            panels, mesh = make_panels_from_le_te_points(
+            panels, mesh, new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_le_te_points(
                 [le_SW, te_SE, le_NW, te_NE],
                 [self.__n_chordwise, self.__n_spanwise], gamma_orientation=-1)
 
             te_NE_underwater = le_NW_underwater  # trailing edge North - East coordinate
             te_SE_underwater = le_SW_underwater  # trailing edge South - East coordinate
 
-            panels_mirror, mesh_mirror = make_panels_from_le_te_points(
+            panels_mirror, mesh_mirror, new_approach_panels_mirror, trailing_edge_info, leading_edge_info = make_panels_from_le_te_points(
                 [le_SW_underwater, te_SE_underwater, le_NW_underwater, te_NE_underwater],
                 [self.__n_chordwise, self.__n_spanwise], gamma_orientation=-1)
 
@@ -178,7 +180,24 @@ class SailGeometry(BaseGeometry, ABC):
         self.__panels = np.hstack((panels_mirror, panels))  # original version
         self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
+        
+        # moje dodatki w ramach eksperymentow
+        
+        self.panels_above = new_approach_panels
+        self.panels_under = new_approach_panels_mirror
+        
+        
+        self.my_panels = np.concatenate([self.panels_above, self.panels_under])
+        
+        # both trailing_edge_info and leading_edge_info are the same for above and underwater
+        self.trailing_edge_info = trailing_edge_info
+        self.leading_edge_info = leading_edge_info
+    
 
+        self.tack_mounting_arr = np.array([self.tack_mounting for i in range(self.__n_chordwise * self.__n_spanwise)])
+        print()
+        
+        
     def rotate_chord_around_le(self, axis, chords_vec, sail_twist_deg_vec):
         # sail_twist = np.deg2rad(45.)
         # todo: dont forget to reverse rotations in postprocessing (plots)
@@ -188,7 +207,7 @@ class SailGeometry(BaseGeometry, ABC):
             np.dot(rotation_matrix(axis, np.deg2rad(t)), c) for t, c in zip(sail_twist_deg_vec, chords_vec)])
 
         return rchords_vec
-
+# powrot zagla do ukladu przy pomoscie 
     def get_cp_points_upright(self):
         cp_points = self.get_cp_points1d()
         cp_straight_yacht = np.array([self.csys_transformations.reverse_rotations_with_mirror(p) for p in cp_points])
@@ -196,15 +215,25 @@ class SailGeometry(BaseGeometry, ABC):
 
     def sail_cp_to_girths(self):
         sail_cp_straight_yacht = self.get_cp_points_upright()
+        # rog helsowy 
         tack_mounting = self.tack_mounting
         y = sail_cp_straight_yacht[:, 2]
+        # ciesnienie w procentach (girths) liczac od rogu
         y_as_girths = (y - tack_mounting[2]) / (max(y) - tack_mounting[2])
         return y_as_girths
 
     @property
     def spans(self):
         return self.__spans
-
+    
+    @property
+    def n_chordwise(self):
+        return self.__n_chordwise
+    
+    @property
+    def n_spanwise(self):
+        return self.__n_spanwise
+    
     @property
     def panels1d(self) -> np.array([Panel]):
         return self.__panels1D
@@ -223,6 +252,24 @@ class SailSet(BaseGeometry):
         self.__panels1D = self.__panels.flatten()
         self.__spans = np.array([panel.get_panel_span_at_cp() for panel in self.panels1d])
 
+        panels_above = np.concatenate([sail.panels_above for sail in self.sails])
+        panels_under = np.concatenate([sail.panels_under for sail in self.sails])
+        self.my_panels = np.concatenate([panels_above, panels_under])
+        
+        trailing_info_above = np.concatenate([sail.trailing_edge_info for sail in self.sails])
+        trailing_info_under = np.concatenate([sail.trailing_edge_info for sail in self.sails])
+        self.trailing_edge_info = np.concatenate([trailing_info_above, trailing_info_under])
+        
+        leading_info_above = np.concatenate([sail.leading_edge_info for sail in self.sails])
+        leading_info_under = np.concatenate([sail.leading_edge_info for sail in self.sails])
+        self.leading_edge_info = np.concatenate([leading_info_above, leading_info_under])
+
+        # nie uzywane chyba
+        tack_mounting_arr_above = np.concatenate([sail.tack_mounting_arr for sail in self.sails])
+        tack_mounting_arr_under = np.concatenate([sail.tack_mounting_arr for sail in self.sails])
+        self.tack_mounting_arr = np.concatenate([tack_mounting_arr_above, tack_mounting_arr_under])
+        
+        print()
     @property
     def panels1d(self):
         return self.__panels1D

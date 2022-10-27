@@ -140,3 +140,10 @@ sailingVLM/tests_VLM/.pytest_cache
 .vscode/
 
 testy_czasowe/*
+output*
+# do not include csv files from tests_VLM/InputFiles/
+sailingVLM/tests_VLM/InputFiles/*.csv
+out.txt
+sailingVLM/NewApproach/jit_*
+
+results_example_jib_and_mainsail_vlm/
