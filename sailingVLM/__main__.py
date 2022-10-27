@@ -220,13 +220,13 @@ inviscid_flow_results_new_approach.estimate_heeling_moment_from_keel(hull.center
 
 
 print("Preparing visualization.")
-display_panels_xyz_and_winds(myvlm, inviscid_flow_results_new_approach, sail_set.panels1d, inlet_condition, myvlm.inlet_conditions, inviscid_flow_results, hull, show_plot=False)
+# good, uncomment and fix boolean to not do the plot
+#display_panels_xyz_and_winds(myvlm, inviscid_flow_results_new_approach, sail_set.panels1d, inlet_condition, myvlm.inlet_conditions, inviscid_flow_results, hull, show_plot=False)
 
-#display_panels_xyz_and_winds_new_approach(myvlm, inviscid_flow_results_new_approach, inlet_condition, hull)
 
 # tu spawdzic
 # assert zrobic, na bank nie przejdzie bo save_results_to_file needs changes
-df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, inviscid_flow_results_new_approach, None, inlet_condition, myvlm.inlet_conditions, sail_set, output_dir_name, )
+df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, inviscid_flow_results_new_approach, inlet_condition, myvlm.inlet_conditions, sail_set, output_dir_name)
 
 #df_components, df_integrals, df_inlet_IC = save_results_to_file(inviscid_flow_results, None, inlet_condition, sail_set, output_dir_name)
 #new_df_components, new_df_integrals, new_df_inlet_IC = save_results_to_file(inviscid_flow_results_new_approach, None, myvlm.inlet_conditions, sail_set, output_dir_name)
