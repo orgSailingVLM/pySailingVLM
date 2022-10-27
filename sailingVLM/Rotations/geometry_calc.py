@@ -2,17 +2,6 @@ import numpy as np
 import math
 
 
-def rotate_around_point(axis, theta, local_csys_origin, point):
-    m = rotation_matrix(axis, theta)
-    p_in_local_csys = point - local_csys_origin
-    length = np.linalg.norm(p_in_local_csys, axis=0)
-    point_rotated_in_local_csys = np.dot(m, p_in_local_csys)
-    length2 = np.linalg.norm(point_rotated_in_local_csys, axis=0)
-    point_in_xyz_csys = point_rotated_in_local_csys + local_csys_origin
-
-    return point_in_xyz_csys
-
-
 def rotation_matrix(axis, theta):
     """
     Return the rotation matrix associated with counterclockwise rotation about

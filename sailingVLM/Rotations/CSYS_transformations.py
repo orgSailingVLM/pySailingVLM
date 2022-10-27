@@ -1,5 +1,5 @@
 import numpy as np
-from sailingVLM.Solver.forces import extract_above_water_quantities
+from sailingVLM.NewApproach.vlm_logic import extract_above_water_quantities_new_approach
 from sailingVLM.Rotations.geometry_calc import rotation_matrix
 
 
@@ -63,7 +63,7 @@ class CSYS_transformations:
         # under water (mirror) moments are positive (righting)
         # above water moments are negative (heeling)
         M_centerline_csys = self.from_xyz_to_centerline_csys(Mxyz)
-        _, total_above_water_moments_in_centerline_csys = extract_above_water_quantities(M_centerline_csys, cp_points)
+        _, total_above_water_moments_in_centerline_csys = extract_above_water_quantities_new_approach(M_centerline_csys, cp_points)
         return M_centerline_csys, total_above_water_moments_in_centerline_csys
 
     @property

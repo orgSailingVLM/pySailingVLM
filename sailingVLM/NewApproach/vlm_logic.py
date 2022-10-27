@@ -8,8 +8,8 @@ from sailingVLM.Rotations.geometry_calc import rotation_matrix
 
 import numba
 
-from sailingVLM.YachtGeometry.SailGeometry import SailGeometry, SailSet
-from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
+#from sailingVLM.YachtGeometry.SailGeometry import SailGeometry, SailSet
+#from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
 
 
 def get_leading_edge_mid_point(p2: np.ndarray, p3: np.ndarray) -> np.ndarray:
@@ -151,7 +151,12 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
     return q_ind
 
 # sails = [jib, main]
-def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, V_app_infw: np.ndarray, sails : List[SailGeometry], horseshoe_info : np.ndarray, gamma_orientation : float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+
+# tak bylo w starej funkcji:
+# # numba tutaj nie rozumie typow -> do poprawki
+# #@numba.jit(nopython=True)
+# #@numba.njit(parallel=True)
+def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, V_app_infw: np.ndarray, horseshoe_info : np.ndarray, gamma_orientation : float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     
     m = collocation_points.shape[0]
     # to nie dziala dla jiba?
@@ -183,44 +188,12 @@ def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarr
                 
     return coefs, RHS, wind_coefs
 
-# numba tutaj nie rozumie typow -> do poprawki
-#@numba.jit(nopython=True)
-#@numba.njit(parallel=True)
-def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, M: int, N: int, V_app_infw: np.ndarray, gamma_orientation : np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-
-    m = collocation_points.shape[0]
-    RHS = -V_app_infw.dot(normals.transpose()).diagonal()
-    coefs = np.zeros((m, m))
-    wind_coefs = np.zeros((m, m, 3))
-    # loop over other vortices
-    for i, ring in enumerate(rings):
-        A = ring[0]
-        B = ring[1]
-        C = ring[2]
-        D = ring[3]
-        # loop over points
-        for j, point in enumerate(collocation_points):
-           
-            a = vortex_ring(point, A, B, C, D, gamma_orientation)
-            # poprawka na trailing edge
-            # todo: zrobic to w drugim, oddzielnym ifie
-            # poziomo od 0 do n-1, reszta odzielnie
-            if i >= len(collocation_points) - M:
-                #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
-                a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[i], gamma_orientation)
-            b = np.dot(a, normals[j].reshape(3, 1))
-            wind_coefs[j, i] = a
-            coefs[j, i] = b
-    RHS = np.asarray(RHS)
-                
-    return coefs, RHS, wind_coefs
-
 def solve_eq(coefs: np.ndarray, RHS: np.ndarray):
     big_gamma = np.linalg.solve(coefs, RHS)
     return big_gamma
 
 # parallel - no time change
-@numba.jit(nopython=True, cache=True)
+#@numba.jit(nopython=True, cache=True)
 def calc_induced_velocity(v_ind_coeff, gamma_magnitude):
     N = gamma_magnitude.shape[0]
     
@@ -231,6 +204,13 @@ def calc_induced_velocity(v_ind_coeff, gamma_magnitude):
             V_induced[i] += v_ind_coeff[i,j] * gamma_magnitude[j]
 
     return V_induced
+
+
+def calculate_app_fs(V_app_infs, v_ind_coeff, gamma_magnitude):
+    V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
+    V_app_fs = V_app_infs + V_induced
+    return V_induced, V_app_fs
+
 
 # no seppedup
 #@numba.jit(nopython=True, parallel=True)
@@ -276,10 +256,16 @@ def is_no_flux_BC_satisfied(V_app_fw, panels, areas, normals):
 
     return True
 
+# to bylo w starej czesci kodu:
+# # czesc kodu sie powtarza, zrobic osobna funkcje
+# # todo numba tutaj nie rozumie typow
+# #@numba.jit(nopython=True)
 
-def calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, sails : List[SailGeometry], trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
-        
-    
+
+# problem withnimport
+# sails  : List[SailGeometry], 
+def calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, sails, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
+
     m = center_of_pressure.shape[0]
 
     coefs = np.zeros((m, m))
@@ -308,68 +294,17 @@ def calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure
     V_at_cp = V_app_infw + V_induced
     return V_at_cp, V_induced
 
-    
-    
-# czesc kodu sie powtarza, zrobic osobna funkcje
-# todo numba tutaj nie rozumie typow
-#@numba.jit(nopython=True)
-def calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels, center_of_pressure, rings, M, N, normals, gamma_orientation : np.ndarray):
-        m = M * N
-        coefs = np.zeros((m, m))
-        wind_coefs = np.zeros((m, m, 3))
-        for i, point in enumerate(center_of_pressure):
 
-            # loop over other vortices
-            for j, ring in enumerate(rings):
-                A = ring[0]
-                B = ring[1]
-                C = ring[2]
-                D = ring[3]
-                a = vortex_ring(point, A, B, C, D, gamma_orientation)
+# to bylo w starej finkcji:
+# # "Loop serialization occurs when any number of prange driven loops are present 
+# # inside another prange driven loop. In this case the outermost of all the prange loops executes
+# # in parallel and any inner prange loops (nested or otherwise) 
+# # are treated as standard range based loops. Essentially, nested parallelism does not occur."
+# #@numba.jit(nopython=True, parallel=True)
 
-                # poprawka na trailing edge
-                # todo: zrobic to w drugim, oddzielnym ifie
-                if j >= len(center_of_pressure) - M:
-                    #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
-                    a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j], gamma_orientation)
-                b = np.dot(a, normals[i].reshape(3, 1))
-                # v_ind_coeff to jest u mnie wind_coefs
-                wind_coefs[i, j] = a
-                coefs[i, j] = b
-
-        V_induced = calc_induced_velocity(wind_coefs, gamma_magnitude)
-        V_at_cp = V_app_infw + V_induced
-        return V_at_cp, V_induced
-
-# "Loop serialization occurs when any number of prange driven loops are present 
-# inside another prange driven loop. In this case the outermost of all the prange loops executes
-# in parallel and any inner prange loops (nested or otherwise) 
-# are treated as standard range based loops. Essentially, nested parallelism does not occur."
-#@numba.jit(nopython=True, parallel=True)
-def calc_force_wrapper_new(V_app_infw, gamma_magnitude, panels, rho, center_of_pressure, rings, M, N, normals, span_vectors):
-    # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
-    # f. Secondary Computations: Pressures, Loads, Velocities, Etc
-    #Eq (12.25)
-
-    V_at_cp, V_induced = calc_V_at_cp_new(V_app_infw, gamma_magnitude, panels, center_of_pressure, rings, M, N, normals)
-
-    K = M * N
-    force_xyz = np.zeros((K, 3))
-    #numba.prange
-    for i in range(K):
-        # for spanwise only!
-        # if panel is leading edge
-        gamma = 0.0
-        if i < M:
-            gamma = span_vectors[i] * gamma_magnitude[i]
-        else:
-            gamma = span_vectors[i] * (gamma_magnitude[i] - gamma_magnitude[i-M])
-        force_xyz[i] = rho * np.cross(V_at_cp[i], gamma)
-
-    return force_xyz
-
-
-def calc_force_wrapper_new_jib_version(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, M, N, normals, span_vectors, sails :List[SailGeometry], trailing_edge_info : np.ndarray, leading_edges_info : np.ndarray, gamma_orientation : float = 1.0):
+# import problem
+# sails  :List[SailGeometry], 
+def calc_force_wrapper_new_jib_version(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, M, N, normals, span_vectors, sails, trailing_edge_info : np.ndarray, leading_edges_info : np.ndarray, gamma_orientation : float = 1.0):
     # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     # f. Secondary Computations: Pressures, Loads, Velocities, Etc
     #Eq (12.25)
@@ -399,13 +334,11 @@ def calc_force_wrapper_new_jib_version(V_app_infw, gamma_magnitude, rho, center_
     return force_xyz, V_at_cp, V_induced
 
 
-
-
 def calc_pressure_new_approach(forces, normals, areas, N , M):
     p = forces.dot(normals.transpose()).diagonal() /  areas
     return p
 
-
+# do przykladu z aircraftem
 def get_vlm_CL_CD_free_wing(F: np.ndarray, V: np.array, rho : float, S : float) -> Tuple[float, float]:
     
     total_F = np.sum(F, axis=0)
@@ -415,18 +348,17 @@ def get_vlm_CL_CD_free_wing(F: np.ndarray, V: np.array, rho : float, S : float) 
     
     return CL_vlm, CD_vlm
 
-################ mesher #################
-# sprawdzic typy!
-
-
-def make_panels_from_mesh_spanwise_new(mesh, gamma_orientation : float) -> np.array:
+# to be used
+def make_panels_from_mesh_spanwise_new(mesh) -> np.array:
     n_lines = mesh.shape[0]
     n_points_per_line = mesh.shape[1]
     M = n_points_per_line - 1
     N = n_lines - 1
     
     new_approach_panels = np.zeros((N * M, 4, 3))
-
+    trailing_edge_info = np.full(N * M, False, dtype=bool)
+    leading_edge_info = np.full(N * M, False, dtype=bool)
+    
     counter = 0
     for i in range(N):
         for j in range(M):
@@ -436,9 +368,16 @@ def make_panels_from_mesh_spanwise_new(mesh, gamma_orientation : float) -> np.ar
             pNE = mesh[i + 1][j + 1]
             new_approach_panels[counter] = [pSE, pSW, pNW, pNE] 
 
+            if i == (n_lines - 2):
+                trailing_edge_info[counter] = True
+                
+            else:
+                if i == 0:
+                    leading_edge_info[counter] = True
+                
             counter += 1
-    return  new_approach_panels
-
+            
+    return  new_approach_panels, trailing_edge_info, leading_edge_info
 
 
 def make_panels_from_le_te_points_new(points, grid_size, gamma_orientation):
@@ -454,8 +393,22 @@ def make_panels_from_le_te_points_new(points, grid_size, gamma_orientation):
     north_line = discrete_segment(le_NW, te_NE, nc)
 
     mesh = make_point_mesh(south_line, north_line, ns)
-    new_approach_panels = make_panels_from_mesh_spanwise_new(mesh, gamma_orientation)
+    new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_mesh_spanwise_new(mesh)
     return new_approach_panels
+
+
+def make_panels_from_le_points_and_chords_new(le_points, grid_size, chords_vec, gamma_orientation):
+    le_SW,  le_NW = le_points
+    n_chordwise, n_spanwise = grid_size
+    le_line = discrete_segment(le_SW, le_NW, n_spanwise)
+    te_line = np.copy(le_line)  # deep copy
+    te_line += chords_vec
+
+    mesh = make_point_mesh(le_line, te_line, n_chordwise)
+    # panels = make_panels_from_mesh_chordwise(mesh)
+    mesh = np.swapaxes(mesh, 0, 1)
+    new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_mesh_spanwise_new(mesh)
+    return new_approach_panels, trailing_edge_info, leading_edge_info
 
 
 def create_panels(half_wing_span : float, chord : float, AoA_deg : float, M : int, N : int) -> np.ndarray:
@@ -492,46 +445,9 @@ def extract_above_water_quantities_new_approach(quantities, cp_points):
     return above_water_quantities, total_above_water_quantities
 
 
-
-# to mozna gdzie s przenesc 
-# było uprzednio w pliku sail geometry (208)
-
-# def get_cp_straight_yacht(cp_points, csys_transformations):
-#     cp_straight_yacht = np.array([csys_transformations.reverse_rotations_with_mirror(p) for p in cp_points])
-#     return cp_straight_yacht
-
-# # sail_cp_to_girths
-# def get_y_as_girths(cp_points, csys_transformations, tack_mounting):
-#     sail_cp_straight_yacht = get_cp_straight_yacht(cp_points, csys_transformations)
-#     tack_mounting = tack_mounting
-#     y = sail_cp_straight_yacht[:, 2]
-#     y_as_girths = (y - tack_mounting[2]) / (max(y) - tack_mounting[2])
-#     return y_as_girths
-
-# # set
-# def sail_cp_to_girths(self):
-#         y_as_girths = np.array([])
-#         for sail in self.sails:
-#             y_as_girths = np.append(y_as_girths, sail.sail_cp_to_girths())
-#         return y_as_girths
-
-# # sail
-
-# def sail_cp_to_girths(self):
-#     sail_cp_straight_yacht = self.get_cp_points_upright()
-#     tack_mounting = self.tack_mounting
-#     y = sail_cp_straight_yacht[:, 2]
-#     y_as_girths = (y - tack_mounting[2]) / (max(y) - tack_mounting[2])
-#     return y_as_girths
-    
-# def get_cp_points_upright(cp_points):
-#     cp_straight_yacht = np.array([self.csys_transformations.reverse_rotations_with_mirror(p) for p in cp_points])
-#     return cp_straight_yacht
-
-
-####
-
-def get_cp_strainght_yacht(cp_points : np.ndarray, csys_transformations: CSYS_transformations) -> np.ndarray:
+# circular import
+#  csys_transformations: CSYS_transformations
+def get_cp_strainght_yacht(cp_points : np.ndarray, csys_transformations) -> np.ndarray:
     """
     cp_strainght_yacht get center of pressure points straight to bridge
 
@@ -545,8 +461,10 @@ def cp_to_girths(sail_cp_straight_yacht, tack_mounting):
     z_as_girths = (sail_cp_straight_yacht_z - tack_mounting[2]) / (max(sail_cp_straight_yacht_z) - tack_mounting[2])
     return z_as_girths
 
-
-def get_cp_z_as_girths_all(sail_set : SailSet, csys_transformations : CSYS_transformations, center_of_pressure : np.ndarray) -> np.ndarray: 
+# circular import
+#  csys_transformations: CSYS_transformations
+# sail_set : SailSet problem with import
+def get_cp_z_as_girths_all(sail_set, csys_transformations, center_of_pressure : np.ndarray) -> np.ndarray: 
     """
     cp_z_as_girths_all get center of pressure staright z as girths
 
@@ -580,8 +498,9 @@ def get_cp_z_as_girths_all(sail_set : SailSet, csys_transformations : CSYS_trans
 
 # to policzyc dla wszystkich cpsow
 # potem wziac gorna czesc czyli pierwsza polowe by miec nad woda
-
-def get_cp_z_as_girths_all_above(cp_z_as_girths_all : np.ndarray, sail_set : SailSet):
+# import problem
+# sail set  sail_set : SailSet
+def get_cp_z_as_girths_all_above(cp_z_as_girths_all : np.ndarray, sail_set):
     # 2 bo mamy odbicie 
     # parzyste numery to sa te nad woda
     n = 2 * len(sail_set.sails)

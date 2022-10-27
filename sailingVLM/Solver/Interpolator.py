@@ -1,15 +1,6 @@
 from scipy import interpolate
 import numpy as np
 
-# np.set_printoptions(precision=3, suppress=True)
-
-
-# def extrapolate_twist(y_data_for_interpolation, n_points):
-#     ls_p = np.linspace(0., 1., num=len(y_data_for_interpolation), endpoint=True)
-#     ls_p1 = np.linspace(0., 1., num=n_points, endpoint=True)
-#     y = np.interp(ls_p1, ls_p, y_data_for_interpolation)
-#     return y
-
 class Interpolator:
     def __init__(self, interpolation_type):
         self.interpolation_type = interpolation_type
