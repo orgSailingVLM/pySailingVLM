@@ -264,6 +264,7 @@ class SailSet(BaseGeometry):
         leading_info_under = np.concatenate([sail.leading_edge_info for sail in self.sails])
         self.leading_edge_info = np.concatenate([leading_info_above, leading_info_under])
 
+        # nie uzywane chyba
         tack_mounting_arr_above = np.concatenate([sail.tack_mounting_arr for sail in self.sails])
         tack_mounting_arr_under = np.concatenate([sail.tack_mounting_arr for sail in self.sails])
         self.tack_mounting_arr = np.concatenate([tack_mounting_arr_above, tack_mounting_arr_under])

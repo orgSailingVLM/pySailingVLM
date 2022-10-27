@@ -120,6 +120,7 @@ rings_good = np.array(rings_good)
 gammas_good = np.array(gammas_good)
 panels_good = np.array(panels_good)
 
+# not used?
 horseshoe_info_panels = np.array(horseshoe_info_panels)
 
 

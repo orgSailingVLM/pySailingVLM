@@ -159,6 +159,7 @@ def get_influence_coefficients_spanwise_jib_version(collocation_points: np.ndarr
     #RHS = [-np.dot(V_app_infw[i], normals[i]) for i in range(normals.shape[0])]
     coefs = np.zeros((m, m))
     wind_coefs = np.zeros((m, m, 3))
+    
     # loop over other vortices
     for i, ring in enumerate(rings):
         A = ring[0]
@@ -376,7 +377,13 @@ def calc_force_wrapper_new_jib_version(V_app_infw, gamma_magnitude, rho, center_
     # N - odleglosc miedzy leading a trailing edge
     # M - rozpietosc skrzydel    
     V_at_cp, V_induced = calc_V_at_cp_new_jib_version(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, sails, trailing_edge_info, gamma_orientation)
-
+    
+    # if case 1x1 leading_edges_info is False False False False
+    # horseshoe_edge_info i True True True True
+    # caclulating winds as for trailing edges
+    # forces and pressure like "leading edge"
+    case1x1 = np.logical_not(np.any(leading_edges_info)) 
+    
     K = center_of_pressure.shape[0]
     force_xyz = np.zeros((K, 3))
     #numba.prange
@@ -384,7 +391,7 @@ def calc_force_wrapper_new_jib_version(V_app_infw, gamma_magnitude, rho, center_
         # for spanwise only!
         # if panel is leading edge
         gamma = 0.0
-        if leading_edges_info[i]:
+        if leading_edges_info[i] or case1x1:
             gamma = span_vectors[i] * gamma_magnitude[i]
         else:
             gamma = span_vectors[i] * (gamma_magnitude[i] - gamma_magnitude[i-M])
