@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
-from sailingVLM.Inlet.Winds import WindBase
-from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
+from sailing_vlm.inlet.winds import WindBase
+from sailing_vlm.rotations.csys_transformations import CSYS_transformations
 
-class InletConditionsNew:
+class InletConditions:
     def __init__(self, winds: WindBase, rho, center_of_pressure: np.ndarray):
         self.rho = rho  # fluid density [kg/m3]
         self.winds = winds

@@ -1,18 +1,18 @@
 import pandas as pd
 import os
 import numpy as np
-from sailingVLM.ResultsContainers.InviscidFlowResults import InviscidFlowResultsNew
+from sailing_vlm.results.inviscid_flow import InviscidFlowResults
 
 from typing import List
-from sailingVLM.Inlet.InletConditions import InletConditionsNew
-from sailingVLM.YachtGeometry.SailGeometry import SailSet
+from sailing_vlm.inlet.inlet_conditions import InletConditions
+from sailing_vlm.yacht_geometry.sail_geometry import SailSet
 
-from sailingVLM.NewApproach.vlm_logic import get_cp_z_as_girths_all, get_cp_z_as_girths_all_above
+from sailing_vlm.solver.additional_functions import get_cp_z_as_girths_all, get_cp_z_as_girths_all_above
 
 # jak juz bedzie dzialac to zrzucic jakis przypadek z excela i porownywac w unittestach
 def save_results_to_file(myvlm, csys_transformations,
-                         inviscid_flow_results_new: InviscidFlowResultsNew,
-                         inlet_conditions_new: InletConditionsNew,
+                         inviscid_flow_results: InviscidFlowResults,
+                         inlet_conditions: InletConditions,
                          sail_set: SailSet,
                          output_dir="output"):
 
@@ -30,7 +30,7 @@ def save_results_to_file(myvlm, csys_transformations,
     df_inlet_conditions_my_above = df_inlet_conditions_my[0]
     
 
-    df_inviscid_flow_my = np.array_split(inviscid_flow_results_new.to_df_full(), 2)
+    df_inviscid_flow_my = np.array_split(inviscid_flow_results.to_df_full(), 2)
     df_inviscid_flow_my_above = df_inviscid_flow_my[0]
 
 
@@ -41,8 +41,8 @@ def save_results_to_file(myvlm, csys_transformations,
     
     list_of_df_my = [df_inviscid_flow_my_above, df_inlet_conditions_my_above,df_cp_straight_yacht_above, df_cp_z_as_girths_all_above, df_names_all_above ]
 
-    df_inviscid_flow_integral_my = inviscid_flow_results_new.to_df_integral()
-    df_inlet_conditions_integral_my = inlet_conditions_new.winds.to_df_integral(sail_set.sails[0].csys_transformations)
+    df_inviscid_flow_integral_my = inviscid_flow_results.to_df_integral()
+    df_inlet_conditions_integral_my = inlet_conditions.winds.to_df_integral(sail_set.sails[0].csys_transformations)
     
     save_to_excel(output_dir, list_of_df_my, "res_my.xlsx", df_inviscid_flow_integral_my, df_inlet_conditions_integral_my)
    
@@ -143,13 +143,3 @@ def save_to_excel(output_dir : str, list_of_df : List[pd.DataFrame], output_file
 
         write_summary_sheet(df_inviscid_flow_integral, 'Integrals')
         write_summary_sheet(df_inlet_conditions_integral, 'IC_at_reference_height')
-
-
-
-def test_df(df, df2):
-    
-    for i in range(df.shape[1]):
-        arr1 = np.asarray(df.iloc[:, i])
-        arr2 = np.asarray(df2.iloc[:, i])
-        np.testing.assert_almost_equal(np.sort(arr1, axis=0), np.sort(arr2, axis=0))
-        #np.testing.assert_almost_equal(arr1, arr2)

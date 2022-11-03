@@ -1,6 +1,6 @@
 import numpy as np
-from sailingVLM.YachtGeometry.SailGeometry import SailGeometry
-from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
+from sailing_vlm.yacht_geometry.sail_geometry import SailGeometry
+from sailing_vlm.rotations.csys_transformations import CSYS_transformations
 
 
 class SailFactory:

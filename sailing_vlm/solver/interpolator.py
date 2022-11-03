@@ -1,5 +1,6 @@
-from scipy import interpolate
 import numpy as np
+from scipy import interpolate
+
 
 class Interpolator:
     def __init__(self, interpolation_type):

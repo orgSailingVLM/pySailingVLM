@@ -1,13 +1,13 @@
 import numpy as np
 
 from abc import abstractmethod, ABC
-from sailingVLM.Rotations.geometry_calc import rotation_matrix
+from sailing_vlm.rotations.geometry_calc import rotation_matrix
 
-from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
+from sailing_vlm.rotations.csys_transformations import CSYS_transformations
 
 from typing import List
 
-from sailingVLM.NewApproach.vlm_logic import make_panels_from_le_te_points_new, make_panels_from_le_points_and_chords_new
+from sailing_vlm.solver.panels import make_panels_from_le_points_and_chords
 
 class BaseGeometry:
 
@@ -100,31 +100,15 @@ class SailGeometry(BaseGeometry, ABC):
                 pass
             # inicjalizacja zmiennych? sa w ifie przeciez
 
-            new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords_new(
+            new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
                 [le_SW, le_NW],
                 [self.__n_chordwise, self.__n_spanwise],
                 rchords_vec, gamma_orientation=-1)
 
-            new_approach_panels_mirror, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords_new(
+            new_approach_panels_mirror, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
                 [le_SW_underwater, le_NW_underwater],
                 [self.__n_chordwise, self.__n_spanwise],
                 frchords_vec, gamma_orientation=-1)
-        else:
-            # make a lifting line instead of panels
-            te_NE = le_NW  # trailing edge North - East coordinate
-            te_SE = le_SW  # trailing edge South - East coordinate
-
-            new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_le_te_points_new(
-                [le_SW, te_SE, le_NW, te_NE],
-                [self.__n_chordwise, self.__n_spanwise], gamma_orientation=-1)
-
-            te_NE_underwater = le_NW_underwater  # trailing edge North - East coordinate
-            te_SE_underwater = le_SW_underwater  # trailing edge South - East coordinate
-
-            new_approach_panels_mirror, trailing_edge_info, leading_edge_info = make_panels_from_le_te_points_new(
-                [le_SW_underwater, te_SE_underwater, le_NW_underwater, te_NE_underwater],
-                [self.__n_chordwise, self.__n_spanwise], gamma_orientation=-1)
-
 
         self.__panels_above = new_approach_panels
         self.__panels_under = new_approach_panels_mirror

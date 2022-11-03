@@ -15,9 +15,10 @@ def discrete_segment(p1, p2, n):
 
 def make_point_mesh(segment1, segment2, n):
     mesh = []
+    # TODO: dodac camber w stylu NACA airfoil --> wzorek z wikipedii
+    # TODO: upewnic sie ze normalna jest w dobra strone dla pochylonej lodki
     for p1, p2 in zip(segment1, segment2):
         s = discrete_segment(p1, p2, n)
         mesh.append(np.array(s))
 
     return np.array(mesh)
-

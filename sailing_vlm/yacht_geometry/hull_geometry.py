@@ -1,6 +1,6 @@
 import numpy as np
 from airfoils import Airfoil
-from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
+from sailing_vlm.rotations.csys_transformations import CSYS_transformations
 
 
 class HullGeometry:

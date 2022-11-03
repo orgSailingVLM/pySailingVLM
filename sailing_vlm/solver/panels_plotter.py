@@ -2,24 +2,20 @@
 import numpy as np
 import math
 
-import matplotlib
-# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
-from sailingVLM.NewApproach.vlm import NewVlm
 
-from sailingVLM.Solver.vortices import normalize
+from sailing_vlm.solver.additional_functions import normalize
 from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d import proj3d
 
 
 import mpl_toolkits.mplot3d as a3
-import matplotlib.colors as colors
 import matplotlib.cm as cm
 import matplotlib as mpl
 
-from sailingVLM.ResultsContainers.InviscidFlowResults import InviscidFlowResultsNew
-from sailingVLM.Inlet.InletConditions import InletConditionsNew
-from sailingVLM.YachtGeometry.HullGeometry import HullGeometry
+from sailing_vlm.results.inviscid_flow import InviscidFlowResults
+from sailing_vlm.inlet.inlet_conditions import InletConditions
+from sailing_vlm.yacht_geometry.hull_geometry import HullGeometry
 
 
 class Arrow3D(FancyArrowPatch):
@@ -41,16 +37,7 @@ class Arrow3D(FancyArrowPatch):
         FancyArrowPatch.draw(self, renderer)
 
 
-def _prepare_geometry_data_to_display(panels1d):
-    le_mid_points = np.array([panel.get_leading_edge_mid_point() for panel in panels1d])
-    cp_points = np.array([panel.cp_position for panel in panels1d])
-    ctr_points = np.array([panel.get_ctr_point_position() for panel in panels1d])
-    te_midpoints = np.array([panel.get_trailing_edge_mid_points() for panel in panels1d])
-
-    return le_mid_points, cp_points, ctr_points, te_midpoints
-
-
-def display_panels_xyz_new_approach(myvlm):
+def display_panels_xyz(myvlm):
     fig = plt.figure(figsize=(12, 12))
     ax = plt.axes(projection='3d')
     # ax.set_title('Initial location of: \n Leading Edge, Lifting Line, Control Points and Trailing Edge')
@@ -72,16 +59,7 @@ def display_panels_xyz_new_approach(myvlm):
 
         return max_range
 
-    # Data for a three-dimensional line
-    
-    # ax.scatter3D(le_mid_points[:, 0], le_mid_points[:, 1], le_mid_points[:, 2], c=le_mid_points[:, 2], marker="<", cmap='Greys')
-    # ax.scatter3D(cp_points[:, 0], cp_points[:, 1], cp_points[:, 2], c=cp_points[:, 2], marker="o", cmap='Greens', s=2)  # s stands for size
-    # ax.scatter3D(ctr_points[:, 0], ctr_points[:, 1], ctr_points[:, 2], c=ctr_points[:, 2], marker="x", cmap='Blues')
-    # ax.scatter3D(te_mid_points[:, 0], te_mid_points[:, 1], te_mid_points[:, 2], c=te_mid_points[:, 2], marker=">", cmap='Greys')
 
-    ### plot panels and color by pressure
-    # https://stackoverflow.com/questions/15140072/how-to-map-number-to-color-using-matplotlibs-colormap
-    #panel_points = np.array([panel.get_points() for panel in myvlm])
     norm = mpl.colors.Normalize(vmin=min(myvlm.pressure), vmax=max(myvlm.pressure))
     cmap = cm.hot
     m = cm.ScalarMappable(norm=norm, cmap=cmap)
@@ -113,7 +91,7 @@ def display_hull(ax, hull: HullGeometry):
     ax.plot(hull.deck_starboard_line_underwater[:, 0], hull.deck_starboard_line_underwater[:, 1], hull.deck_starboard_line_underwater[:, 2], 'gray', alpha=0.25)
 
 
-def display_winds(ax, cp_points, water_size,  inlet_condition: InletConditionsNew, inviscid_flow_results):
+def display_winds(ax, cp_points, water_size,  inlet_condition: InletConditions, inviscid_flow_results):
     N = len(cp_points[:, 2])
 
     
@@ -147,7 +125,7 @@ def display_winds(ax, cp_points, water_size,  inlet_condition: InletConditionsNe
 
     
 def display_CE_CLR(ax,
-                   inviscid_flow_results: InviscidFlowResultsNew,
+                   inviscid_flow_results: InviscidFlowResults,
                    hull: HullGeometry):
     # https://en.wikipedia.org/wiki/Forces_on_sails#Forces_on_sailing_craft
     def plot_vector(origin, length):
@@ -168,13 +146,13 @@ def display_CE_CLR(ax,
     
     return scale, clr, ce, F
 
-def display_panels_xyz_and_winds(myvlm, inviscid_flow_results_new: InviscidFlowResultsNew, 
-                                 my_inlet_condition: InletConditionsNew,
+def display_panels_xyz_and_winds(myvlm, inviscid_flow_results_new: InviscidFlowResults, 
+                                 my_inlet_condition: InletConditions,
                                  hull: HullGeometry,
                                  show_plot=True
                                  ):
 
-    my_ax, my_cp_points, my_water_size = display_panels_xyz_new_approach(myvlm)
+    my_ax, my_cp_points, my_water_size = display_panels_xyz(myvlm)
 
     my_ax.set_title('Panels colored by pressure \n'
                  'Winds: True (green), Apparent (blue), Apparent + Induced (red) \n'

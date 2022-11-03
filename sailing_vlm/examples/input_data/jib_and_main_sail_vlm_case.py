@@ -45,6 +45,14 @@ main_sail_girths = np.array([0.00, 1./8, 1./4, 1./2, 3./4, 7./8, 1.00])
 main_sail_chords = np.array([4.00, 3.82, 3.64, 3.20, 2.64, 2.32, 2.00])
 main_sail_centerline_twist_deg = 12. * main_sail_girths + 7
 
+
+# First digit describing maximum camber as percentage of the chord.
+# Second digit describing the distance of maximum camber from the airfoil leading edge in tenths of the chord.
+
+main_sail_camber= np.array([0.05, 0.12, 0.20, 0.20, 0.12, 0.05, 0.5])
+main_sail_camber_distance_from_LE = np.array([0.10, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10])
+
+
 jib_girths = np.array([0.00, 1./4, 1./2, 3./4, 1.00])
 jib_chords = np.array([3.80, 2.98, 2.15, 1.33, 0.5]) - 0.4
 jib_centerline_twist_deg = 15. * jib_girths + 5

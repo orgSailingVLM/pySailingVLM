@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from abc import abstractmethod
-from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
+from sailing_vlm.rotations.csys_transformations import CSYS_transformations
 
 
 class WindBase:
