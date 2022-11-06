@@ -1,15 +1,26 @@
 import numpy as np
 from numpy.testing import assert_almost_equal
 
-from sailingVLM.Solver.vlm_solver import calc_circulation
-from sailingVLM.Solver.mesher import make_panels_from_le_te_points
-from sailingVLM.Solver.coeff_formulas import get_CL_CD_free_wing
-from sailingVLM.Solver.forces import determine_vector_from_its_dot_and_cross_product
-from sailingVLM.Solver.forces import calc_forces_on_panels_VLM_xyz, get_stuff_from_panels
-from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
-from sailingVLM.Rotations.geometry_calc import rotation_matrix
+
+from sailing_vlm.solver.panels import make_panels_from_le_te_points
+from sailing_vlm.solver.coefs import get_CL_CD_free_wing
+from sailing_vlm.solver.forces import determine_vector_from_its_dot_and_cross_product
+from sailing_vlm.solver.velocity import calc_induced_velocity
+from sailing_vlm.solver.forces import is_no_flux_BC_satisfied
+from sailing_vlm.solver.vlm import Vlm
+from sailing_vlm.rotations.geometry_calc import rotation_matrix
 from unittest import TestCase
 from numpy.linalg import norm
+
+
+
+# def calc_circulation(V_app_ifnw, panels):
+#     A, RHS, v_ind_coeff = assembly_sys_of_eq(V_app_ifnw, panels)
+#     gamma_magnitude = np.linalg.solve(A, RHS)
+#     print(f"System of equations is solved.")
+#     return gamma_magnitude, v_ind_coeff
+
+
 
 class TestForces(TestCase):
     def setUp(self):
@@ -41,7 +52,7 @@ class TestForces(TestCase):
 
 
     def get_geom(self,ns,nc):
-        panels, mesh, _ = make_panels_from_le_te_points(
+        panels, trailing_edge_info, leading_edge_info = make_panels_from_le_te_points(
 
             [np.dot(self.Ry, self.le_SW),
              np.dot(self.Ry, self.te_SE),
@@ -50,7 +61,7 @@ class TestForces(TestCase):
             [nc, ns],
             gamma_orientation=1)
 
-        return panels, mesh
+        return panels, trailing_edge_info, leading_edge_info
 
     def get_CL_CD_from_F(self, F):
         total_F = np.sum(F, axis=0)
@@ -67,11 +78,17 @@ class TestForces(TestCase):
         nc = 1   # number of panels (chordwise)
         N = ns * nc
 
-        panels, mesh = self.get_geom(ns, nc)
+        panels, trailing_edge_info, leading_edge_info = self.get_geom(ns, nc)
         V_app_infw = np.array([self.V for _ in range(N)])
 
         ### ACT ###
         ### CALCULATIONS ###
+        rho = 1.225
+        myvlm = Vlm(panels, nc, ns, rho, V_app_infw,  trailing_edge_info, leading_edge_info)
+
+        
+        
+        
         gamma_magnitude, v_ind_coeff, A = calc_circulation(V_app_infw, panels)
         V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
         V_app_fw = V_app_infw + V_induced

@@ -44,7 +44,7 @@ def determine_vector_from_its_dot_and_cross_product(F, r_dot_F, r_cross_F):
 
 # problem withnimport
 # sails  : List[SailGeometry], 
-def calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, sails, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
+def calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
 
     m = center_of_pressure.shape[0]
 
@@ -84,14 +84,14 @@ def calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, norm
 
 # import problem
 # sails  :List[SailGeometry], 
-def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, M, N, normals, span_vectors, sails, trailing_edge_info : np.ndarray, leading_edges_info : np.ndarray, gamma_orientation : float = 1.0):
+def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, M, N, normals, span_vectors, trailing_edge_info : np.ndarray, leading_edges_info : np.ndarray, gamma_orientation : float = 1.0):
     # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     # f. Secondary Computations: Pressures, Loads, Velocities, Etc
     #Eq (12.25)
     ##### WAZNE #####
     # N - odleglosc miedzy leading a trailing edge
     # M - rozpietosc skrzydel    
-    V_at_cp, V_induced = calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, sails, trailing_edge_info, gamma_orientation)
+    V_at_cp, V_induced = calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, trailing_edge_info, gamma_orientation)
     
     # if case 1x1 leading_edges_info is False False False False
     # horseshoe_edge_info i True True True True

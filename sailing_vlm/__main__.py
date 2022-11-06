@@ -65,7 +65,7 @@ def main():
     hull = HullGeometry(sheer_above_waterline, foretriangle_base, csys_transformations, center_of_lateral_resistance_upright)
 
     
-    myvlm = Vlm(set.panels, n_chordwise, n_spanwise, rho, wind, set.sails, set.trailing_edge_info, set.leading_edge_info)
+    myvlm = Vlm(set.panels, n_chordwise, n_spanwise, rho, wind, set.trailing_edge_info, set.leading_edge_info)
 
 
     inviscid_flow_results = prepare_inviscid_flow_results_vlm(set, csys_transformations, myvlm)
