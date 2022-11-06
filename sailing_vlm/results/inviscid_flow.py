@@ -36,7 +36,7 @@ class InviscidFlowResults:
         self.AWA_app_fs = np.arctan(myvlm.V_app_fs_at_cp[:, 1] / myvlm.V_app_fs_at_cp[:, 0])
   
         self.F_xyz = myvlm.force
-        self.F_xyz_above_water, self.F_xyz_total = extract_above_water_quantities(self.F_xyz, myvlm.center_of_pressure)
+        self.F_xyz_above_water, self.F_xyz_total = extract_above_water_quantities(self.F_xyz)
 
         r = calc_moment_arm_in_shifted_csys(myvlm.center_of_pressure, csys_transformations.v_from_original_xyz_2_reference_csys_xyz)
      
@@ -68,20 +68,20 @@ class InviscidFlowResults:
         self.dyn_dict = dyn_dict
 
         self.M_xyz = calc_moments(r, myvlm.force)
-        _, self.M_total_above_water_in_xyz_csys = extract_above_water_quantities(self.M_xyz, myvlm.center_of_pressure)
+        _, self.M_total_above_water_in_xyz_csys = extract_above_water_quantities(self.M_xyz)
 
         r_dot_F = np.array([np.dot(r[i], myvlm.force[i]) for i in range(len(myvlm.force))])
-        _, r_dot_F_total_above_water = extract_above_water_quantities(r_dot_F, myvlm.center_of_pressure)
+        _, r_dot_F_total_above_water = extract_above_water_quantities(r_dot_F)
 
         self.above_water_centre_of_effort_estimate_xyz \
             = determine_vector_from_its_dot_and_cross_product(
                 self.F_xyz_total, r_dot_F_total_above_water, self.M_total_above_water_in_xyz_csys)
 
         self.F_centerline = csys_transformations.from_xyz_to_centerline_csys(myvlm.force)
-        _, self.F_centerline_total = extract_above_water_quantities(self.F_centerline, myvlm.center_of_pressure)
+        _, self.F_centerline_total = extract_above_water_quantities(self.F_centerline)
 
         self.M_centerline_csys = csys_transformations.from_xyz_to_centerline_csys(self.M_xyz)
-        _, M_total_above_water_in_centerline_csys = extract_above_water_quantities(self.M_centerline_csys, myvlm.center_of_pressure)
+        _, M_total_above_water_in_centerline_csys = extract_above_water_quantities(self.M_centerline_csys)
         self.M_total_above_water_in_centerline_csys = M_total_above_water_in_centerline_csys
 
     def estimate_heeling_moment_from_keel(self, underwater_centre_of_effort_xyz):

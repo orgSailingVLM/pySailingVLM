@@ -25,18 +25,9 @@ class TestPanels(TestCase):
         assert_almost_equal(calculated_area, expected_area)
 
     def test_pressure(self):
-<<<<<<< HEAD:sailingVLM/tests_VLM/test_panels.py
-        from sailingVLM.Solver.forces import calc_pressure
-
-        p = calc_pressure(force=np.array([[0, 0, 1], [3, 2, 1]]),
-                          panels=np.array([self.panel, self.panel]))
-
-        assert_almost_equal(p, [0.01, 0.01])
-=======
         self.panel.force_xyz = np.array([3., 2., 1.])
         self.panel.calc_pressure()
         assert_almost_equal(self.panel.pressure, 0.01)
->>>>>>> 801de37c8b548151ce8cdd70b9b1e61c86fe1d8f:tests_VLM/test_panels.py
 
     def test_get_ctr_point_postion(self):
         ctr_point = self.panel.get_ctr_point_position()

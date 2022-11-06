@@ -58,12 +58,12 @@ class CSYS_transformations:
         array_of_vectors_in_centerline_csys = np.array([np.dot(self.leeway_rotation_matrix, v_xyz) for v_xyz in array_of_xyz_vectors])
         return array_of_vectors_in_centerline_csys
 
-    def calc_centerline_moments(self, Mxyz, cp_points):
+    def calc_centerline_moments(self, Mxyz):
         # side moment is around x axis
         # under water (mirror) moments are positive (righting)
         # above water moments are negative (heeling)
         M_centerline_csys = self.from_xyz_to_centerline_csys(Mxyz)
-        _, total_above_water_moments_in_centerline_csys = extract_above_water_quantities(M_centerline_csys, cp_points)
+        _, total_above_water_moments_in_centerline_csys = extract_above_water_quantities(M_centerline_csys)
         return M_centerline_csys, total_above_water_moments_in_centerline_csys
 
     @property

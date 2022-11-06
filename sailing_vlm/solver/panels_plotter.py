@@ -15,8 +15,11 @@ import matplotlib as mpl
 
 from sailing_vlm.results.inviscid_flow import InviscidFlowResults
 from sailing_vlm.inlet.inlet_conditions import InletConditions
+from sailing_vlm.results.inviscid_flow import InviscidFlowResults
 from sailing_vlm.yacht_geometry.hull_geometry import HullGeometry
 
+from sailing_vlm.solver.vlm import Vlm
+from typing import Tuple
 
 class Arrow3D(FancyArrowPatch):
     def __init__(self, xs, ys, zs, *args, **kwargs):
@@ -37,15 +40,30 @@ class Arrow3D(FancyArrowPatch):
         FancyArrowPatch.draw(self, renderer)
 
 
-def display_panels_xyz(myvlm):
+def display_panels_xyz(vlm : Vlm) -> Tuple[plt.axes, int]:
+    """
+    display_panels_xyz display panels in 3 dimentions
+
+    :param Vlm vlm: vlm class instance
+    :return List[plt.axes, int]: list containing matplotlib plt ax and size of water (int)
+    """
     fig = plt.figure(figsize=(12, 12))
     ax = plt.axes(projection='3d')
-    # ax.set_title('Initial location of: \n Leading Edge, Lifting Line, Control Points and Trailing Edge')
+
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
 
-    def set_ax_eq(ax, X, Y, Z):
+    def set_ax_eq(ax : plt.Axes, X : np.ndarray, Y : np.ndarray, Z : np.ndarray) -> float:
+        """
+        set_ax_eq sets limits on x, y, z axes
+
+        :param plt.Axes ax: ax to be modified
+        :param np.ndarray X: x array
+        :param np.ndarray Y: y array
+        :param np.ndarray Z: z array
+        :return float: max range number 
+        """
         # ax.set_aspect('equal') - matplotlib bug
         # dirty hack: NotImplementedError: It is not currently possible to manually set the aspect on 3D axes
         max_range = np.array([X.max() - X.min(), Y.max() - Y.min(), Z.max() - Z.min()]).max() / 2.0
@@ -60,11 +78,11 @@ def display_panels_xyz(myvlm):
         return max_range
 
 
-    norm = mpl.colors.Normalize(vmin=min(myvlm.pressure), vmax=max(myvlm.pressure))
+    norm = mpl.colors.Normalize(vmin=min(vlm.pressure), vmax=max(vlm.pressure))
     cmap = cm.hot
     m = cm.ScalarMappable(norm=norm, cmap=cmap)
 
-    for vtx, p in zip(myvlm.panels, myvlm.pressure):
+    for vtx, p in zip(vlm.panels,vlm.pressure):
         tri = a3.art3d.Poly3DCollection([vtx])
         tri.set_color(m.to_rgba(p))
         tri.set_edgecolor('k')
@@ -73,17 +91,23 @@ def display_panels_xyz(myvlm):
     fig.colorbar(m, ax=ax)
     ###
     # plot water level
-    water_size = int(1.1*math.ceil(max(max(abs(myvlm.leading_mid_points[:, 2])), max(abs(myvlm.trailing_mid_points[:, 2])))))
+    water_size = int(1.1*math.ceil(max(max(abs(vlm.leading_mid_points[:, 2])), max(abs(vlm.trailing_mid_points[:, 2])))))
     xx, yy = np.meshgrid(range(-water_size, water_size), range(-water_size, water_size))
     zz = 0 * xx + 0 * yy
     ax.plot_surface(xx, yy, zz, alpha=0.25)
 
     set_ax_eq(ax, xx, yy, zz)
-    return ax, myvlm.center_of_pressure, water_size
+    return ax, water_size
 
 
 
-def display_hull(ax, hull: HullGeometry):
+def display_hull(ax: plt.Axes, hull: HullGeometry):
+    """
+    display_hull plots hull 
+
+    :param plt.Axes ax: axes for drawing
+    :param HullGeometry hull: hull object
+    """
     ax.plot(hull.deck_centerline[:, 0], hull.deck_centerline[:, 1], hull.deck_centerline[:, 2], 'gray')
     ax.plot(hull.deck_port_line[:, 0], hull.deck_port_line[:, 1], hull.deck_port_line[:, 2], 'gray')
     ax.plot(hull.deck_starboard_line[:, 0], hull.deck_starboard_line[:, 1], hull.deck_starboard_line[:, 2], 'gray')
@@ -91,7 +115,16 @@ def display_hull(ax, hull: HullGeometry):
     ax.plot(hull.deck_starboard_line_underwater[:, 0], hull.deck_starboard_line_underwater[:, 1], hull.deck_starboard_line_underwater[:, 2], 'gray', alpha=0.25)
 
 
-def display_winds(ax, cp_points, water_size,  inlet_condition: InletConditions, inviscid_flow_results):
+def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inlet_condition: InletConditions, inviscid_flow_results :  InviscidFlowResults):
+    """
+    display_winds displays winds on final plot
+
+    :param plt.Axes ax: ax
+    :param np.ndarray cp_points: array with center of pressure points
+    :param int water_size: size of water
+    :param InletConditions inlet_condition: inlet conditions
+    :param InviscidFlowResults inviscid_flow_results: flow results
+    """
     N = len(cp_points[:, 2])
 
     
@@ -101,8 +134,7 @@ def display_winds(ax, cp_points, water_size,  inlet_condition: InletConditions, 
 
     V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs, inviscid_flow_results.V_app_fs_at_cp]
     colors = ['green', 'blue', 'red']  # G: True wind, B: - Apparent wind, R: Apparent + Induced wind
-   
-    zipp = zip(V_winds, colors)
+
     for V_wind, color in zip(V_winds, colors):
         # V_wind = V_winds[2]
         # color = colors[2]
@@ -120,13 +152,20 @@ def display_winds(ax, cp_points, water_size,  inlet_condition: InletConditions, 
             else:
                 arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.15)
             ax.add_artist(arrow)
-    # potem wywalic tego returna
-    return V_winds
 
-    
-def display_CE_CLR(ax,
+
+def display_CE_CLR(ax : plt.Axes,
                    inviscid_flow_results: InviscidFlowResults,
-                   hull: HullGeometry):
+                   hull: HullGeometry) -> Tuple[float, np.ndarray, np.ndarray]:
+    """
+    display_CE_CLR display force 
+
+    :param plt.Axes ax: plot ax
+    :param InviscidFlowResults inviscid_flow_results: flow results
+    :param HullGeometry hull: hull object
+    :return Tuple[float, np.ndarray, np.ndarray]: Tuple[scale, lateral resistance, effort, force]
+    """
+
     # https://en.wikipedia.org/wiki/Forces_on_sails#Forces_on_sailing_craft
     def plot_vector(origin, length):
         vx = np.array([origin[0], origin[0] + length[0]])
@@ -146,25 +185,33 @@ def display_CE_CLR(ax,
     
     return scale, clr, ce, F
 
-def display_panels_xyz_and_winds(myvlm, inviscid_flow_results_new: InviscidFlowResults, 
-                                 my_inlet_condition: InletConditions,
+def display_panels_xyz_and_winds(vlm :Vlm, inviscid_flow_results: InviscidFlowResults, 
+                                 inlet_condition: InletConditions,
                                  hull: HullGeometry,
                                  show_plot=True
                                  ):
+    """
+    display_panels_xyz_and_winds plot whole yacht with winds and force
 
-    my_ax, my_cp_points, my_water_size = display_panels_xyz(myvlm)
+    :param Vlm vlm: Vlm object
+    :param InviscidFlowResults inviscid_flow_results: flow results
+    :param InletConditions inlet_condition: inlet conditions
+    :param HullGeometry hull: hull object
+    :param bool show_plot: decide if plot should be shown, defaults to True
+    """
 
-    my_ax.set_title('Panels colored by pressure \n'
+    ax, water_size = display_panels_xyz(vlm)
+
+    ax.set_title('Panels colored by pressure \n'
                  'Winds: True (green), Apparent (blue), Apparent + Induced (red) \n'
                  'Centre of Effort & Center of Lateral Resistance (black)')
     
-    display_hull(my_ax, hull)
+    display_hull(ax, hull)
 
-    my_V_winds = display_winds(my_ax, my_cp_points, my_water_size, my_inlet_condition, inviscid_flow_results_new)
-    my_V_winds = np.asarray(my_V_winds).flatten()
-    
-   
-    my_scale, my_clr, my_ce, my_F = display_CE_CLR(my_ax, inviscid_flow_results_new, hull)
+    display_winds(ax, vlm.center_of_pressure, water_size, inlet_condition, inviscid_flow_results)
+
+    scale, clr, ce, F = display_CE_CLR(ax, inviscid_flow_results, hull)
     
     if show_plot:
         plt.show()
+

@@ -9,6 +9,7 @@ case_dir = os.path.dirname(os.path.realpath(__file__))  # get dir of the current
 time_stamp = time.strftime("%Y-%m-%d_%Hh%Mm%Ss")
 output_dir_name = os.path.join("results_example_jib_and_mainsail_vlm", time_stamp)
 
+
 # SOLVER SETTINGS
 n_spanwise =  2 # No of control points (above the water) per sail, recommended: 50
 n_chordwise = 2  # No of control points (above the water) per sail, recommended: 50

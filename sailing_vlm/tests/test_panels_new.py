@@ -45,39 +45,6 @@ class TestMesher(TestCase):
         self.ns = 10  # number of panels spanwise
         self.nc = 5  # number of panels chordwise
 
-    def test_make_discrete_segment(self):
-        line = discrete_segment(self.le_sw, self.te_se, self.nc)
-
-        expected_line = np.array(
-            [[0., 0., 0.],
-             [0.8, 0., 0.],
-             [1.6, 0., 0.],
-             [2.4, 0., 0.],
-             [3.2, 0., 0.],
-             [4., 0., 0.]])
-
-        assert np.allclose(line, expected_line)
-
-    def test_make_point_mesh(self):
-        s_line = discrete_segment(self.le_sw, self.te_se, self.nc)
-        n_line = discrete_segment(self.le_nw, self.te_ne, self.nc)
-
-        mesh = make_point_mesh(s_line, n_line, self.ns)
-        expected_mesh0 = np.array(
-            [[0., 0., 0.],
-             [0., 1.6, 0.],
-             [0., 3.2, 0.],
-             [0., 4.8, 0.],
-             [0., 6.4, 0.],
-             [0., 8., 0.],
-             [0., 9.6, 0.],
-             [0., 11.2, 0.],
-             [0., 12.8, 0.],
-             [0., 14.4, 0.],
-             [0., 16., 0.]])
-
-        assert np.allclose(mesh[0], expected_mesh0)
-
     def test_make_panels_from_points_span_and_chord_wise(self):
         panels_le_te, trailing_edge_info_le_te, leading_edge_info_le_te  = make_panels_from_le_te_points(
             [self.le_sw, self.te_se,

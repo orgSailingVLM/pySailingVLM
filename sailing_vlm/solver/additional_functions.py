@@ -1,7 +1,15 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sailing_vlm.rotations.csys_transformations import CSYS_transformations
+    from sailing_vlm.yacht_geometry.sail_geometry import SailSet
+
 import numpy as np
 import pandas as pd
 from typing import List, Tuple
 from numpy.linalg import norm
+
 
 import numba
 
@@ -11,7 +19,13 @@ def normalize(x):
     xn = x / np.linalg.norm(x)
     return xn
 
-def extract_above_water_quantities(quantities, cp_points):
+def extract_above_water_quantities(quantities : np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    extract_above_water_quantities get data above water
+
+    :param np.ndarray quantities: data to be "searched" for above water quantities
+    :return Tuple[np.ndarray, np.ndarray]: above water quantities, total above water quantities
+    """
     
     # for jib and main, quantities is always dividable by 2
     half = int(quantities.shape[0] / 2)
@@ -22,16 +36,25 @@ def extract_above_water_quantities(quantities, cp_points):
 
 # circular import
 #  csys_transformations: CSYS_transformations
-def get_cp_strainght_yacht(cp_points : np.ndarray, csys_transformations) -> np.ndarray:
+def get_cp_strainght_yacht(cp_points : np.ndarray, csys_transformations : CSYS_transformations) -> np.ndarray:
     """
     cp_strainght_yacht get center of pressure points straight to bridge
 
     :param np.ndarray cp_points: center of pressure points
+    :param CSYS_transformations: : CSYS_transformations objetc
     :return np.ndarray: staright center of pressure points
     """
     return np.array([csys_transformations.reverse_rotations_with_mirror(p) for p in cp_points])
 
-def cp_to_girths(sail_cp_straight_yacht, tack_mounting):
+def cp_to_girths(sail_cp_straight_yacht : np.ndarray, tack_mounting : np.ndarray) -> np.ndarray:
+    """
+    cp_to_girths convert center of pressure points to girths
+
+    :param np.ndarray sail_cp_straight_yacht: straighten yacht center of pressure points
+    :param np.ndarray tack_mounting: tack mounting
+    :return np.ndarray: center of pressure points as girths
+    """
+    
     sail_cp_straight_yacht_z = sail_cp_straight_yacht[:, 2]
     z_as_girths = (sail_cp_straight_yacht_z - tack_mounting[2]) / (max(sail_cp_straight_yacht_z) - tack_mounting[2])
     return z_as_girths
@@ -39,7 +62,7 @@ def cp_to_girths(sail_cp_straight_yacht, tack_mounting):
 # circular import
 #  csys_transformations: CSYS_transformations
 # sail_set : SailSet problem with import
-def get_cp_z_as_girths_all(sail_set, csys_transformations, center_of_pressure : np.ndarray) -> np.ndarray: 
+def get_cp_z_as_girths_all(sail_set : SailSet, csys_transformations : CSYS_transformations, center_of_pressure : np.ndarray) -> np.ndarray: 
     """
     cp_z_as_girths_all get center of pressure staright z as girths
 
@@ -75,7 +98,14 @@ def get_cp_z_as_girths_all(sail_set, csys_transformations, center_of_pressure : 
 # potem wziac gorna czesc czyli pierwsza polowe by miec nad woda
 # import problem
 # sail set  sail_set : SailSet
-def get_cp_z_as_girths_all_above(cp_z_as_girths_all : np.ndarray, sail_set):
+def get_cp_z_as_girths_all_above(cp_z_as_girths_all : np.ndarray, sail_set : SailSet) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    get_cp_z_as_girths_all_above get center of pressure z coordinate as girths above water
+
+    :param np.ndarray cp_z_as_girths_all: center of pressure z coordinate as girths
+    :param SailSet sail_set: sail set 
+    :return Tuple[np.ndarray, np.ndarray]:  center of pressure z coordinate as girths above water for all panels, names of all panels
+    """
     # 2 bo mamy odbicie 
     # parzyste numery to sa te nad woda
     n = 2 * len(sail_set.sails)
