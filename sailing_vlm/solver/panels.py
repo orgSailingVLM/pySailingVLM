@@ -44,14 +44,13 @@ def make_panels_from_mesh_spanwise(mesh : np.ndarray) -> Tuple[np.ndarray, np.nd
     return  panels, trailing_edge_info, leading_edge_info
 
 
-def make_panels_from_le_te_points(points : np.ndarray, grid_size :List[int], gamma_orientation : float) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def make_panels_from_le_te_points(points : np.ndarray, grid_size :List[int]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     make_panels_from_le_te_points make_panels_from_le_te_points make panels from leading end trailing edges points
 
 
     :param np.ndarray points: points
     :param List[int, int] grid_size: grid size
-    :param float gamma_orientation: gamma orientation
     :return Tuple[np.ndarray, np.ndarray, np.ndarray]: panels, trailing edge info, leading edge info
     """
 

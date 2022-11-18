@@ -1,82 +1,118 @@
-"""
-    Unit tests_LLT_optimizer of the Panel class and its methods
-
-"""
-
 import numpy as np
-from numpy.testing import assert_almost_equal
-
-from sailingVLM.Solver.Panel import Panel
 from unittest import TestCase
+
+from sailing_vlm.solver.panels import make_panels_from_le_te_points, make_panels_from_le_points_and_chords, get_panels_area
 
 
 class TestPanels(TestCase):
     def setUp(self):
-        self.points = [np.array([10., 0., 0.]), np.array([0., 0., 0.]),
-                       np.array([0., 10., 0.]), np.array([10., 10., 0.])]
 
-        self.panel = Panel(*self.points)
-        self.assertTrue(self.panel._are_points_coplanar())
+        """
+               wing span
+                  ^
+                 y|
+                  |
+        P3nw------|------P4ne
+           |      |      |
+           |      |      |
+           |      |      |
+           |      |      |
+           |      +---------------> chord
+           |             |      x
+           |             |
+           |             |
+           |             |
+        P2sw----root----P1se
+        """
 
-    def test_area(self):
-        calculated_area = self.panel.get_panel_area()
+        self.c_root = 4.0  # root chord length
+        self.c_tip = 2.0  # tip chord length
+        self.wing_span = 16  # wing span length
+
+        # Points defining wing
+
+        self.te_se = np.array([self.c_root, 0, 0])
+        self.le_sw = np.array([0, 0, 0])
+
+        self.le_nw = np.array([0, self.wing_span, 0])
+        self.te_ne = np.array([self.c_tip, self.wing_span, 0])
+
+        # MESH DENSITY
+        self.ns = 10  # number of panels spanwise
+        self.nc = 5  # number of panels chordwise
+
+    def test_make_panels_from_points_span_and_chord_wise(self):
+        panels_le_te, trailing_edge_info_le_te, leading_edge_info_le_te  = make_panels_from_le_te_points(
+            [self.le_sw, self.te_se,
+             self.le_nw, self.te_ne],
+            [self.nc, self.ns])
+
+        chords = np.linspace(self.c_root, self.c_tip, num=self.ns+1, endpoint=True)
+        chords_vec = np.array([chords, np.zeros(len(chords)), np.zeros(len(chords))])
+        chords_vec = chords_vec.transpose()
+        panels_c, trailing_edge_info_c, leading_edge_info_c = make_panels_from_le_points_and_chords(
+            [self.le_sw, self.le_nw],
+            [self.nc, self.ns],
+            chords_vec,
+            gamma_orientation=-1)
+
+        expected_points = (np.array([0.8, 0., 0.]), np.array([0., 0., 0.]), np.array([0., 1.6, 0.]), np.array([0.76, 1.6, 0.]))
+        assert np.allclose(expected_points, panels_c[0])
+        assert np.allclose(expected_points, panels_le_te[0])
+
+        expected_points37 = (np.array([2.08, 11.2, 0.]), np.array([1.56, 11.2,  0.]), np.array([1.44, 12.8, 0.]), np.array([1.92, 12.8,  0.]))
+        assert np.allclose(expected_points37, panels_le_te[37])
+        assert np.allclose(expected_points37, panels_c[37])
+        
+        # check trailing arrays
+        start = trailing_edge_info_le_te.shape[0] - self.ns
+        assert np.all(trailing_edge_info_le_te[start:-1])
+        assert np.all(trailing_edge_info_c[start:-1])
+
+        # test leading edges array
+        assert np.all(leading_edge_info_le_te[0:self.ns])
+        assert np.all(leading_edge_info_c[0:self.ns])
+    
+    def test_get_panels_area(self):
+        points = [np.array([10., 0., 0.]), np.array([0., 0., 0.]),
+                    np.array([0., 10., 0.]), np.array([10., 10., 0.])]
+
+        panels, _, _ = make_panels_from_le_te_points(points, [1, 1])
+        calculated_area = get_panels_area(panels)
         expected_area = 100.0
 
-        assert_almost_equal(calculated_area, expected_area)
+        np.testing.assert_almost_equal(calculated_area, expected_area)
+    
+    def test_make_panels_from_points_span(self):
+        c_root = 4.0  # root chord length
+        c_tip = 2.0  # tip chord length
+        wing_span = 16  # wing span length
 
-    def test_pressure(self):
-        self.panel.force_xyz = np.array([3., 2., 1.])
-        self.panel.calc_pressure()
-        assert_almost_equal(self.panel.pressure, 0.01)
+        # Points defining wing
 
-    def test_get_ctr_point_postion(self):
-        ctr_point = self.panel.get_ctr_point_position()
-        expected_ctr_point = [7.5, 5, 0]
+        te_se = np.array([c_root, 0, 0])
+        le_sw = np.array([0, 0, 0])
 
-        assert_almost_equal(expected_ctr_point, ctr_point)
+        le_nw = np.array([0, wing_span, 0])
+        te_ne = np.array([c_tip, wing_span, 0])
 
-        points2 = [np.array([ 8., 2., 0]), np.array([0., 0., 0]),
-                   np.array([-2., 6., 0]), np.array([6., 7., 0])]
+        # MESH DENSITY
+        ns = 10  # number of panels spanwise
+        nc = 5  # number of panels chordwise
 
-        panel2 = Panel(*points2)
-        ctr_point2 = panel2.get_ctr_point_position()
-        expected_ctr_point2 = [5., 4.125, 0]
-        assert_almost_equal(expected_ctr_point2, ctr_point2)
 
-    def test_get_cp_postion(self):
-        cp = self.panel.cp_position
-        expected_ctr_point = [2.5, 5, 0]
+        new_approach_panels, _, _ = make_panels_from_le_te_points(
+            [le_sw, te_se,
+            le_nw, te_ne],
+            [nc, ns])
 
-        assert_almost_equal(expected_ctr_point, cp)
+        chords = np.linspace(c_root, c_tip, num=ns+1, endpoint=True)
+        chords_vec = np.array([chords, np.zeros(len(chords)), np.zeros(len(chords))])
+        chords_vec = chords_vec.transpose()
 
-        points2 = [np.array([ 8., 2., 0]), np.array([0., 0., 0]),
-                   np.array([-2., 6., 0]), np.array([6., 7., 0])]
+        expected_points = (np.array([0.8, 0., 0.]), np.array([0., 0., 0.]), np.array([0., 1.6, 0.]), np.array([0.76, 1.6, 0.]))
 
-        panel2 = Panel(*points2)
-        cp2 = panel2.cp_position
-        expected_cp2 = [1., 3.375, 0]
-        assert_almost_equal(expected_cp2, cp2)
+        assert np.allclose(expected_points, new_approach_panels[0])
 
-    def test_get_vortex_ring_position(self):
-        vortex_ring_position = self.panel.get_vortex_ring_position()
-        expected_vortex_riing_position = [[12.5, 0., 0.],
-                                          [2.5, 0., 0.],
-                                          [2.5, 10., 0.],
-                                          [12.5, 10., 0.]]
-
-        assert_almost_equal(expected_vortex_riing_position, vortex_ring_position)
-
-    def test_get_vortex_ring_induced_velocity(self):
-        ctr_p = self.panel.get_ctr_point_position()
-        dummy_velocity = None
-        v_ind = self.panel.get_induced_velocity(ctr_p, dummy_velocity)
-        v_ind_expected = [0, 0, -0.09003163161571061]
-
-        assert_almost_equal(v_ind, v_ind_expected)
-
-    def test_panel_is_not_plane(self):
-        points = [np.array([10, 0, 0]), np.array([0, 0, 666]),
-                  np.array([0, 10, 0]), np.array([10, 10, 0])]
-
-        panel = Panel(*points)
-        self.assertFalse(panel._are_points_coplanar())
+        expected_points37 = (np.array([2.08, 11.2, 0.]), np.array([1.56, 11.2,  0.]), np.array([1.44, 12.8, 0.]), np.array([1.92, 12.8,  0.]))
+        assert np.allclose(expected_points37, new_approach_panels[37])

@@ -66,6 +66,7 @@ class Vlm:
 
         self.pressure = forces.calc_pressure(self.force, self.normals, self.areas, self.n_spanwise, self.n_chordwise)
     
+    # to be done
     def calculate_CL_CD_free_wing(self, chord = 1.0, half_wing_span = 100, AoA_deg = 3.0):
         
         # chord : float = 1.              # chord length

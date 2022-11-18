@@ -78,7 +78,7 @@ def main():
 
     #todo
     # te rzeczy co sa zwracane sa na razie puste albo jakies bezsensowne
-    df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results , myvlm.inlet_conditions, set, output_dir_name)
+    df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, set, output_dir_name)
 
     #df_components, df_integrals, df_inlet_IC = save_results_to_file(inviscid_flow_results, None, inlet_condition, sail_set, output_dir_name)
     #new_df_components, new_df_integrals, new_df_inlet_IC = save_results_to_file(inviscid_flow_results_new_approach, None, myvlm.inlet_conditions, sail_set, output_dir_name)

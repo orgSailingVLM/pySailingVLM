@@ -1,22 +1,12 @@
 import numpy as np
 import timeit
 
-<<<<<<< HEAD:sailingVLM/Examples/aircraft_wing_planform.py
-
-from sailingVLM.Solver.vlm_solver import calc_circulation
-from sailingVLM.Solver.mesher import make_panels_from_le_te_points
-from sailingVLM.Rotations.geometry_calc import rotation_matrix
-from sailingVLM.Solver.coeff_formulas import get_CL_CD_free_wing
-from sailingVLM.Solver.forces import calc_pressure, calc_force_VLM_xyz, calc_force_VLM_xyz
-from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
-=======
 from Solver.vlm_solver import calc_circulation
 from Solver.mesher import make_panels_from_le_te_points
 from Rotations.geometry_calc import rotation_matrix
 from Solver.coeff_formulas import get_CL_CD_free_wing
 from Solver.forces import calc_forces_on_panels_VLM_xyz, get_stuff_from_panels
 from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
->>>>>>> 801de37c8b548151ce8cdd70b9b1e61c86fe1d8f:Examples/aircraft_wing_planform.py
 
 ### GEOMETRY DEFINITION ###
 
@@ -42,6 +32,22 @@ from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
 start = timeit.default_timer()
 np.set_printoptions(precision=3, suppress=True)
 
+import numpy as np
+from unittest import TestCase
+
+from sailing_vlm.rotations.geometry_calc import rotation_matrix
+from sailing_vlm.solver.panels import make_panels_from_le_te_points, get_panels_area
+from sailing_vlm.solver.coefs import get_CL_CD_free_wing, get_vlm_CL_CD_free_wing
+from sailing_vlm.solver.coefs import calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points, \
+    get_influence_coefficients_spanwise, solve_eq
+
+from sailing_vlm.solver.velocity import calculate_app_fs 
+from sailing_vlm.solver.forces import is_no_flux_BC_satisfied, calc_force_wrapper, calc_pressure
+
+np.set_printoptions(precision=10, suppress=True)
+
+# PARAMETERS
+gamma_orientation = 1
 ### WING DEFINITION ###
 #Parameters #
 chord = 1.              # chord length
@@ -59,72 +65,53 @@ Ry = rotation_matrix([0, 1, 0], np.deg2rad(AoA_deg))
 # we are going to rotate the geometry
 
 ### MESH DENSITY ###
-ns = 15    # number of panels (spanwise)
-nc = 15   # number of panels (chordwise)
 
-# for testing my own verison
+ns = 5   # number of panels (spanwise)
+nc = 5   # number of panels (chordwise)
 
-ns = 3    # number of panels (spanwise)
-nc = 4   # number of panels (chordwise)
-panels, mesh, _ = make_panels_from_le_te_points(
+panels, trailing_edge_info, leading_edge_info = make_panels_from_le_te_points(
     [np.dot(Ry, le_SW),
-     np.dot(Ry, te_SE),
-     np.dot(Ry, le_NW),
-     np.dot(Ry, te_NE)],
-    [nc, ns],
-    gamma_orientation=1)
+    np.dot(Ry, te_SE),
+    np.dot(Ry, le_NW),
+    np.dot(Ry, te_NE)],
+    [nc, ns])
 
-rows, cols = panels.shape
-N = rows * cols
-
+N = panels.shape[0]
 
 ### FLIGHT CONDITIONS ###
 V = 1*np.array([10.0, 0.0, 0.0])
 V_app_infw = np.array([V for i in range(N)])
 rho = 1.225  # fluid density [kg/m3]
 
-### CALCULATIONS ###
-gamma_magnitude, v_ind_coeff, A = calc_circulation(V_app_infw, panels)
-V_induced_at_ctrl_p = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
+AR = 2 * half_wing_span / chord
+S = 2 * half_wing_span * chord
+CL_expected, CD_expected = get_CL_CD_free_wing(AR, AoA_deg)
 
-V_app_fw_at_ctrl_p = V_app_infw + V_induced_at_ctrl_p
-assert is_no_flux_BC_satisfied(V_app_fw_at_ctrl_p, panels)
+################## CALCULATIONS ##################
 
+areas = get_panels_area(panels) 
+normals, collocation_points, center_of_pressure, rings, span_vectors, _, _ = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(panels, gamma_orientation)
 
-<<<<<<< HEAD:sailingVLM/Examples/aircraft_wing_planform.py
+coefs, RHS, wind_coefs = get_influence_coefficients_spanwise(collocation_points, rings, normals, V_app_infw, trailing_edge_info, gamma_orientation)
+gamma_magnitude = solve_eq(coefs, RHS)
 
-F, _, _ = calc_force_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho)
-=======
-calc_forces_on_panels_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho)
-F = get_stuff_from_panels(panels, "force_xyz", (panels.shape[0], panels.shape[1], 3))
->>>>>>> 801de37c8b548151ce8cdd70b9b1e61c86fe1d8f:Examples/aircraft_wing_planform.py
-F = F.reshape(N, 3)
+_,  V_app_fs_at_ctrl_p = calculate_app_fs(V_app_infw,  wind_coefs,  gamma_magnitude)
+assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, panels, areas, normals)
 
-map(lambda x: x.calc_pressure(), panels.flatten())
+force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, ns, nc, normals, span_vectors, trailing_edge_info, leading_edge_info, gamma_orientation)
+
+CL_vlm, CD_vlm = get_vlm_CL_CD_free_wing(force, V, rho, S)
 
 print("gamma_magnitude: \n")
 print(gamma_magnitude)
 print("DONE")
 
-### compare vlm with book formulas ###
-# reference values - to compare with book formulas
-AR = 2 * half_wing_span / chord
-S = 2 * half_wing_span * chord
-CL_expected, CD_ind_expected = get_CL_CD_free_wing(AR, AoA_deg)
-
-total_F = np.sum(F, axis=0)
-q = 0.5 * rho * (np.linalg.norm(V) ** 2) * S
-CL_vlm = total_F[2] / q
-CD_vlm = total_F[0] / q
 
 print(f"\nAspect Ratio {AR}")
-print(f"CL_expected {CL_expected:.6f} \t CD_ind_expected {CD_ind_expected:.6f}")
+print(f"CL_expected {CL_expected:.6f} \t CD_ind_expected {CD_expected:.6f}")
 print(f"CL_vlm      {CL_vlm:.6f}  \t CD_vlm          {CD_vlm:.6f}")
 
-print(f"\n\ntotal_F {str(total_F)}")
+print(f"\n\ntotal_F {str(np.sum(force, axis=0))}")
 print("=== END ===")
 
 print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
-
-
-# po dodaniu TrailingEdge wyniki powinny byc o okolo kilkanacsie procent inne

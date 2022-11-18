@@ -77,38 +77,3 @@ class TestMesher(TestCase):
              [0., 16., 0.]])
 
         assert np.allclose(mesh[0], expected_mesh0)
-
-    def test_make_panels_from_points_span_and_chord_wise(self):
-        panels_le_te, trailing_edge_info_le_te, leading_edge_info_le_te  = make_panels_from_le_te_points(
-            [self.le_sw, self.te_se,
-             self.le_nw, self.te_ne],
-            [self.nc, self.ns],
-            gamma_orientation=1)
-
-        chords = np.linspace(self.c_root, self.c_tip, num=self.ns+1, endpoint=True)
-        chords_vec = np.array([chords, np.zeros(len(chords)), np.zeros(len(chords))])
-        chords_vec = chords_vec.transpose()
-        panels_c, trailing_edge_info_c, leading_edge_info_c = make_panels_from_le_points_and_chords(
-            [self.le_sw, self.le_nw],
-            [self.nc, self.ns],
-            chords_vec,
-            gamma_orientation=-1)
-
-        expected_points = (np.array([0.8, 0., 0.]), np.array([0., 0., 0.]), np.array([0., 1.6, 0.]), np.array([0.76, 1.6, 0.]))
-        assert np.allclose(expected_points, panels_c[0])
-        assert np.allclose(expected_points, panels_le_te[0])
-
-        expected_points37 = (np.array([2.08, 11.2, 0.]), np.array([1.56, 11.2,  0.]), np.array([1.44, 12.8, 0.]), np.array([1.92, 12.8,  0.]))
-        assert np.allclose(expected_points37, panels_le_te[37])
-        assert np.allclose(expected_points37, panels_c[37])
-        
-        # check trailing arrays
-        start = trailing_edge_info_le_te.shape[0] - self.ns
-        assert np.all(trailing_edge_info_le_te[start:-1])
-        assert np.all(trailing_edge_info_c[start:-1])
-
-        # test leading edges array
-        assert np.all(leading_edge_info_le_te[0:self.ns])
-        assert np.all(leading_edge_info_c[0:self.ns])
-        
-    

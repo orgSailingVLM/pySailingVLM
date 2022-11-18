@@ -12,7 +12,6 @@ from sailing_vlm.solver.additional_functions import get_cp_z_as_girths_all, get_
 # jak juz bedzie dzialac to zrzucic jakis przypadek z excela i porownywac w unittestach
 def save_results_to_file(myvlm, csys_transformations,
                          inviscid_flow_results: InviscidFlowResults,
-                         inlet_conditions: InletConditions,
                          sail_set: SailSet,
                          output_dir="output"):
 
@@ -26,12 +25,12 @@ def save_results_to_file(myvlm, csys_transformations,
     cp_straight_yacht_above = np.concatenate(a) 
     
 
-    df_inlet_conditions_my = np.array_split(myvlm.inlet_conditions.to_df_full(sail_set.sails[0].csys_transformations), 2)
-    df_inlet_conditions_my_above = df_inlet_conditions_my[0]
+    df_inlet_conditions = np.array_split(myvlm.inlet_conditions.to_df_full(sail_set.sails[0].csys_transformations), 2)
+    df_inlet_conditions_above = df_inlet_conditions[0]
     
 
-    df_inviscid_flow_my = np.array_split(inviscid_flow_results.to_df_full(), 2)
-    df_inviscid_flow_my_above = df_inviscid_flow_my[0]
+    df_inviscid_flow = np.array_split(inviscid_flow_results.to_df_full(), 2)
+    df_inviscid_flow_above = df_inviscid_flow[0]
 
 
     df_cp_straight_yacht_above = pd.DataFrame(cp_straight_yacht_above[:, 2], columns=['cp_points_upright.z'])
@@ -39,16 +38,15 @@ def save_results_to_file(myvlm, csys_transformations,
     df_names_all_above = pd.DataFrame(names_all_above, columns=['sail_name'])
 
     
-    list_of_df_my = [df_inviscid_flow_my_above, df_inlet_conditions_my_above,df_cp_straight_yacht_above, df_cp_z_as_girths_all_above, df_names_all_above ]
+    list_of_df_my = [df_inviscid_flow_above, df_inlet_conditions_above,df_cp_straight_yacht_above, df_cp_z_as_girths_all_above, df_names_all_above ]
 
-    df_inviscid_flow_integral_my = inviscid_flow_results.to_df_integral()
-    df_inlet_conditions_integral_my = inlet_conditions.winds.to_df_integral(sail_set.sails[0].csys_transformations)
+    df_inviscid_flow_integral = inviscid_flow_results.to_df_integral()
+    df_inlet_conditions_integral = myvlm.inlet_conditions.winds.to_df_integral(sail_set.sails[0].csys_transformations)
     
-    save_to_excel(output_dir, list_of_df_my, "res_my.xlsx", df_inviscid_flow_integral_my, df_inlet_conditions_integral_my)
+    df_merged = save_to_excel(output_dir, list_of_df_my, "res_my.xlsx", df_inviscid_flow_integral, df_inlet_conditions_integral)
    
-    # usunac to 
-    df_merged = None
-    return df_merged, df_inviscid_flow_integral_my, df_inlet_conditions_integral_my
+
+    return df_merged, df_inviscid_flow_integral, df_inlet_conditions_integral
     
 
 
@@ -143,3 +141,5 @@ def save_to_excel(output_dir : str, list_of_df : List[pd.DataFrame], output_file
 
         write_summary_sheet(df_inviscid_flow_integral, 'Integrals')
         write_summary_sheet(df_inlet_conditions_integral, 'IC_at_reference_height')
+
+        return df_merged

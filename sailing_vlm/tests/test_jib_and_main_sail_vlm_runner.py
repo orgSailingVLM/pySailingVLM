@@ -1,32 +1,33 @@
 import shutil
 
-from sailingVLM.YachtGeometry.SailFactory import SailFactory
-from sailingVLM.YachtGeometry.SailGeometry import SailSet
-from sailingVLM.Rotations.CSYS_transformations import CSYS_transformations
-from sailingVLM.Solver.Interpolator import Interpolator
-from sailingVLM.YachtGeometry.HullGeometry import HullGeometry
-from sailingVLM.Inlet.InletConditions import InletConditions
-from sailingVLM.Inlet.Winds import ExpWindProfile
+from sailing_vlm.yacht_geometry.sail_factory import SailFactory
+from sailing_vlm.yacht_geometry.sail_geometry import SailSet
+from sailing_vlm.rotations.csys_transformations import CSYS_transformations
+from sailing_vlm.solver.interpolator import Interpolator
+from sailing_vlm.yacht_geometry.hull_geometry import HullGeometry
+from sailing_vlm.inlet.inlet_conditions import InletConditions
+from sailing_vlm.inlet.winds import ExpWindProfile
 
-from sailingVLM.Solver.forces import calc_V_at_cp
-from sailingVLM.ResultsContainers.save_results_utils import save_results_to_file
-from sailingVLM.Solver.PanelsPlotter import display_panels_xyz_and_winds
-from sailingVLM.Solver.vlm_solver import is_no_flux_BC_satisfied
+from sailing_vlm.solver.forces import calc_V_at_cp
+from sailing_vlm.results.save_utils import save_results_to_file
+from sailing_vlm.solver.panels_plotter import display_panels_xyz_and_winds
+#from sailing_vlm.solver.vlm_solver import is_no_flux_BC_satisfied
 
-from sailingVLM.Solver.vlm_solver import calc_circulation
-from sailingVLM.ResultsContainers.InviscidFlowResults import prepare_inviscid_flow_results_llt, prepare_inviscid_flow_results_vlm
-from sailingVLM.Solver.vlm_solver import calculate_app_fs
+#from sailing_vlm.solver.vlm_solver import calc_circulation
+from sailing_vlm.results.inviscid_flow import  prepare_inviscid_flow_results_vlm #, prepare_inviscid_flow_results_llt,
+#from sailing_vlm.solver.vlm_solver import calculate_app_fs
 
+from sailing_vlm.solver.vlm import Vlm
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 from unittest import TestCase
 
 
-from sailingVLM.tests_VLM.InputFiles.case_data_for_vlm_runner import *
+from sailing_vlm.tests.input_files.case_data_for_vlm_runner import *
 # np.set_printoptions(precision=3, suppress=True)
 
 
-class TestVLM_Solver(TestCase):
+class TestVLM_solver(TestCase):
     def setUp(self):
         self.interpolator = Interpolator(interpolation_type)
 
@@ -67,18 +68,22 @@ class TestVLM_Solver(TestCase):
             LLT_twist=LLT_twist)
 
         sail_set = SailSet([jib_geometry, main_sail_geometry])
-        inlet_condition = InletConditions(self.wind, rho=rho, panels1D=sail_set.panels1d)
-        return sail_set, inlet_condition
+        #inlet_condition = InletConditions(self.wind, rho=rho, panels1D=sail_set.panels1d)
+        
+        myvlm = Vlm(sail_set.panels, n_chordwise, n_spanwise, rho, self.wind, sail_set.trailing_edge_info, sail_set.leading_edge_info)
+
+        return sail_set, myvlm# , inlet_condition
 
 
 
 
-    def _check_df_results(self, suffix, inviscid_flow_results, inlet_condition, sail_set):
+    def _check_df_results(self, suffix, myvlm, csys_transformations, inviscid_flow_results, sail_set):
         inviscid_flow_results.estimate_heeling_moment_from_keel(self.hull.center_of_lateral_resistance)
         # display_panels_xyz_and_winds(self.sail_set.panels1d, self.inlet_condition, inviscid_flow_results, self.hull, show_plot=False)
 
-        df_components, df_integrals, df_inlet_IC = save_results_to_file(
-            inviscid_flow_results, None, inlet_condition, sail_set, output_dir_name)
+                             
+        df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, 
+            csys_transformations, inviscid_flow_results, sail_set, output_dir_name)
         shutil.copy(os.path.join(case_dir, case_name), os.path.join(output_dir_name, case_name))
 
 
@@ -90,74 +95,21 @@ class TestVLM_Solver(TestCase):
         assert_frame_equal(df_integrals, expected_df_integrals)
 
         expected_df_inlet_ic = pd.read_csv(os.path.join(case_dir, f'expected_df_inlet_IC_{suffix}.csv'))
-        expected_df_inlet_ic.set_index('Unnamed: 0', inplace=True)  # the mirror part is not stored, thus half of the indices are cut off
-        expected_df_inlet_ic.index.name = None
         assert_frame_equal(df_inlet_IC, expected_df_inlet_ic)
 
         expected_df_components = pd.read_csv(os.path.join(case_dir, f'expected_df_components_{suffix}.csv'))
-        expected_df_components.set_index('Unnamed: 0', inplace=True)  # the mirror part is not stored, thus half of the indices are cut off
-        expected_df_components.index.name = None
         assert_frame_equal(df_components, expected_df_components)
 
     def test_calc_forces_and_moments_vlm(self):
         suffix = 'vlm'
         n_chordwise = 3
 
-        sail_set, inlet_condition = self._prepare_sail_set(n_spanwise=10, n_chordwise=n_chordwise)
-        gamma_magnitude, v_ind_coeff = calc_circulation(inlet_condition.V_app_infs, sail_set.panels1d)
+        sail_set, myvlm = self._prepare_sail_set(n_spanwise=2, n_chordwise=n_chordwise)
 
-        df_gamma = pd.DataFrame({'gamma_magnitute': gamma_magnitude})
+        df_gamma = pd.DataFrame({'gamma_magnitute': myvlm.gamma_magnitude})
         df_gamma.to_csv(f'expected_gamma_magnitute_{suffix}.csv', index=False)
         expected_df_gamma = pd.read_csv(os.path.join(case_dir, f'expected_gamma_magnitute_{suffix}.csv'))
-        assert_frame_equal(df_gamma, expected_df_gamma)
+        np.testing.assert_almost_equal(df_gamma['gamma_magnitute'].to_numpy(), expected_df_gamma['gamma_magnitute'].to_numpy())
 
-        V_induced_at_ctrl_p, V_app_fs_at_ctrl_p = calculate_app_fs(inlet_condition, v_ind_coeff, gamma_magnitude)
-        assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, sail_set.panels1d)
-        inviscid_flow_results_vlm = prepare_inviscid_flow_results_vlm(gamma_magnitude,
-                                                                   sail_set, inlet_condition,
-                                                                   self.csys_transformations)
-
-        self._check_df_results(suffix, inviscid_flow_results_vlm, inlet_condition, sail_set)
-
-    def test_calc_forces_and_moments_llt(self):
-        suffix = 'llt'
-        n_chordwise = 1
-
-        sail_set, inlet_condition = self._prepare_sail_set(n_spanwise=10, n_chordwise=n_chordwise)
-        gamma_magnitude, v_ind_coeff = calc_circulation(inlet_condition.V_app_infs, sail_set.panels1d)
-
-        df_gamma = pd.DataFrame({'gamma_magnitute': gamma_magnitude})
-        df_gamma.to_csv(f'expected_gamma_magnitute_{suffix}.csv', index=False)
-        expected_df_gamma = pd.read_csv(os.path.join(case_dir, f'expected_gamma_magnitute_{suffix}.csv'))
-        assert_frame_equal(df_gamma, expected_df_gamma)
-
-        V_induced_at_ctrl_p, V_app_fs_at_ctrl_p = calculate_app_fs(inlet_condition, v_ind_coeff, gamma_magnitude)
-        assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, sail_set.panels1d)
-        # to calculate forces one have to recalculate induceed wind at cp (centre of pressure), not at ctr_point!
-        V_app_fs_at_cp, V_induced_at_cp = calc_V_at_cp(inlet_condition.V_app_infs, gamma_magnitude, sail_set.panels1d)
-        inviscid_flow_results_llt = prepare_inviscid_flow_results_llt(
-            V_app_fs_at_cp, V_induced_at_cp, gamma_magnitude,
-            sail_set, inlet_condition,
-            self.csys_transformations)
-
-        self._check_df_results(suffix, inviscid_flow_results_llt, inlet_condition, sail_set)
-
-    def test_calc_forces_and_moments_use_vlm_as_llt(self):
-        suffix = 'llt'
-        n_chordwise = 1
-
-        sail_set, inlet_condition = self._prepare_sail_set(n_spanwise=10, n_chordwise=n_chordwise)
-        gamma_magnitude, v_ind_coeff = calc_circulation(inlet_condition.V_app_infs, sail_set.panels1d)
-
-        df_gamma = pd.DataFrame({'gamma_magnitute': gamma_magnitude})
-        df_gamma.to_csv(f'expected_gamma_magnitute_{suffix}.csv', index=False)
-        expected_df_gamma = pd.read_csv(os.path.join(case_dir, f'expected_gamma_magnitute_{suffix}.csv'))
-        assert_frame_equal(df_gamma, expected_df_gamma)
-
-        V_induced_at_ctrl_p, V_app_fs_at_ctrl_p = calculate_app_fs(inlet_condition, v_ind_coeff, gamma_magnitude)
-        assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, sail_set.panels1d)
-        inviscid_flow_results_vlm = prepare_inviscid_flow_results_vlm(gamma_magnitude,
-                                                                   sail_set, inlet_condition,
-                                                                   self.csys_transformations)
-
-        self._check_df_results(suffix, inviscid_flow_results_vlm, inlet_condition, sail_set)
+        inviscid_flow_results_vlm = prepare_inviscid_flow_results_vlm(sail_set, self.csys_transformations, myvlm)
+        self._check_df_results(suffix, myvlm, self.csys_transformations, inviscid_flow_results_vlm, sail_set)

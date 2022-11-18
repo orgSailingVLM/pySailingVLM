@@ -139,8 +139,7 @@ def calc_induced_velocity(v_ind_coeff : np.ndarray, gamma_magnitude : float) -> 
     :return np.ndarray: induced wind velocity
     """
     N = gamma_magnitude.shape[0]
-    
-    t2 = len(gamma_magnitude)
+
     V_induced = np.zeros((N, 3))
     for i in range(N):
         for j in range(N):

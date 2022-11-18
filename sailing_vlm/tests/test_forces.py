@@ -58,8 +58,7 @@ class TestForces(TestCase):
              np.dot(self.Ry, self.te_SE),
              np.dot(self.Ry, self.le_NW),
              np.dot(self.Ry, self.te_NE)],
-            [nc, ns],
-            gamma_orientation=1)
+            [nc, ns])
 
         return panels, trailing_edge_info, leading_edge_info
 
@@ -270,3 +269,18 @@ class TestForces(TestCase):
         # r_naive = np.array([r0, r1, r2])
         # M_naive = np.cross(r_naive, F_total)
         #todo: this is weird: r_cross_F_total != R_estimate_cross_F_total
+
+
+
+
+# TODO
+        # self.points = [np.array([10., 0., 0.]), np.array([0., 0., 0.]),
+        #                np.array([0., 10., 0.]), np.array([10., 10., 0.])]
+
+        # self.panel = Panel(*self.points)
+        # self.assertTrue(self.panel._are_points_coplanar())
+
+
+        # self.panel.force_xyz = np.array([3., 2., 1.])
+        # self.panel.calc_pressure()
+        # assert_almost_equal(self.panel.pressure, 0.01)
