@@ -1,12 +1,15 @@
-import numpy as np
 import timeit
+import numpy as np
+from unittest import TestCase
 
-from Solver.vlm_solver import calc_circulation
-from Solver.mesher import make_panels_from_le_te_points
-from Rotations.geometry_calc import rotation_matrix
-from Solver.coeff_formulas import get_CL_CD_free_wing
-from Solver.forces import calc_forces_on_panels_VLM_xyz, get_stuff_from_panels
-from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
+from sailing_vlm.rotations.geometry_calc import rotation_matrix
+from sailing_vlm.solver.panels import make_panels_from_le_te_points, get_panels_area
+from sailing_vlm.solver.coefs import get_CL_CD_free_wing, get_vlm_CL_CD_free_wing
+from sailing_vlm.solver.coefs import calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points, \
+    get_influence_coefficients_spanwise, solve_eq
+
+from sailing_vlm.solver.velocity import calculate_app_fs 
+from sailing_vlm.solver.forces import is_no_flux_BC_satisfied, calc_force_wrapper
 
 ### GEOMETRY DEFINITION ###
 
@@ -31,20 +34,6 @@ from Solver.vlm_solver import is_no_flux_BC_satisfied, calc_induced_velocity
 """
 start = timeit.default_timer()
 np.set_printoptions(precision=3, suppress=True)
-
-import numpy as np
-from unittest import TestCase
-
-from sailing_vlm.rotations.geometry_calc import rotation_matrix
-from sailing_vlm.solver.panels import make_panels_from_le_te_points, get_panels_area
-from sailing_vlm.solver.coefs import get_CL_CD_free_wing, get_vlm_CL_CD_free_wing
-from sailing_vlm.solver.coefs import calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points, \
-    get_influence_coefficients_spanwise, solve_eq
-
-from sailing_vlm.solver.velocity import calculate_app_fs 
-from sailing_vlm.solver.forces import is_no_flux_BC_satisfied, calc_force_wrapper, calc_pressure
-
-np.set_printoptions(precision=10, suppress=True)
 
 # PARAMETERS
 gamma_orientation = 1
@@ -98,7 +87,7 @@ gamma_magnitude = solve_eq(coefs, RHS)
 _,  V_app_fs_at_ctrl_p = calculate_app_fs(V_app_infw,  wind_coefs,  gamma_magnitude)
 assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, panels, areas, normals)
 
-force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, ns, nc, normals, span_vectors, trailing_edge_info, leading_edge_info, gamma_orientation)
+force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, gamma_orientation)
 
 CL_vlm, CD_vlm = get_vlm_CL_CD_free_wing(force, V, rho, S)
 

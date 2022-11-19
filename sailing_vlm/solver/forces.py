@@ -44,7 +44,7 @@ def determine_vector_from_its_dot_and_cross_product(F, r_dot_F, r_cross_F):
 
 # problem withnimport
 # sails  : List[SailGeometry], 
-def calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
+def calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, normals, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
 
     m = center_of_pressure.shape[0]
 
@@ -69,9 +69,11 @@ def calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, norm
             # v_ind_coeff to jest u mnie wind_coefs
             wind_coefs[i, j] = a
             coefs[i, j] = b
-
+    V_induced_new, V_app_fs_new = velocity.calculate_app_fs(V_app_infw, wind_coefs, gamma_magnitude)
     V_induced = velocity.calc_induced_velocity(wind_coefs, gamma_magnitude)
+   
     V_at_cp = V_app_infw + V_induced
+    np.testing.assert_almost_equal(V_at_cp, V_app_fs_new)
     return V_at_cp, V_induced
 
 
@@ -84,14 +86,14 @@ def calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, norm
 
 # import problem
 # sails  :List[SailGeometry], 
-def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, M, N, normals, span_vectors, trailing_edge_info : np.ndarray, leading_edges_info : np.ndarray, gamma_orientation : float = 1.0):
+def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, M, normals, span_vectors, trailing_edge_info : np.ndarray, leading_edges_info : np.ndarray, gamma_orientation : float = 1.0):
     # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     # f. Secondary Computations: Pressures, Loads, Velocities, Etc
     #Eq (12.25)
     ##### WAZNE #####
     # N - odleglosc miedzy leading a trailing edge
     # M - rozpietosc skrzydel    
-    V_at_cp, V_induced = calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, N, normals, trailing_edge_info, gamma_orientation)
+    V_at_cp, V_induced = calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, normals, trailing_edge_info, gamma_orientation)
     
     # if case 1x1 leading_edges_info is False False False False
     # horseshoe_edge_info i True True True True
@@ -115,7 +117,7 @@ def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rin
 
 
 
-def calc_pressure(forces, normals, areas, N , M):
+def calc_pressure(forces, normals, areas):
     p = forces.dot(normals.transpose()).diagonal() /  areas
     return p
 

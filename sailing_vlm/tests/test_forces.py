@@ -1,12 +1,15 @@
 import numpy as np
-from numpy.testing import assert_almost_equal
 
+from sailing_vlm.solver.coefs import calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points, \
+                                            get_influence_coefficients_spanwise, \
+                                            solve_eq, \
+                                            get_vlm_CL_CD_free_wing, \
+                                            get_CL_CD_free_wing
 
-from sailing_vlm.solver.panels import make_panels_from_le_te_points
-from sailing_vlm.solver.coefs import get_CL_CD_free_wing
-from sailing_vlm.solver.forces import determine_vector_from_its_dot_and_cross_product
-from sailing_vlm.solver.velocity import calc_induced_velocity
-from sailing_vlm.solver.forces import is_no_flux_BC_satisfied
+from sailing_vlm.solver.panels import get_panels_area, make_panels_from_le_te_points
+from sailing_vlm.solver.forces import determine_vector_from_its_dot_and_cross_product, calc_pressure
+from sailing_vlm.solver.velocity import calc_induced_velocity, calculate_app_fs
+from sailing_vlm.solver.forces import is_no_flux_BC_satisfied, calc_force_wrapper
 from sailing_vlm.solver.vlm import Vlm
 from sailing_vlm.rotations.geometry_calc import rotation_matrix
 from unittest import TestCase
@@ -14,16 +17,12 @@ from numpy.linalg import norm
 
 
 
-# def calc_circulation(V_app_ifnw, panels):
-#     A, RHS, v_ind_coeff = assembly_sys_of_eq(V_app_ifnw, panels)
-#     gamma_magnitude = np.linalg.solve(A, RHS)
-#     print(f"System of equations is solved.")
-#     return gamma_magnitude, v_ind_coeff
-
 
 
 class TestForces(TestCase):
     def setUp(self):
+        
+        self.gamma_orientation = 1
         ### WING DEFINITION ###
         # Parameters #
         chord = 1.  # chord length
@@ -62,13 +61,13 @@ class TestForces(TestCase):
 
         return panels, trailing_edge_info, leading_edge_info
 
-    def get_CL_CD_from_F(self, F):
-        total_F = np.sum(F, axis=0)
-        q = 0.5 * self.rho * (np.linalg.norm(self.V) ** 2) * self.S
-        CL_vlm = total_F[2] / q
-        CD_vlm = total_F[0] / q
+    # def get_CL_CD_from_F(self, F):
+    #     total_F = np.sum(F, axis=0)
+    #     q = 0.5 * self.rho * (np.linalg.norm(self.V) ** 2) * self.S
+    #     CL_vlm = total_F[2] / q
+    #     CD_vlm = total_F[0] / q
 
-        return CL_vlm, CD_vlm
+    #     return CL_vlm, CD_vlm
 
     def test_CL_CD_spanwise_only(self):
         ### ARRANGE ###
@@ -82,32 +81,23 @@ class TestForces(TestCase):
 
         ### ACT ###
         ### CALCULATIONS ###
-        rho = 1.225
-        myvlm = Vlm(panels, nc, ns, rho, V_app_infw,  trailing_edge_info, leading_edge_info)
 
-        
-        
-        
-        gamma_magnitude, v_ind_coeff, A = calc_circulation(V_app_infw, panels)
-        V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
-        V_app_fw = V_app_infw + V_induced
+        areas = get_panels_area(panels) 
+        normals, collocation_points, center_of_pressure, rings, span_vectors, _, _ = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(panels, self.gamma_orientation)
 
-        assert is_no_flux_BC_satisfied(V_app_fw, panels)
+        coefs, RHS, wind_coefs = get_influence_coefficients_spanwise(collocation_points, rings, normals, V_app_infw, trailing_edge_info, self.gamma_orientation)
+        gamma_magnitude = solve_eq(coefs, RHS)
 
-        calc_forces_on_panels_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
-        F = get_stuff_from_panels(panels, 'force_xyz', (panels.shape[0], panels.shape[1], 3))
-        F = F.reshape(N, 3)
-        ### compare vlm with book coeff_formulas ###
-        CL_vlm, CD_vlm = self.get_CL_CD_from_F(F)
+        _,  V_app_fs_at_ctrl_p = calculate_app_fs(V_app_infw,  wind_coefs,  gamma_magnitude)
+        assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, panels, areas, normals)
 
-        # rel_err_CL = abs((self.CL_expected - CL_vlm) / self.CL_expected)
-        # rel_err_CD = abs((self.CD_ind_expected - CD_vlm) / self.CD_ind_expected)
-        # print(f"CL_expected: {self.CL_expected:.4f} \t CL_vlm: {CL_vlm:.4f}")
-        # print(f"CD_ind_expected: {self.CD_ind_expected:.4f} \t CL_vlm: {CD_vlm:.4f}")
+        force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, self.rho, center_of_pressure, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, self.gamma_orientation)
+
+        CL_vlm, CD_vlm = get_vlm_CL_CD_free_wing(force, self.V, self.rho, self.S)
 
         ### ASSSERT ###
-        assert_almost_equal(CL_vlm, 0.32477746534138485)
-        assert_almost_equal(CD_vlm, 0.00020242110304907)
+        np.testing.assert_almost_equal(CL_vlm, 0.32477746534138485)
+        np.testing.assert_almost_equal(CD_vlm, 0.00020242110304907)
 
     def test_CL_CD_spanwise_and_chordwise(self):
         ### ARRANGE ###
@@ -116,26 +106,27 @@ class TestForces(TestCase):
         nc = 3  # number of panels (chordwise)
         N = ns*nc
 
-        panels, mesh = self.get_geom(ns, nc)
+        panels, trailing_edge_info, leading_edge_info = self.get_geom(ns, nc)
         V_app_infw = np.array([self.V for _ in range(N)])
 
         ### ACT ###
         ### CALCULATIONS ###
-        gamma_magnitude, v_ind_coeff, _ = calc_circulation(V_app_infw, panels)
-        V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
-        V_app_fw = V_app_infw + V_induced
+        areas = get_panels_area(panels) 
+        normals, collocation_points, center_of_pressure, rings, span_vectors, _, _ = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(panels, self.gamma_orientation)
 
-        assert is_no_flux_BC_satisfied(V_app_fw, panels)
+        coefs, RHS, wind_coefs = get_influence_coefficients_spanwise(collocation_points, rings, normals, V_app_infw, trailing_edge_info, self.gamma_orientation)
+        gamma_magnitude = solve_eq(coefs, RHS)
 
-        calc_forces_on_panels_VLM_xyz(V_app_infw, gamma_magnitude, panels, rho=self.rho)
-        F = get_stuff_from_panels(panels, 'force_xyz', (panels.shape[0], panels.shape[1], 3))
-        F = F.reshape(N, 3)
-        ### compare vlm with book coeff_formulas ###
-        CL_vlm, CD_vlm = self.get_CL_CD_from_F(F)
+        _,  V_app_fs_at_ctrl_p = calculate_app_fs(V_app_infw,  wind_coefs,  gamma_magnitude)
+        assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, panels, areas, normals)
+
+        force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, self.rho, center_of_pressure, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, self.gamma_orientation)
+
+        CL_vlm, CD_vlm = get_vlm_CL_CD_free_wing(force, self.V, self.rho, self.S)
 
         ### ASSSERT ###
-        assert_almost_equal(CL_vlm, 0.3247765909739283)
-        assert_almost_equal(CD_vlm, 0.0002024171446522)
+        np.testing.assert_almost_equal(CL_vlm, 0.3247765909739283)
+        np.testing.assert_almost_equal(CD_vlm, 0.0002024171446522)
 
 
     def test_determine_vector_from_its_dot_and_cross_product(self):
@@ -251,16 +242,16 @@ class TestForces(TestCase):
         r_dot_F_total = np.sum(r_dot_F, axis=0)
         r_cross_F_total = np.sum(r_cross_F, axis=0)  # total moments
 
-        assert_almost_equal(r_cross_F_total, np.array([-97190.75616098, -32915.36423537, 10338.34931543]), decimal=4)
+        np.testing.assert_almost_equal(r_cross_F_total, np.array([-97190.75616098, -32915.36423537, 10338.34931543]), decimal=4)
 
         R_estimate = determine_vector_from_its_dot_and_cross_product(F_total, r_dot_F_total, r_cross_F_total)
-        assert_almost_equal(np.dot(R_estimate, F_total), r_dot_F_total, decimal=4)
+        np.testing.assert_almost_equal(np.dot(R_estimate, F_total), r_dot_F_total, decimal=4)
 
         R_estimate_cross_F_total = np.cross(R_estimate, F_total)
         R_estimate2 = determine_vector_from_its_dot_and_cross_product(F_total, r_dot_F_total, R_estimate_cross_F_total)
-        assert_almost_equal(R_estimate, R_estimate2, decimal=4)
+        np.testing.assert_almost_equal(R_estimate, R_estimate2, decimal=4)
 
-        assert_almost_equal(R_estimate_cross_F_total, np.array([-98169.12235103, -30039.89115736,   9298.81310178]), decimal=4)
+        np.testing.assert_almost_equal(R_estimate_cross_F_total, np.array([-98169.12235103, -30039.89115736,   9298.81310178]), decimal=4)
 
         # most naive way
         # r0 = r_cross_F_total[0] / F_total[0]
@@ -271,8 +262,214 @@ class TestForces(TestCase):
         #todo: this is weird: r_cross_F_total != R_estimate_cross_F_total
 
 
+    def test_calc_moment_arm_in_shifted_csys(self):
+        pass
+    
+    def test_calc_V_at_cp(self):
+        pass
+    
+    def test_calc_force_wrapper(self):
+        
+        ns = 5
+        nc = 2
+        panels = np.array([[[ 4.99314767e-01, -1.00000000e+02, -2.61679781e-02],
+                            [ 0.00000000e+00, -1.00000000e+02,  0.00000000e+00],
+                            [ 0.00000000e+00, -6.00000000e+01,  0.00000000e+00],
+                            [ 4.99314767e-01, -6.00000000e+01, -2.61679781e-02]],
 
+                            [[ 4.99314767e-01, -6.00000000e+01, -2.61679781e-02],
+                            [ 0.00000000e+00, -6.00000000e+01,  0.00000000e+00],
+                            [ 0.00000000e+00, -2.00000000e+01,  0.00000000e+00],
+                            [ 4.99314767e-01, -2.00000000e+01, -2.61679781e-02]],
 
+                            [[ 4.99314767e-01, -2.00000000e+01, -2.61679781e-02],
+                            [ 0.00000000e+00, -2.00000000e+01,  0.00000000e+00],
+                            [ 0.00000000e+00,  2.00000000e+01,  0.00000000e+00],
+                            [ 4.99314767e-01,  2.00000000e+01, -2.61679781e-02]],
+
+                            [[ 4.99314767e-01,  2.00000000e+01, -2.61679781e-02],
+                            [ 0.00000000e+00,  2.00000000e+01,  0.00000000e+00],
+                            [ 0.00000000e+00,  6.00000000e+01,  0.00000000e+00],
+                            [ 4.99314767e-01,  6.00000000e+01, -2.61679781e-02]],
+
+                            [[ 4.99314767e-01,  6.00000000e+01, -2.61679781e-02],
+                            [ 0.00000000e+00,  6.00000000e+01,  0.00000000e+00],
+                            [ 0.00000000e+00,  1.00000000e+02,  0.00000000e+00],
+                            [ 4.99314767e-01,  1.00000000e+02, -2.61679781e-02]],
+
+                            [[ 9.98629535e-01, -1.00000000e+02, -5.23359562e-02],
+                            [ 4.99314767e-01, -1.00000000e+02, -2.61679781e-02],
+                            [ 4.99314767e-01, -6.00000000e+01, -2.61679781e-02],
+                            [ 9.98629535e-01, -6.00000000e+01, -5.23359562e-02]],
+
+                            [[ 9.98629535e-01, -6.00000000e+01, -5.23359562e-02],
+                            [ 4.99314767e-01, -6.00000000e+01, -2.61679781e-02],
+                            [ 4.99314767e-01, -2.00000000e+01, -2.61679781e-02],
+                            [ 9.98629535e-01, -2.00000000e+01, -5.23359562e-02]],
+
+                            [[ 9.98629535e-01, -2.00000000e+01, -5.23359562e-02],
+                            [ 4.99314767e-01, -2.00000000e+01, -2.61679781e-02],
+                            [ 4.99314767e-01,  2.00000000e+01, -2.61679781e-02],
+                            [ 9.98629535e-01,  2.00000000e+01, -5.23359562e-02]],
+
+                            [[ 9.98629535e-01,  2.00000000e+01, -5.23359562e-02],
+                            [ 4.99314767e-01,  2.00000000e+01, -2.61679781e-02],
+                            [ 4.99314767e-01,  6.00000000e+01, -2.61679781e-02],
+                            [ 9.98629535e-01,  6.00000000e+01, -5.23359562e-02]],
+
+                            [[ 9.98629535e-01,  6.00000000e+01, -5.23359562e-02],
+                            [ 4.99314767e-01,  6.00000000e+01, -2.61679781e-02],
+                            [ 4.99314767e-01,  1.00000000e+02, -2.61679781e-02],
+                            [ 9.98629535e-01,  1.00000000e+02, -5.23359562e-02]]])
+        areas = np.array([20., 20., 20., 20., 20., 20., 20., 20., 20., 20.])   
+        normals = np.array([[0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953]])   
+
+        V_app_infw = np.array([ [10.,  0.,  0.],
+                                [10.,  0.,  0.],
+                                [10.,  0.,  0.],
+                                [10.,  0.,  0.],
+                                [10.,  0.,  0.],
+                                [10.,  0.,  0.],
+                                [10.,  0.,  0.],
+                                [10.,  0.,  0.],
+                                [10.,  0.,  0.],
+                                [10.,  0.,  0.]])
+        gamma_magnitude = np.array([1.21622984, 1.2257545 , 1.22694307, 1.2257545 , 1.21622984,
+                                    1.62157652, 1.63433059, 1.63591882, 1.63433059, 1.62157652])
+        
+        trailing_edge_info = np.array([False, False, False, False, False,  True,  True,  True,  True, True])
+        leading_edge_info = np.array([ True,  True,  True,  True,  True, False, False, False, False,False])
+        
+        span_vectors = np.array([[ 0., 40.,  0.],
+                                [ 0., 40.,  0.],
+                                [ 0., 40.,  0.],
+                                [ 0., 40.,  0.],
+                                [ 0., 40.,  0.],
+                                [ 0., 40.,  0.],
+                                [ 0., 40.,  0.],
+                                [ 0., 40.,  0.],
+                                [ 0., 40.,  0.],
+                                [ 0., 40.,  0.]])
+        
+        center_of_pressure = np.array([[ 1.24828692e-01, -8.00000000e+01, -6.54199453e-03],
+                                        [ 1.24828692e-01, -4.00000000e+01, -6.54199453e-03],
+                                        [ 1.24828692e-01, -7.10542736e-15, -6.54199453e-03],
+                                        [ 1.24828692e-01,  4.00000000e+01, -6.54199453e-03],
+                                        [ 1.24828692e-01,  8.00000000e+01, -6.54199453e-03],
+                                        [ 6.24143459e-01, -8.00000000e+01, -3.27099727e-02],
+                                        [ 6.24143459e-01, -4.00000000e+01, -3.27099727e-02],
+                                        [ 6.24143459e-01, -7.10542736e-15, -3.27099727e-02],
+                                        [ 6.24143459e-01,  4.00000000e+01, -3.27099727e-02],
+                                        [ 6.24143459e-01,  8.00000000e+01, -3.27099727e-02]])
+        
+        rings = np.array([[[ 6.24143459e-01, -1.00000000e+02, -3.27099727e-02],
+                            [ 1.24828692e-01, -1.00000000e+02, -6.54199453e-03],
+                            [ 1.24828692e-01, -6.00000000e+01, -6.54199453e-03],
+                            [ 6.24143459e-01, -6.00000000e+01, -3.27099727e-02]],
+
+                            [[ 6.24143459e-01, -6.00000000e+01, -3.27099727e-02],
+                            [ 1.24828692e-01, -6.00000000e+01, -6.54199453e-03],
+                            [ 1.24828692e-01, -2.00000000e+01, -6.54199453e-03],
+                            [ 6.24143459e-01, -2.00000000e+01, -3.27099727e-02]],
+
+                            [[ 6.24143459e-01, -2.00000000e+01, -3.27099727e-02],
+                            [ 1.24828692e-01, -2.00000000e+01, -6.54199453e-03],
+                            [ 1.24828692e-01,  2.00000000e+01, -6.54199453e-03],
+                            [ 6.24143459e-01,  2.00000000e+01, -3.27099727e-02]],
+
+                            [[ 6.24143459e-01,  2.00000000e+01, -3.27099727e-02],
+                            [ 1.24828692e-01,  2.00000000e+01, -6.54199453e-03],
+                            [ 1.24828692e-01,  6.00000000e+01, -6.54199453e-03],
+                            [ 6.24143459e-01,  6.00000000e+01, -3.27099727e-02]],
+
+                            [[ 6.24143459e-01,  6.00000000e+01, -3.27099727e-02],
+                            [ 1.24828692e-01,  6.00000000e+01, -6.54199453e-03],
+                            [ 1.24828692e-01,  1.00000000e+02, -6.54199453e-03],
+                            [ 6.24143459e-01,  1.00000000e+02, -3.27099727e-02]],
+
+                            [[ 1.12345823e+00, -1.00000000e+02, -5.88779508e-02],
+                            [ 6.24143459e-01, -1.00000000e+02, -3.27099727e-02],
+                            [ 6.24143459e-01, -6.00000000e+01, -3.27099727e-02],
+                            [ 1.12345823e+00, -6.00000000e+01, -5.88779508e-02]],
+
+                            [[ 1.12345823e+00, -6.00000000e+01, -5.88779508e-02],
+                            [ 6.24143459e-01, -6.00000000e+01, -3.27099727e-02],
+                            [ 6.24143459e-01, -2.00000000e+01, -3.27099727e-02],
+                            [ 1.12345823e+00, -2.00000000e+01, -5.88779508e-02]],
+
+                            [[ 1.12345823e+00, -2.00000000e+01, -5.88779508e-02],
+                            [ 6.24143459e-01, -2.00000000e+01, -3.27099727e-02],
+                            [ 6.24143459e-01,  2.00000000e+01, -3.27099727e-02],
+                            [ 1.12345823e+00,  2.00000000e+01, -5.88779508e-02]],
+
+                            [[ 1.12345823e+00,  2.00000000e+01, -5.88779508e-02],
+                            [ 6.24143459e-01,  2.00000000e+01, -3.27099727e-02],
+                            [ 6.24143459e-01,  6.00000000e+01, -3.27099727e-02],
+                            [ 1.12345823e+00,  6.00000000e+01, -5.88779508e-02]],
+
+                            [[ 1.12345823e+00,  6.00000000e+01, -5.88779508e-02],
+                            [ 6.24143459e-01,  6.00000000e+01, -3.27099727e-02],
+                            [ 6.24143459e-01,  1.00000000e+02, -3.27099727e-02],
+                            [ 1.12345823e+00,  1.00000000e+02, -5.88779508e-02]]])  
+        
+        force_good = np.array([[ -7.25540491,   0.        , 596.35460618],
+                                [ -7.61281181,   0.        , 601.02845598],
+                                [ -7.65793281,   0.        , 601.61167433],
+                                [ -7.61281181,   0.        , 601.02845598],
+                                [ -7.25540491,   0.        , 596.35460618],
+                                [  7.82150574,  -0.        , 198.21738467],
+                                [  7.86339581,  -0.        , 199.79346364],
+                                [  7.8685363 ,  -0.        , 199.98850418],
+                                [  7.86339581,  -0.        , 199.79346364],
+                                [  7.82150574,  -0.        , 198.21738467]])  
+                          
+
+        force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, self.rho, center_of_pressure, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, self.gamma_orientation)
+
+        np.testing.assert_almost_equal(force, force_good, decimal=5)
+
+    
+    def test_calc_pressure(self):
+        # case 5x2
+        # spanwise 5 x chordwise 2
+        areas = np.array([20., 20., 20., 20., 20., 20., 20., 20., 20., 20.])   
+        normals = np.array([[0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953],
+                            [0.05233596, 0.        , 0.99862953]])   
+
+        force_good = np.array([ [ -7.25540491,   0.        , 596.35460618],
+                                [ -7.61281181,   0.        , 601.02845598],
+                                [ -7.65793281,   0.        , 601.61167433],
+                                [ -7.61281181,   0.        , 601.02845598],
+                                [ -7.25540491,   0.        , 596.35460618],
+                                [  7.82150574,  -0.        , 198.21738467],
+                                [  7.86339581,  -0.        , 199.79346364],
+                                [  7.8685363 ,  -0.        , 199.98850418],
+                                [  7.86339581,  -0.        , 199.79346364],
+                                [  7.82150574,  -0.        , 198.21738467]])  
+                          
+        pressure_good = np.array([29.75788022, 29.99031718, 30.01932006, 29.99031718, 29.75788022,
+                                    9.91775403,  9.9965596 , 10.00631171,  9.9965596 ,  9.91775403])
+        pressure = calc_pressure(force_good, normals, areas)
+        np.testing.assert_almost_equal(pressure, pressure_good)
+        
+    
 # TODO
         # self.points = [np.array([10., 0., 0.]), np.array([0., 0., 0.]),
         #                np.array([0., 10., 0.]), np.array([10., 10., 0.])]
