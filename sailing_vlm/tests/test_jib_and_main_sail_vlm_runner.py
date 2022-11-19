@@ -5,27 +5,17 @@ from sailing_vlm.yacht_geometry.sail_geometry import SailSet
 from sailing_vlm.rotations.csys_transformations import CSYS_transformations
 from sailing_vlm.solver.interpolator import Interpolator
 from sailing_vlm.yacht_geometry.hull_geometry import HullGeometry
-from sailing_vlm.inlet.inlet_conditions import InletConditions
 from sailing_vlm.inlet.winds import ExpWindProfile
 
-from sailing_vlm.solver.forces import calc_V_at_cp
 from sailing_vlm.results.save_utils import save_results_to_file
-from sailing_vlm.solver.panels_plotter import display_panels_xyz_and_winds
-#from sailing_vlm.solver.vlm_solver import is_no_flux_BC_satisfied
-
-#from sailing_vlm.solver.vlm_solver import calc_circulation
-from sailing_vlm.results.inviscid_flow import  prepare_inviscid_flow_results_vlm #, prepare_inviscid_flow_results_llt,
-#from sailing_vlm.solver.vlm_solver import calculate_app_fs
+from sailing_vlm.results.inviscid_flow import  prepare_inviscid_flow_results_vlm 
 
 from sailing_vlm.solver.vlm import Vlm
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
 from unittest import TestCase
 
-
 from sailing_vlm.tests.input_files.case_data_for_vlm_runner import *
-# np.set_printoptions(precision=3, suppress=True)
-
 
 class TestVLM_solver(TestCase):
     def setUp(self):

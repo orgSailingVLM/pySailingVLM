@@ -3,8 +3,7 @@ import pandas as pd
 from typing import List, Tuple
 from numpy.linalg import norm
 
-from sailing_vlm.solver import velocity
-
+from sailing_vlm.solver.additional_functions import calc_wind_coefs
 import numba
 
 
@@ -69,11 +68,16 @@ def calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(p
 
 # sails = [jib, main]
 
+def calculate_RHS(V_app_infw, normals):
+    RHS = -V_app_infw.dot(normals.transpose()).diagonal()
+    RHS = np.asarray(RHS)
+    return RHS
+
 # tak bylo w starej funkcji:
 # # numba tutaj nie rozumie typow -> do poprawki
 # #@numba.jit(nopython=True)
 # #@numba.njit(parallel=True)
-def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, V_app_infw: np.ndarray, horseshoe_info : np.ndarray, gamma_orientation : float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, V_app_infw: np.ndarray, trailing_edge_info : np.ndarray, gamma_orientation : float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     get_influence_coefficients_spanwise calculate coefs spanwise
 
@@ -81,39 +85,14 @@ def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: n
     :param np.ndarray rings: rings
     :param np.ndarray normals: normals
     :param np.ndarray V_app_infw: wind apparent infinite sail velocity
-    :param np.ndarray horseshoe_info: if panel is hourseshoe, ten horseshoe_info is True 
+    :param np.ndarray trailing_edge_info: if panel is hourseshoe, ten horseshoe_info is True 
     :param float gamma_orientation: gamma orientation, defaults to 1.0
     :return Tuple[np.ndarray, np.ndarray, np.ndarray]: coefs, RHS, wind coefs
     """
-    
-    m = collocation_points.shape[0]
-    # to nie dziala dla jiba?
-    RHS = -V_app_infw.dot(normals.transpose()).diagonal()
-    #RHS = [-np.dot(V_app_infw[i], normals[i]) for i in range(normals.shape[0])]
-    coefs = np.zeros((m, m))
-    wind_coefs = np.zeros((m, m, 3))
-    
-    # loop over other vortices
-    for i, ring in enumerate(rings):
-        A = ring[0]
-        B = ring[1]
-        C = ring[2]
-        D = ring[3]
-        # loop over points
-        for j, point in enumerate(collocation_points):
-           
-            a = velocity.vortex_ring(point, A, B, C, D, gamma_orientation)
-            # poprawka na trailing edge
-            # todo: zrobic to w drugim, oddzielnym ifie
-            # poziomo od 0 do n-1, reszta odzielnie
-            if horseshoe_info[i]:
-                #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
-                a = velocity.vortex_horseshoe(point, ring[1], ring[2], V_app_infw[i], gamma_orientation)
-            b = np.dot(a, normals[j].reshape(3, 1))
-            wind_coefs[j, i] = a
-            coefs[j, i] = b
-    RHS = np.asarray(RHS)
-                
+
+    coefs, wind_coefs = calc_wind_coefs(V_app_infw, collocation_points, rings, normals, trailing_edge_info, gamma_orientation)
+    RHS = calculate_RHS(V_app_infw, normals)
+
     return coefs, RHS, wind_coefs
 
 def solve_eq(coefs: np.ndarray, RHS: np.ndarray) -> np.ndarray:
@@ -126,7 +105,6 @@ def solve_eq(coefs: np.ndarray, RHS: np.ndarray) -> np.ndarray:
     """
     big_gamma = np.linalg.solve(coefs, RHS)
     return big_gamma
-
 
 
 # do przykladu z aircraftem
@@ -151,3 +129,4 @@ def get_CL_CD_free_wing(AR, AoA_deg):
     CD_ind_expected_3d = CL_expected_3d * CL_expected_3d / (np.pi * AR * e_w)
 
     return CL_expected_3d, CD_ind_expected_3d
+

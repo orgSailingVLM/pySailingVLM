@@ -10,7 +10,6 @@ from sailing_vlm.solver.panels import get_panels_area, make_panels_from_le_te_po
 from sailing_vlm.solver.forces import determine_vector_from_its_dot_and_cross_product, calc_pressure
 from sailing_vlm.solver.velocity import calc_induced_velocity, calculate_app_fs
 from sailing_vlm.solver.forces import is_no_flux_BC_satisfied, calc_force_wrapper
-from sailing_vlm.solver.vlm import Vlm
 from sailing_vlm.rotations.geometry_calc import rotation_matrix
 from unittest import TestCase
 from numpy.linalg import norm

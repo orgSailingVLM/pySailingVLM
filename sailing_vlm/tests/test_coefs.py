@@ -8,11 +8,11 @@ import os
 from numpy.testing import assert_almost_equal
 
 
-from sailing_vlm.solver.coefs import calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points, \
-                                            get_influence_coefficients_spanwise, \
-                                            solve_eq, \
-                                            get_vlm_CL_CD_free_wing, \
-                                            get_CL_CD_free_wing
+from sailing_vlm.solver.coefs import calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points
+from sailing_vlm.solver.coefs import get_influence_coefficients_spanwise
+from sailing_vlm.solver.coefs import solve_eq
+from sailing_vlm.solver.coefs import get_vlm_CL_CD_free_wing
+from sailing_vlm.solver.coefs import get_CL_CD_free_wing
 from sailing_vlm.solver.panels import get_panels_area, make_panels_from_le_te_points
 from sailing_vlm.solver.velocity import calc_induced_velocity
 from sailing_vlm.solver.forces import is_no_flux_BC_satisfied 

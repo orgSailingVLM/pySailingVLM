@@ -1,6 +1,7 @@
 import numpy as np
 
-from sailing_vlm.solver import velocity
+from sailing_vlm.solver.velocity import calc_V_at_cp
+
 def calc_moment_arm_in_shifted_csys(cp_points, v_from_old_2_new_csys):
     dx, dy, dz = v_from_old_2_new_csys
     N = len(cp_points)
@@ -34,47 +35,6 @@ def determine_vector_from_its_dot_and_cross_product(F, r_dot_F, r_cross_F):
     R = (np.cross(F, r_cross_F) + F * r_dot_F) / F_dot_F
     return np.array(R)
 
-
-
-
-# to bylo w starej czesci kodu:
-# # czesc kodu sie powtarza, zrobic osobna funkcje
-# # todo numba tutaj nie rozumie typow
-# #@numba.jit(nopython=True)
-
-# problem withnimport
-# sails  : List[SailGeometry], 
-def calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, normals, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
-
-    m = center_of_pressure.shape[0]
-
-    coefs = np.zeros((m, m))
-    wind_coefs = np.zeros((m, m, 3))
-    for i, point in enumerate(center_of_pressure):
-
-        # loop over other vortices
-        for j, ring in enumerate(rings):
-            A = ring[0]
-            B = ring[1]
-            C = ring[2]
-            D = ring[3]
-            a = velocity.vortex_ring(point, A, B, C, D, gamma_orientation)
-
-            # poprawka na trailing edge
-            # todo: zrobic to w drugim, oddzielnym ifie
-            if trailing_edge_info[j]:
-                #a = self.vortex_horseshoe(point, ring[0], ring[3], V_app_infw[j])
-                a = velocity.vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j], gamma_orientation)
-            b = np.dot(a, normals[i].reshape(3, 1))
-            # v_ind_coeff to jest u mnie wind_coefs
-            wind_coefs[i, j] = a
-            coefs[i, j] = b
-    V_induced_new, V_app_fs_new = velocity.calculate_app_fs(V_app_infw, wind_coefs, gamma_magnitude)
-    V_induced = velocity.calc_induced_velocity(wind_coefs, gamma_magnitude)
-   
-    V_at_cp = V_app_infw + V_induced
-    np.testing.assert_almost_equal(V_at_cp, V_app_fs_new)
-    return V_at_cp, V_induced
 
 
 # to bylo w starej finkcji:
