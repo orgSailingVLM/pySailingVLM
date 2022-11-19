@@ -1,6 +1,7 @@
 import numpy as np
 
-from sailing_vlm.solver.velocity import calc_V_at_cp
+from sailing_vlm.solver.coefs import calc_wind_coefs
+from sailing_vlm.solver.velocity import calculate_app_fs
 
 def calc_moment_arm_in_shifted_csys(cp_points, v_from_old_2_new_csys):
     dx, dy, dz = v_from_old_2_new_csys
@@ -37,6 +38,7 @@ def determine_vector_from_its_dot_and_cross_product(F, r_dot_F, r_cross_F):
 
 
 
+
 # to bylo w starej finkcji:
 # # "Loop serialization occurs when any number of prange driven loops are present 
 # # inside another prange driven loop. In this case the outermost of all the prange loops executes
@@ -53,8 +55,12 @@ def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rin
     ##### WAZNE #####
     # N - odleglosc miedzy leading a trailing edge
     # M - rozpietosc skrzydel    
-    V_at_cp, V_induced = calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, normals, trailing_edge_info, gamma_orientation)
     
+    #V_at_cp, V_induced = calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, normals, trailing_edge_info, gamma_orientation)
+    
+    _, wind_coefs = calc_wind_coefs(V_app_infw, center_of_pressure, rings, normals, trailing_edge_info, gamma_orientation)
+    V_induced, V_at_cp = calculate_app_fs(V_app_infw, wind_coefs, gamma_magnitude)
+
     # if case 1x1 leading_edges_info is False False False False
     # horseshoe_edge_info i True True True True
     # caclulating winds as for trailing edges

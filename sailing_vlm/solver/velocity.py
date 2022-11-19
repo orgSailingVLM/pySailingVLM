@@ -3,7 +3,6 @@ import numpy as np
 from numpy.linalg import norm
 from typing import Tuple
 
-from sailing_vlm.solver.additional_functions import calc_wind_coefs
 
 #@numba.jit(nopython=True, cache=True)
 def is_in_vortex_core(vector_list : numba.typed.List) -> bool:
@@ -164,18 +163,4 @@ def calculate_app_fs(V_app_infs : np.ndarray, v_ind_coeff : np.ndarray, gamma_ma
     return V_induced, V_app_fs
 
 
-# to bylo w starej czesci kodu:
-# # czesc kodu sie powtarza, zrobic osobna funkcje
-# # todo numba tutaj nie rozumie typow
-# #@numba.jit(nopython=True)
 
-# problem withnimport
-# sails  : List[SailGeometry], 
-
-# przeniesc do velocity
-def calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, normals, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
-
-    _, wind_coefs = calc_wind_coefs(V_app_infw, center_of_pressure, rings, normals, trailing_edge_info, gamma_orientation)
-    V_induced, V_at_cp = calculate_app_fs(V_app_infw, wind_coefs, gamma_magnitude)
-    
-    return V_at_cp, V_induced

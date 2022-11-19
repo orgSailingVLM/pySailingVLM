@@ -124,28 +124,3 @@ def get_cp_z_as_girths_all_above(cp_z_as_girths_all : np.ndarray, sail_set : Sai
     return cp_z_as_girths_all_above, names      
 
 
-
-def calc_wind_coefs(V_app_infw, points_for_calculations, rings, normals, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
-
-    m = points_for_calculations.shape[0]
-
-    coefs = np.zeros((m, m))
-    wind_coefs = np.zeros((m, m, 3))
-    for i, point in enumerate(points_for_calculations):
-
-        # loop over other vortices
-        for j, ring in enumerate(rings):
-            A = ring[0]
-            B = ring[1]
-            C = ring[2]
-            D = ring[3]
-            a = vortex_ring(point, A, B, C, D, gamma_orientation)
-
-            # poprawka na trailing edge
-            # todo: zrobic to w drugim, oddzielnym ifie
-            if trailing_edge_info[j]:
-                a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j], gamma_orientation)
-            b = np.dot(a, normals[i].reshape(3, 1))
-            wind_coefs[i, j] = a
-            coefs[i, j] = b
-    return coefs, wind_coefs  

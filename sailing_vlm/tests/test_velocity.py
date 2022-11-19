@@ -53,6 +53,7 @@ class TestVelocity(TestCase):
         assert_almost_equal(q, q_good)
         assert_almost_equal(q2, q_good2)
 
+
     def test_vortex_infinite_line(self):
         A = np.array([2, 1, 0])
 
@@ -70,6 +71,7 @@ class TestVelocity(TestCase):
         expected_vel1 = [0, 0, 0.0159154943]
         assert_almost_equal(calculated_vel1, expected_vel1)
 
+    
     def test_vortex_horseshoe(self):
         V = [1, 0, 0]
 
@@ -121,3 +123,34 @@ class TestVelocity(TestCase):
         V_induced = calc_induced_velocity(wind_coefs, gamma_magnitude)
         np.testing.assert_almost_equal(V_induced, V_induced_expected)
         
+ 
+    
+    def test_v_induced_by_vortex_line_vs_vortex_infinite_line(self):
+        A = np.array([123, 456, 789], dtype=np.float64)
+        B = np.array([120, 456, 789], dtype=np.float64)
+
+        ctr_point = np.array([12, 34, 56], dtype=np.float64)
+        vortex_line_direction = np.array([1, 0, 0], dtype=np.float64)
+        # calculated_vel_A ma zal wartosc, patzr pomozej
+        calculated_vel_A = vortex_line(ctr_point, A, vortex_line_direction, gamma=1)
+        calculated_vel_B = vortex_infinite_line(ctr_point, B, vortex_line_direction, gamma=-1)
+        expected_vel = vortex_line(ctr_point, A, B, gamma=1)
+
+        difference_AB = calculated_vel_A + calculated_vel_B
+        assert_almost_equal(difference_AB, expected_vel)
+        
+# array([ 0.00000000e+00,  7.09284116e-05, -4.08346381e-05])
+# calculated_vel_B
+# array([-0.00000000e+00, -7.12105017e-05,  4.09970419e-05])
+# expected_vel
+# array([ 0.00000000e+00, -2.82090017e-07,  1.62403802e-07])
+ 
+    def test_v_induced_by_finite_vortex_line(self):
+        P = np.array([1, 0, 0], dtype=np.float64)
+        A = np.array([0, 0, 0], dtype=np.float64)
+        B = np.array([0, 1, 0], dtype=np.float64)
+
+        calculated_vel = vortex_line(P, A, B, gamma=1)
+        expected_vel = [0, 0, -0.056269769]
+
+        assert_almost_equal(calculated_vel, expected_vel)

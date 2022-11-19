@@ -152,7 +152,7 @@ class TestRotations(TestCase):
         n_spanwise = 10
         n_chordwise = 1
         sail_set, wind, rho = self._prepare_sail_set(initial_twist_factor=0., n_spanwise=n_spanwise, n_chordwise=n_chordwise)
-        myvlm = Vlm(sail_set.panels, n_chordwise, n_spanwise, rho, wind, sail_set.sails, sail_set.trailing_edge_info, sail_set.leading_edge_info)
+        myvlm = Vlm(sail_set.panels, n_chordwise, n_spanwise, rho, wind, sail_set.trailing_edge_info, sail_set.leading_edge_info, )
 
  
         le_mid_points_desired = np.array(
@@ -333,7 +333,7 @@ class TestRotations(TestCase):
         n_spanwise = 10
         n_chordwise = 1
         sail_set, wind, rho = self._prepare_sail_set(initial_twist_factor=10., n_spanwise=n_spanwise, n_chordwise=n_chordwise)
-        myvlm = Vlm(sail_set.panels, n_chordwise, n_spanwise, rho, wind, sail_set.sails, sail_set.trailing_edge_info, sail_set.leading_edge_info)
+        myvlm = Vlm(sail_set.panels, n_chordwise, n_spanwise, rho, wind, sail_set.trailing_edge_info, sail_set.leading_edge_info)
 
         cp_points_desired = np.array(
             [[ -2.38640347,   0.36267309,   1.32411213],
