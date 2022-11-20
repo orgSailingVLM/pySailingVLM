@@ -58,11 +58,11 @@ jobs:
 
       # https://pytest.org
       - run:
-          name: run sailingVLM/tests_VLM
+          name: run sailing_vlm/tests
           command: |
             . venv/bin/activate
             export NUMBA_DISABLE_JIT=1
-            coverage run -m unittest discover -v sailingVLM/tests_VLM
+            coverage run -m unittest discover -v sailing_vlm/tests
             coverage report
             coverage html
 

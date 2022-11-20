@@ -128,12 +128,12 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-sailingVLM/Examples/results_example_*
-sailingVLM/tests_VLM/results_example_*
+sailing_vlm/examples/results_example_*
+sailing_vlm/tests/results_example_*
 .idea
-sailingVLM//Examples/results_example_jib_and_mainsail_vlm/*
+sailing_vlm/examples/results_example_jib_and_mainsail_vlm/*
 
-sailingVLM/tests_VLM/.pytest_cache
+sailing_vlm/tests_VLM/.pytest_cache
 
 
 # vscode
@@ -142,8 +142,8 @@ sailingVLM/tests_VLM/.pytest_cache
 testy_czasowe/*
 output*
 # do not include csv files from tests_VLM/InputFiles/
-sailingVLM/tests_VLM/InputFiles/*.csv
+sailing_vlm/tests/InputFiles/*.csv
 out.txt
-sailingVLM/NewApproach/jit_*
+
 
 results_example_jib_and_mainsail_vlm/
