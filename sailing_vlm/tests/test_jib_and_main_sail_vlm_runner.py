@@ -17,7 +17,7 @@ from unittest import TestCase
 
 from sailing_vlm.tests.input_files.case_data_for_vlm_runner import *
 
-class TestVLM_solver(TestCase):
+class TestJibRunner(TestCase):
     def setUp(self):
         self.interpolator = Interpolator(interpolation_type)
 
@@ -58,20 +58,14 @@ class TestVLM_solver(TestCase):
             LLT_twist=LLT_twist)
 
         sail_set = SailSet([jib_geometry, main_sail_geometry])
-        #inlet_condition = InletConditions(self.wind, rho=rho, panels1D=sail_set.panels1d)
-        
+
         myvlm = Vlm(sail_set.panels, n_chordwise, n_spanwise, rho, self.wind, sail_set.trailing_edge_info, sail_set.leading_edge_info)
 
-        return sail_set, myvlm# , inlet_condition
-
-
-
+        return sail_set, myvlm
 
     def _check_df_results(self, suffix, myvlm, csys_transformations, inviscid_flow_results, sail_set):
         inviscid_flow_results.estimate_heeling_moment_from_keel(self.hull.center_of_lateral_resistance)
-        # display_panels_xyz_and_winds(self.sail_set.panels1d, self.inlet_condition, inviscid_flow_results, self.hull, show_plot=False)
-
-                             
+                  
         df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, 
             csys_transformations, inviscid_flow_results, sail_set, output_dir_name)
         shutil.copy(os.path.join(case_dir, case_name), os.path.join(output_dir_name, case_name))

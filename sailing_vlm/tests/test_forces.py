@@ -7,16 +7,12 @@ from sailing_vlm.solver.coefs import calculate_normals_collocations_cps_rings_sp
                                             get_CL_CD_free_wing
 
 from sailing_vlm.solver.panels import get_panels_area, make_panels_from_le_te_points
-from sailing_vlm.solver.forces import determine_vector_from_its_dot_and_cross_product, calc_pressure
-from sailing_vlm.solver.velocity import calc_induced_velocity, calculate_app_fs
+from sailing_vlm.solver.forces import determine_vector_from_its_dot_and_cross_product, \
+    calc_pressure, calc_moment_arm_in_shifted_csys
+from sailing_vlm.solver.velocity import calculate_app_fs
 from sailing_vlm.solver.forces import is_no_flux_BC_satisfied, calc_force_wrapper
 from sailing_vlm.rotations.geometry_calc import rotation_matrix
 from unittest import TestCase
-from numpy.linalg import norm
-
-
-
-
 
 class TestForces(TestCase):
     def setUp(self):
@@ -37,7 +33,6 @@ class TestForces(TestCase):
         AoA_deg = 3.0  # Angle of attack [deg]
         self.Ry = rotation_matrix([0, 1, 0], np.deg2rad(AoA_deg))
 
-
         # reference values - to compare with book coeff_formulas
         self.AR = 2 * half_wing_span / chord
         self.S = 2 * half_wing_span * chord
@@ -45,7 +40,6 @@ class TestForces(TestCase):
 
         ### FLIGHT CONDITIONS ###
         self.V = [10.0, 0.0, 0.0]
-
         self.rho = 1.225  # fluid density [kg/m3]
 
 
@@ -60,14 +54,6 @@ class TestForces(TestCase):
 
         return panels, trailing_edge_info, leading_edge_info
 
-    # def get_CL_CD_from_F(self, F):
-    #     total_F = np.sum(F, axis=0)
-    #     q = 0.5 * self.rho * (np.linalg.norm(self.V) ** 2) * self.S
-    #     CL_vlm = total_F[2] / q
-    #     CD_vlm = total_F[0] / q
-
-    #     return CL_vlm, CD_vlm
-
     def test_CL_CD_spanwise_only(self):
         ### ARRANGE ###
         ### MESH DENSITY ###
@@ -80,7 +66,6 @@ class TestForces(TestCase):
 
         ### ACT ###
         ### CALCULATIONS ###
-
         areas = get_panels_area(panels) 
         normals, collocation_points, center_of_pressure, rings, span_vectors, _, _ = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(panels, self.gamma_orientation)
 
@@ -262,11 +247,44 @@ class TestForces(TestCase):
 
 
     def test_calc_moment_arm_in_shifted_csys(self):
-        pass
-    
-    def test_calc_V_at_cp(self):
-        pass
-    
+        
+        center_of_pressure = np.array([[ -2.85932546,   0.40627935,   3.48110962],
+                                        [ -1.38806442,   1.33606872,   8.09527974],
+                                        [ -1.60224763,   0.67329836,   3.45805989],
+                                        [ -0.94606188,   1.47100623,   8.08232929],
+                                        [  0.54484912,   1.09780989,   5.49870887],
+                                        [  0.53630003,   2.18727047,  11.59919224],
+                                        [  2.28427654,   1.54835841,   5.44728884],
+                                        [  1.75442245,   2.63275344,  11.54135142],
+                                        [ -1.38806442,   1.33606872,  -8.09527974],
+                                        [ -2.85932546,   0.40627935,  -3.48110962],
+                                        [ -0.94606188,   1.47100623,  -8.08232929],
+                                        [ -1.60224763,   0.67329836,  -3.45805989],
+                                        [  0.53630003,   2.18727047, -11.59919224],
+                                        [  0.54484912,   1.09780989,  -5.49870887],
+                                        [  1.75442245,   2.63275344, -11.54135142],
+                                        [  2.28427654,   1.54835841,  -5.44728884]])
+        v_from_original_xyz_2_reference_csys_xyz = np.array([0, 0, 0])
+        
+        r_expected = np.array([[ -2.85932546,   0.40627935,   3.48110962],
+                                [ -1.38806442,   1.33606872,   8.09527974],
+                                [ -1.60224763,   0.67329836,   3.45805989],
+                                [ -0.94606188,   1.47100623,   8.08232929],
+                                [  0.54484912,   1.09780989,   5.49870887],
+                                [  0.53630003,   2.18727047,  11.59919224],
+                                [  2.28427654,   1.54835841,   5.44728884],
+                                [  1.75442245,   2.63275344,  11.54135142],
+                                [ -1.38806442,   1.33606872,  -8.09527974],
+                                [ -2.85932546,   0.40627935,  -3.48110962],
+                                [ -0.94606188,   1.47100623,  -8.08232929],
+                                [ -1.60224763,   0.67329836,  -3.45805989],
+                                [  0.53630003,   2.18727047, -11.59919224],
+                                [  0.54484912,   1.09780989,  -5.49870887],
+                                [  1.75442245,   2.63275344, -11.54135142],
+                                [  2.28427654,   1.54835841,  -5.44728884]])
+        r = calc_moment_arm_in_shifted_csys(center_of_pressure, v_from_original_xyz_2_reference_csys_xyz)            
+        np.testing.assert_almost_equal(r, r_expected)
+        
     def test_calc_force_wrapper(self):
         
         ns = 5
@@ -433,50 +451,12 @@ class TestForces(TestCase):
                           
 
         force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, self.rho, center_of_pressure, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, self.gamma_orientation)
-
         np.testing.assert_almost_equal(force, force_good, decimal=5)
 
     
     def test_calc_pressure(self):
-        # case 5x2
-        # spanwise 5 x chordwise 2
-        areas = np.array([20., 20., 20., 20., 20., 20., 20., 20., 20., 20.])   
-        normals = np.array([[0.05233596, 0.        , 0.99862953],
-                            [0.05233596, 0.        , 0.99862953],
-                            [0.05233596, 0.        , 0.99862953],
-                            [0.05233596, 0.        , 0.99862953],
-                            [0.05233596, 0.        , 0.99862953],
-                            [0.05233596, 0.        , 0.99862953],
-                            [0.05233596, 0.        , 0.99862953],
-                            [0.05233596, 0.        , 0.99862953],
-                            [0.05233596, 0.        , 0.99862953],
-                            [0.05233596, 0.        , 0.99862953]])   
-
-        force_good = np.array([ [ -7.25540491,   0.        , 596.35460618],
-                                [ -7.61281181,   0.        , 601.02845598],
-                                [ -7.65793281,   0.        , 601.61167433],
-                                [ -7.61281181,   0.        , 601.02845598],
-                                [ -7.25540491,   0.        , 596.35460618],
-                                [  7.82150574,  -0.        , 198.21738467],
-                                [  7.86339581,  -0.        , 199.79346364],
-                                [  7.8685363 ,  -0.        , 199.98850418],
-                                [  7.86339581,  -0.        , 199.79346364],
-                                [  7.82150574,  -0.        , 198.21738467]])  
-                          
-        pressure_good = np.array([29.75788022, 29.99031718, 30.01932006, 29.99031718, 29.75788022,
-                                    9.91775403,  9.9965596 , 10.00631171,  9.9965596 ,  9.91775403])
-        pressure = calc_pressure(force_good, normals, areas)
-        np.testing.assert_almost_equal(pressure, pressure_good)
-        
-    
-# TODO
-        # self.points = [np.array([10., 0., 0.]), np.array([0., 0., 0.]),
-        #                np.array([0., 10., 0.]), np.array([10., 10., 0.])]
-
-        # self.panel = Panel(*self.points)
-        # self.assertTrue(self.panel._are_points_coplanar())
-
-
-        # self.panel.force_xyz = np.array([3., 2., 1.])
-        # self.panel.calc_pressure()
-        # assert_almost_equal(self.panel.pressure, 0.01)
+        normals = np.array([[ 0., -0.,  1.]])
+        areas = np.array([100.0]) 
+        force = np.array([[3., 2., 1.]])
+        press = calc_pressure(force, normals, areas)
+        np.testing.assert_almost_equal(press, 0.01)

@@ -1,8 +1,8 @@
 import numpy as np
 from numpy.testing import assert_almost_equal
+from unittest import TestCase
 
 from sailing_vlm.rotations.geometry_calc import rotation_matrix
-from unittest import TestCase
 from sailing_vlm.yacht_geometry.sail_factory import SailFactory
 from sailing_vlm.yacht_geometry.sail_geometry import SailSet
 from sailing_vlm.solver.interpolator import Interpolator

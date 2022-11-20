@@ -1,12 +1,7 @@
 import numpy as np
-from numpy.testing import assert_almost_equal
-
-
-from sailing_vlm.solver.mesher import discrete_segment, make_point_mesh
-from sailing_vlm.solver.panels import make_panels_from_le_te_points, make_panels_from_le_points_and_chords
-
 from unittest import TestCase
 
+from sailing_vlm.solver.mesher import discrete_segment, make_point_mesh
 
 class TestMesher(TestCase):
     def setUp(self):

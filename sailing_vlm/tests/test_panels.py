@@ -30,7 +30,6 @@ class TestPanels(TestCase):
         self.wing_span = 16  # wing span length
 
         # Points defining wing
-
         self.te_se = np.array([self.c_root, 0, 0])
         self.le_sw = np.array([0, 0, 0])
 
@@ -89,7 +88,6 @@ class TestPanels(TestCase):
         wing_span = 16  # wing span length
 
         # Points defining wing
-
         te_se = np.array([c_root, 0, 0])
         le_sw = np.array([0, 0, 0])
 
@@ -99,7 +97,6 @@ class TestPanels(TestCase):
         # MESH DENSITY
         ns = 10  # number of panels spanwise
         nc = 5  # number of panels chordwise
-
 
         new_approach_panels, _, _ = make_panels_from_le_te_points(
             [le_sw, te_se,

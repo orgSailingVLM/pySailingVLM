@@ -55,9 +55,7 @@ def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rin
     ##### WAZNE #####
     # N - odleglosc miedzy leading a trailing edge
     # M - rozpietosc skrzydel    
-    
-    #V_at_cp, V_induced = calc_V_at_cp(V_app_infw, gamma_magnitude, center_of_pressure, rings, normals, trailing_edge_info, gamma_orientation)
-    
+
     _, wind_coefs = calc_wind_coefs(V_app_infw, center_of_pressure, rings, normals, trailing_edge_info, gamma_orientation)
     V_induced, V_at_cp = calculate_app_fs(V_app_infw, wind_coefs, gamma_magnitude)
 

@@ -4,7 +4,6 @@
 from unittest import TestCase
 import numpy as np
 import numba
-import os
 from numpy.testing import assert_almost_equal
 
 
@@ -14,7 +13,6 @@ from sailing_vlm.solver.coefs import solve_eq
 from sailing_vlm.solver.coefs import get_vlm_CL_CD_free_wing
 from sailing_vlm.solver.coefs import get_CL_CD_free_wing
 from sailing_vlm.solver.panels import get_panels_area, make_panels_from_le_te_points
-from sailing_vlm.solver.velocity import calc_induced_velocity
 from sailing_vlm.solver.forces import is_no_flux_BC_satisfied 
 from sailing_vlm.rotations.geometry_calc import rotation_matrix
 from sailing_vlm.solver.velocity import calculate_app_fs 
@@ -57,20 +55,20 @@ class TestCoefs(TestCase):
 
 
     def test_get_influence_coefficients_spanwise(self):
-        panels = np.array([[[  2.        , -10.        ,   0.        ],
-                            [  0.        , -10.        ,   0.        ],
-                            [  0.        ,  -3.33333333,   0.        ],
-                            [  2.        ,  -3.33333333,   0.        ]],
+        panels = np.array([[[  2., -10.        , 0.],
+                            [  0., -10.        , 0.],
+                            [  0.,  -3.33333333, 0.],
+                            [  2.,  -3.33333333, 0.]],
 
-                        [[  2.        ,  -3.33333333,   0.        ],
-                            [  0.        ,  -3.33333333,   0.        ],
-                            [  0.        ,   3.33333333,   0.        ],
-                            [  2.        ,   3.33333333,   0.        ]],
+                        [[  2.,  -3.33333333,   0.],
+                            [  0.,  -3.33333333,   0.],
+                            [  0.,   3.33333333,   0.],
+                            [  2.,   3.33333333,   0.]],
 
-                        [[  2.        ,   3.33333333,   0.        ],
-                            [  0.        ,   3.33333333,   0.        ],
-                            [  0.        ,  10.        ,   0.        ],
-                            [  2.        ,  10.        ,   0.        ]]])
+                        [[  2., 3.33333333,0.],
+                            [  0. , 3.33333333,   0.],
+                            [  0.,  10.        ,   0.],
+                            [  2.,  10.        ,   0.]]])
 
         trailing_edge_info = np.array([True, True, True])
         normals, collocation_points, center_of_pressure, rings, _, _, _ = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(panels, self.gamma_orientation)
@@ -88,8 +86,7 @@ class TestCoefs(TestCase):
         gamma_expected = [-5.26437093, -5.61425005, -5.26437093]
         assert_almost_equal(gamma_magnitude, gamma_expected)
 
-        V_induced = calc_induced_velocity(wind_coefs, gamma_magnitude)
-        V_app_fs = V_free_stream + V_induced
+        V_induced, V_app_fs = calculate_app_fs(V_free_stream, wind_coefs, gamma_magnitude)
         assert is_no_flux_BC_satisfied(V_app_fs, panels, areas, normals)
 
         with self.assertRaises(ValueError) as context:
@@ -117,7 +114,6 @@ class TestCoefs(TestCase):
         # we are going to rotate the geometry
 
         ### MESH DENSITY ###
-
         ns = 5   # number of panels (spanwise)
         nc = 5   # number of panels (chordwise)
         

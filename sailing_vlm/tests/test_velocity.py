@@ -1,16 +1,12 @@
-"""
-    vlm_logic tests
-"""
 from unittest import TestCase
 import numpy as np
 import numba
-import os
+
 from numpy.testing import assert_almost_equal
 
 from sailing_vlm.solver.velocity import vortex_line, vortex_infinite_line, \
                                     vortex_horseshoe, vortex_ring, \
                                     is_in_vortex_core, calc_induced_velocity
-from sailing_vlm.solver.panels import get_panels_area
 from sailing_vlm.solver.coefs import get_influence_coefficients_spanwise, solve_eq
 
 class TestVelocity(TestCase):
@@ -53,7 +49,6 @@ class TestVelocity(TestCase):
         assert_almost_equal(q, q_good)
         assert_almost_equal(q2, q_good2)
 
-
     def test_vortex_infinite_line(self):
         A = np.array([2, 1, 0])
 
@@ -71,7 +66,6 @@ class TestVelocity(TestCase):
         expected_vel1 = [0, 0, 0.0159154943]
         assert_almost_equal(calculated_vel1, expected_vel1)
 
-    
     def test_vortex_horseshoe(self):
         V = [1, 0, 0]
 
@@ -114,16 +108,13 @@ class TestVelocity(TestCase):
 
         coefs, RHS, wind_coefs = get_influence_coefficients_spanwise(self.collocations, self.rings, self.normals, V_free_stream, self.trailing_edge_info, self.gamma_orientation)
         gamma_magnitude = solve_eq(coefs, RHS)
-        areas = get_panels_area(self.panels)
-
         gamma_expected = [-13.168814113460344]
         np.testing.assert_almost_equal(gamma_magnitude, gamma_expected)
 
-        V_induced_expected = np.array([[0.07035975, 0.        , 1.        ]])
+        V_induced_expected = np.array([[0.07035975, 0., 1.]])
         V_induced = calc_induced_velocity(wind_coefs, gamma_magnitude)
         np.testing.assert_almost_equal(V_induced, V_induced_expected)
-        
- 
+
     
     def test_v_induced_by_vortex_line_vs_vortex_infinite_line(self):
         A = np.array([123, 456, 789], dtype=np.float64)
@@ -131,20 +122,14 @@ class TestVelocity(TestCase):
 
         ctr_point = np.array([12, 34, 56], dtype=np.float64)
         vortex_line_direction = np.array([1, 0, 0], dtype=np.float64)
-        # calculated_vel_A ma zal wartosc, patzr pomozej
-        calculated_vel_A = vortex_line(ctr_point, A, vortex_line_direction, gamma=1)
+
+        calculated_vel_A = vortex_infinite_line(ctr_point, A, vortex_line_direction, gamma=1)
         calculated_vel_B = vortex_infinite_line(ctr_point, B, vortex_line_direction, gamma=-1)
         expected_vel = vortex_line(ctr_point, A, B, gamma=1)
 
         difference_AB = calculated_vel_A + calculated_vel_B
         assert_almost_equal(difference_AB, expected_vel)
         
-# array([ 0.00000000e+00,  7.09284116e-05, -4.08346381e-05])
-# calculated_vel_B
-# array([-0.00000000e+00, -7.12105017e-05,  4.09970419e-05])
-# expected_vel
-# array([ 0.00000000e+00, -2.82090017e-07,  1.62403802e-07])
- 
     def test_v_induced_by_finite_vortex_line(self):
         P = np.array([1, 0, 0], dtype=np.float64)
         A = np.array([0, 0, 0], dtype=np.float64)
