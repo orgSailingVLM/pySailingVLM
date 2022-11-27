@@ -65,18 +65,4 @@ class Vlm:
         self.force, self.V_app_fs_at_cp, self.V_induced_at_cp = forces.calc_force_wrapper(self.inlet_conditions.V_app_infs, self.gamma_magnitude, self.rho, self.center_of_pressure, self.rings, self.n_spanwise, self.normals, self.span_vectors, self.trailing_edge_info, self.leading_edge_info, self.gamma_orientation)
 
         self.pressure = forces.calc_pressure(self.force, self.normals, self.areas)
-    
-    # to be done
-    def calculate_CL_CD_free_wing(self, chord = 1.0, half_wing_span = 100, AoA_deg = 3.0):
-        
-        # chord : float = 1.              # chord length
-        # half_wing_span : int = 100
-        # AoA_deg : float =  3.0   # Angle of attack [deg]
-        
-        AR = 2 * half_wing_span / chord
-        S = 2 * half_wing_span * chord
-        CL_expected, CD_ind_expected = coefs.get_CL_CD_free_wing(AR, AoA_deg)
-        
-        CL_vlm, CD_vlm = coefs.get_vlm_CL_CD_free_wing(self.force, self.wind, self.rho, S)
-        return CL_expected, CD_ind_expected, CL_vlm, CD_vlm 
- 
+

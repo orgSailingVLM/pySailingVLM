@@ -18,12 +18,18 @@ from sailing_vlm.examples.input_data.jib_and_main_sail_vlm_case import *
 from sailing_vlm.solver.vlm import Vlm
 
 
-                                      
+import pstats
+import numpy as np
+import cProfile
+import time
+import sys, os
+from pstats import SortKey
+from contextlib import redirect_stdout
+### GEOMETRY DEFINITION ###
+
 
 def main():
         
-    start = timeit.default_timer()
-
     interpolator = Interpolator(interpolation_type)
 
     csys_transformations = CSYS_transformations(
@@ -70,8 +76,7 @@ def main():
 
 
     print("Preparing visualization.")   
-    display_panels_xyz_and_winds(myvlm, inviscid_flow_results   , myvlm.inlet_conditions, hull, show_plot=True)
-
+    display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=False)
 
     df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, sail_set, output_dir_name)
 
@@ -87,8 +92,23 @@ def main():
 
     print(df_integrals)
 
-    print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
+    
     
     
 if __name__ == "__main__":
-    main()
+    
+    start = time.time()
+    cProfile.runctx('main()', {'main' : main}, {}, "output.dat")
+    
+    end = time.time()
+    print("Elapsed = %s" % (end - start))
+
+    with open("output_time.txt", "w") as f:
+        p = pstats.Stats("output.dat", stream=f)
+        p.sort_stats("time").print_stats()
+        
+    with open("output_calls.txt", "w") as f:
+        p = pstats.Stats("output.dat", stream=f)
+        p.sort_stats("calls").print_stats()
+        
+    

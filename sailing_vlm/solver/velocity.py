@@ -1,10 +1,10 @@
 import numba
 import numpy as np
-from numpy.linalg import norm
+#from numpy.linalg import norm
 from typing import Tuple
 
 
-#@numba.jit(nopython=True, cache=True)
+@numba.jit(nopython=True, cache=True, debug=True)
 def is_in_vortex_core(vector_list : numba.typed.List) -> bool:
     """
     is_in_vortex_core check if list of vectors is n vortex core
@@ -14,13 +14,12 @@ def is_in_vortex_core(vector_list : numba.typed.List) -> bool:
     """
     #todo: polepszyc to
     for vec in vector_list:
-        if norm(vec) < 1e-9:
+        if np.linalg.norm(vec) < 1e-9:
             return True
     return False
 
 
-#@numba.jit(nopython=True) #-> slower than version below
-#@numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True, cache=True) 
+@numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True, cache=True) 
 def vortex_line(p: np.array, p1: np.array, p2: np.array, gamma: float = 1.0) -> np.array:
     """
     vortex_line vortex line by Katz & Plotkin p 254
@@ -55,7 +54,9 @@ def vortex_line(p: np.array, p1: np.array, p2: np.array, gamma: float = 1.0) -> 
 
     return q_ind
 
-# 6 seconds less with it (tested on 30x30)
+
+@numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True, cache=True) 
+# ten sposob jest wolniejszy niz wskazanie wprost typow
 #@numba.jit(nopython=True, cache=True)
 def vortex_infinite_line(P: np.ndarray, A: np.array, r0: np.ndarray, gamma : float = 1.0) -> np.ndarray:
     """
@@ -68,17 +69,16 @@ def vortex_infinite_line(P: np.ndarray, A: np.array, r0: np.ndarray, gamma : flo
     :return np.ndarray: velocity component
     """
 
-    u_inf = r0 / norm(r0)
+    u_inf = r0 / np.linalg.norm(r0)
     ap = P - A
-    norm_ap = norm(ap)
+    norm_ap = np.linalg.norm(ap)
 
     v_ind = np.cross(u_inf, ap) / (
                 norm_ap * (norm_ap - np.dot(u_inf, ap)))  # todo: consider checking is_in_vortex_core
     v_ind *= gamma / (4. * np.pi)
     return v_ind
 
-# numba works slower here (40x40)
-#@numba.jit(nopython=True)
+@numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True, cache=True) 
 def vortex_horseshoe(p: np.array, B: np.array, C: np.array, V_app_infw: np.ndarray,
                         gamma: float = 1.0) -> np.array:
     """
@@ -104,7 +104,8 @@ def vortex_horseshoe(p: np.array, B: np.array, C: np.array, V_app_infw: np.ndarr
     q_ind = sub1 + sub2 + sub3
     return q_ind
 
-#@numba.jit(nopython=True, cache=True)
+# @numba.jit(nopython=True, cache=True) daje ten sam wynik co:
+@numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True, cache=True) 
 def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
                 gamma: float = 1.0) -> np.array:
     """
@@ -130,6 +131,7 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
 
 
 # parallel - no time change
+#@numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1]), nopython=True, debug = True, cache=True) 
 #@numba.jit(nopython=True, cache=True)
 def calc_induced_velocity(v_ind_coeff : np.ndarray, gamma_magnitude : float) -> np.ndarray:
     """
