@@ -17,16 +17,19 @@ from sailing_vlm.results.inviscid_flow import prepare_inviscid_flow_results_vlm
 from sailing_vlm.examples.input_data.jib_and_main_sail_vlm_case import *
 from sailing_vlm.solver.vlm import Vlm
 
-# czy to potrzebne???
-from sailing_vlm.solver.forces import is_no_flux_BC_satisfied
-from sailing_vlm.solver.velocity import calculate_app_fs
 
-                                      
+import pstats
+import numpy as np
+import cProfile
+import time
+import sys, os
+from pstats import SortKey
+from contextlib import redirect_stdout
+### GEOMETRY DEFINITION ###
+
 
 def main():
         
-    start = timeit.default_timer()
-
     interpolator = Interpolator(interpolation_type)
 
     csys_transformations = CSYS_transformations(
@@ -52,7 +55,7 @@ def main():
         sail_twist_deg=interpolator.interpolate_girths(main_sail_girths, main_sail_centerline_twist_deg, n_spanwise + 1),
         LLT_twist=LLT_twist)
 
-    set = SailSet([jib_geometry, main_sail_geometry])
+    sail_set = SailSet([jib_geometry, main_sail_geometry])
 
 
     wind = ExpWindProfile(
@@ -65,42 +68,47 @@ def main():
     hull = HullGeometry(sheer_above_waterline, foretriangle_base, csys_transformations, center_of_lateral_resistance_upright)
 
     
-    myvlm = Vlm(set.panels, n_chordwise, n_spanwise, rho, wind, set.trailing_edge_info, set.leading_edge_info)
+    myvlm = Vlm(sail_set.panels, n_chordwise, n_spanwise, rho, wind, sail_set.trailing_edge_info, sail_set.leading_edge_info)
 
 
-    inviscid_flow_results = prepare_inviscid_flow_results_vlm(set, csys_transformations, myvlm)
+    inviscid_flow_results = prepare_inviscid_flow_results_vlm(sail_set, csys_transformations, myvlm)
     inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
 
 
     print("Preparing visualization.")   
-    display_panels_xyz_and_winds(myvlm, inviscid_flow_results   , myvlm.inlet_conditions, hull, show_plot=True)
+    display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=False)
 
+    df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, sail_set, output_dir_name)
 
-    #todo
-    # te rzeczy co sa zwracane sa na razie puste albo jakies bezsensowne
-    df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, set, output_dir_name)
+    
+    shutil.copy(os.path.join(case_dir, case_name), os.path.join(output_dir_name, case_name))
 
-    #df_components, df_integrals, df_inlet_IC = save_results_to_file(inviscid_flow_results, None, inlet_condition, sail_set, output_dir_name)
-    #new_df_components, new_df_integrals, new_df_inlet_IC = save_results_to_file(inviscid_flow_results_new_approach, None, myvlm.inlet_conditions, sail_set, output_dir_name)
-    # shutil.copy(os.path.join(case_dir, case_name), os.path.join(output_dir_name, case_name))
+    print(f"-------------------------------------------------------------")
+    print(f"Notice:\n"
+          f"\tThe forces [N] and moments [Nm] are without profile drag.\n"
+          f"\tThe the _COG_ CSYS is aligned in the direction of the yacht movement (course over ground).\n"
+          f"\tThe the _COW_ CSYS is aligned along the centerline of the yacht (course over water).\n"
+          f"\tNumber of panels (sail sail_set with mirror): {sail_set.panels.shape}")
 
-    # print(f"-------------------------------------------------------------")
-    # print(f"Notice:\n"
-    #       f"\tThe forces [N] and moments [Nm] are without profile drag.\n"
-    #       f"\tThe the _COG_ CSYS is aligned in the direction of the yacht movement (course over ground).\n"
-    #       f"\tThe the _COW_ CSYS is aligned along the centerline of the yacht (course over water).\n"
-    #       f"\tNumber of panels (sail set with mirror): {sail_set.panels.shape}")
+    print(df_integrals)
 
-    # print(df_integrals)
-
-    # # rows_to_display = ['M_total_heeling', 'M_total_sway', 'F_sails_drag'] # select rows to print
-    # # print(df_integrals[df_integrals['Quantity'].isin(rows_to_display)])
-
-    # print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
-    # #
-    # # import matplotlib.pyplot as plt
-    # # plt.plot([1,2,3],[5,6,7])
-    # # plt.show()
+    
+    
     
 if __name__ == "__main__":
-    main()
+    
+    start = time.time()
+    cProfile.runctx('main()', {'main' : main}, {}, "output.dat")
+    
+    end = time.time()
+    print("Elapsed = %s" % (end - start))
+
+    with open("output_time.txt", "w") as f:
+        p = pstats.Stats("output.dat", stream=f)
+        p.sort_stats("time").print_stats()
+        
+    with open("output_calls.txt", "w") as f:
+        p = pstats.Stats("output.dat", stream=f)
+        p.sort_stats("calls").print_stats()
+        
+    
