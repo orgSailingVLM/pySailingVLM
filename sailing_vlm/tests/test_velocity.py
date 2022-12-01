@@ -1,13 +1,21 @@
 from unittest import TestCase
 import numpy as np
+import os
+
+# option 1: export NUMBA_DISABLE_JIT before import numba
+os.environ['NUMBA_DISABLE_JIT'] = '1'
 import numba
 
-from numpy.testing import assert_almost_equal
+# option 2: import numba, numba.config.DISABLE_JIT=True
+# must be after importing numba
+# numba.config.DISABLE_JIT=True
 
+from numpy.testing import assert_almost_equal
 from sailing_vlm.solver.velocity import vortex_line, vortex_infinite_line, \
                                     vortex_horseshoe, vortex_ring, \
                                     is_in_vortex_core, calc_induced_velocity
 from sailing_vlm.solver.coefs import get_influence_coefficients_spanwise, solve_eq
+
 
 class TestVelocity(TestCase):
 

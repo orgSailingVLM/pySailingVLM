@@ -1,35 +1,49 @@
 import numpy as np
+import os
 import pandas as pd
 from typing import List, Tuple
 from numpy.linalg import norm
 
-from sailing_vlm.solver.velocity import vortex_ring, vortex_horseshoe
+os.environ['NUMBA_DISABLE_JIT'] = '1'
 import numba
 
+from sailing_vlm.solver.velocity import vortex_ring, vortex_horseshoe
 
+# parallel slows down beacuse loop is not big
+@numba.jit(nopython=True, debug = True, cache=True) 
+@numba.jit(numba.types.Tuple((numba.float64[:, ::1], numba.float64[:, :, ::1])) (numba.float64[:, ::1], numba.float64[:, ::1], numba.float64[:, :, ::1], numba.float64[:, ::1], numba.boolean[::1], numba.float64), nopython=True, debug = True, cache=True)
 def calc_wind_coefs(V_app_infw, points_for_calculations, rings, normals, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
 
     m = points_for_calculations.shape[0]
 
     coefs = np.zeros((m, m))
     wind_coefs = np.zeros((m, m, 3))
-    for i, point in enumerate(points_for_calculations):
+    for i in range(points_for_calculations.shape[0]):
 
         # loop over other vortices
-        for j, ring in enumerate(rings):
-            A = ring[0]
-            B = ring[1]
-            C = ring[2]
-            D = ring[3]
-            a = vortex_ring(point, A, B, C, D, gamma_orientation)
+        for j in range(rings.shape[0]):
+            A = rings[j][0]
+            B = rings[j][1]
+            C = rings[j][2]
+            D = rings[j][3]
+            
+            a = vortex_ring(points_for_calculations[i], A, B, C, D, gamma_orientation)
 
             # poprawka na trailing edge
             # todo: zrobic to w drugim, oddzielnym ifie
             if trailing_edge_info[j]:
-                a = vortex_horseshoe(point, ring[1], ring[2], V_app_infw[j], gamma_orientation)
+                a = vortex_horseshoe(points_for_calculations[i], B, C, V_app_infw[j], gamma_orientation)
+            # b is array of one element
             b = np.dot(a, normals[i].reshape(3, 1))
-            wind_coefs[i, j] = a
-            coefs[i, j] = b
+            # to pojdzie tylko w pajtonie
+            # numba nie umie zrozuemic przypisnia do [i,j] wektora 3 elementowego :o
+            # wind_coefs[i, j] = a
+            # yeah xD
+            wind_coefs[i, j, 0] = a[0]
+            wind_coefs[i, j, 1] = a[1]
+            wind_coefs[i, j, 2] = a[2]
+            coefs[i, j] = b[0]
+           
     return coefs, wind_coefs  
 
 def get_leading_edge_mid_point(p2: np.ndarray, p3: np.ndarray) -> np.ndarray:
