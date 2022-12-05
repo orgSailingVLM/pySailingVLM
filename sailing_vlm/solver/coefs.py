@@ -4,19 +4,18 @@ import pandas as pd
 from typing import List, Tuple
 from numpy.linalg import norm
 
-os.environ['NUMBA_DISABLE_JIT'] = '1'
 import numba
 
 from sailing_vlm.solver.velocity import vortex_ring, vortex_horseshoe
 
 # parallel slows down beacuse loop is not big
-@numba.jit(nopython=True, debug = True, cache=True) 
 @numba.jit(numba.types.Tuple((numba.float64[:, ::1], numba.float64[:, :, ::1])) (numba.float64[:, ::1], numba.float64[:, ::1], numba.float64[:, :, ::1], numba.float64[:, ::1], numba.boolean[::1], numba.float64), nopython=True, debug = True, cache=True)
 def calc_wind_coefs(V_app_infw, points_for_calculations, rings, normals, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
 
     m = points_for_calculations.shape[0]
 
-    coefs = np.zeros((m, m))
+    coefs = np.zeros((m,m))
+
     wind_coefs = np.zeros((m, m, 3))
     for i in range(points_for_calculations.shape[0]):
 
@@ -33,18 +32,15 @@ def calc_wind_coefs(V_app_infw, points_for_calculations, rings, normals, trailin
             # todo: zrobic to w drugim, oddzielnym ifie
             if trailing_edge_info[j]:
                 a = vortex_horseshoe(points_for_calculations[i], B, C, V_app_infw[j], gamma_orientation)
-            # b is array of one element
-            b = np.dot(a, normals[i].reshape(3, 1))
-            # to pojdzie tylko w pajtonie
-            # numba nie umie zrozuemic przypisnia do [i,j] wektora 3 elementowego :o
-            # wind_coefs[i, j] = a
-            # yeah xD
+
+            coefs[i, j] = np.dot(a, normals[i].reshape(3, 1))[0]
+            # this is faster than wind_coefs[i, j, :] = a around 0.1s (case 10x10)
             wind_coefs[i, j, 0] = a[0]
             wind_coefs[i, j, 1] = a[1]
             wind_coefs[i, j, 2] = a[2]
-            coefs[i, j] = b[0]
-           
-    return coefs, wind_coefs  
+            
+    return coefs, wind_coefs 
+
 
 def get_leading_edge_mid_point(p2: np.ndarray, p3: np.ndarray) -> np.ndarray:
     return (p2 + p3) / 2.

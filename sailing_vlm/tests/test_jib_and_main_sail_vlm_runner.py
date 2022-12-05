@@ -83,6 +83,11 @@ class TestJibRunner(TestCase):
 
         expected_df_components = pd.read_csv(os.path.join(case_dir, f'expected_df_components_{suffix}.csv'))
         assert_frame_equal(df_components, expected_df_components)
+        
+        # remove files after tests
+        os.remove(f'expected_df_components_{suffix}.csv')
+        os.remove(f'expected_df_integrals_{suffix}.csv')
+        os.remove(f'expected_df_inlet_IC_{suffix}.csv')
 
     def test_calc_forces_and_moments_vlm(self):
         suffix = 'vlm'
@@ -97,3 +102,6 @@ class TestJibRunner(TestCase):
 
         inviscid_flow_results_vlm = prepare_inviscid_flow_results_vlm(sail_set, self.csys_transformations, myvlm)
         self._check_df_results(suffix, myvlm, self.csys_transformations, inviscid_flow_results_vlm, sail_set)
+        
+        # remove useless file after test
+        os.remove(f'expected_gamma_magnitute_{suffix}.csv')
