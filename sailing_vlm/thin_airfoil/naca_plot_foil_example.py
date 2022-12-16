@@ -16,6 +16,7 @@ from numpy import diff
 # The 15 indicates that the airfoil has a 15% thickness to chord length ratio: it is 15% as thick as it is long.
 
 foil = Airfoil.NACA4('1028')
+Airfoil.gen_NACA4_airfoil()
 foil.plot()
 print(f"foil.y_lower = {foil.y_lower(x=[0.2, 0.6, 0.85])} \n\n")
 

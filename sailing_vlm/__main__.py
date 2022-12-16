@@ -46,14 +46,20 @@ def main():
         jib_chords=interpolator.interpolate_girths(jib_girths, jib_chords, n_spanwise + 1),
         sail_twist_deg=interpolator.interpolate_girths(jib_girths, jib_centerline_twist_deg, n_spanwise + 1),
         mast_LOA=mast_LOA,
-        LLT_twist=LLT_twist)
+        LLT_twist=LLT_twist, 
+        interpolated_camber=interpolator.interpolate_girths(jib_girths, jib_sail_camber, n_spanwise + 1),
+        interpolated_distance_from_LE=interpolator.interpolate_girths(jib_girths, jib_sail_camber_distance_from_LE, n_spanwise + 1)
+        )
 
     main_sail_geometry = factory.make_main_sail(
         main_sail_luff=main_sail_luff,
         boom_above_sheer=boom_above_sheer,
         main_sail_chords=interpolator.interpolate_girths(main_sail_girths, main_sail_chords, n_spanwise + 1),
         sail_twist_deg=interpolator.interpolate_girths(main_sail_girths, main_sail_centerline_twist_deg, n_spanwise + 1),
-        LLT_twist=LLT_twist)
+        LLT_twist=LLT_twist,
+        interpolated_camber=interpolator.interpolate_girths(main_sail_girths, main_sail_camber, n_spanwise + 1),
+        interpolated_distance_from_LE=interpolator.interpolate_girths(main_sail_girths, main_sail_camber_distance_from_LE, n_spanwise + 1)
+        )
 
     sail_set = SailSet([jib_geometry, main_sail_geometry])
 
@@ -76,7 +82,7 @@ def main():
 
 
     print("Preparing visualization.")   
-    display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=False)
+    display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=True)
 
     df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, sail_set, output_dir_name)
 

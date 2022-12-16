@@ -21,7 +21,7 @@ class SailGeometry(BaseGeometry, ABC):
     def __init__(self, head_mounting: np.array, tack_mounting: np.array,
                  csys_transformations: CSYS_transformations,
                  n_spanwise=10, n_chordwise=1, chords=None,
-                 initial_sail_twist_deg=None, name=None, LLT_twist=None
+                 initial_sail_twist_deg=None, name=None, LLT_twist=None,  interpolated_camber=None, interpolated_distance_from_LE=None
                  ):
 
         self.__n_spanwise = n_spanwise  # number of panels (span-wise) - above the water
@@ -103,12 +103,12 @@ class SailGeometry(BaseGeometry, ABC):
             new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
                 [le_SW, le_NW],
                 [self.__n_chordwise, self.__n_spanwise],
-                rchords_vec, gamma_orientation=-1)
+                rchords_vec, interpolated_camber, interpolated_distance_from_LE, gamma_orientation=-1)
 
             new_approach_panels_mirror, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
                 [le_SW_underwater, le_NW_underwater],
                 [self.__n_chordwise, self.__n_spanwise],
-                frchords_vec, gamma_orientation=-1)
+                frchords_vec, interpolated_camber, interpolated_distance_from_LE, gamma_orientation=-1)
 
         self.__panels_above = new_approach_panels
         self.__panels_under = new_approach_panels_mirror

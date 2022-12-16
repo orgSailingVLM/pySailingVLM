@@ -212,6 +212,7 @@ def display_panels_xyz_and_winds(vlm :Vlm, inviscid_flow_results: InviscidFlowRe
 
     scale, clr, ce, F = display_CE_CLR(ax, inviscid_flow_results, hull)
     
+
     if show_plot:
         plt.show()
 

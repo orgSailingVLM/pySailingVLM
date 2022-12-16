@@ -11,9 +11,9 @@ output_dir_name = os.path.join("results_example_jib_and_mainsail_vlm", time_stam
 
 
 # SOLVER SETTINGS
-n_spanwise =  10 # No of control points (above the water) per sail, recommended: 50
-n_chordwise = 10 # No of control points (above the water) per sail, recommended: 50
-interpolation_type = "spline"  # either "spline" or "linear"
+n_spanwise =  2 # No of control points (above the water) per sail, recommended: 50
+n_chordwise = 2 # No of control points (above the water) per sail, recommended: 50
+interpolation_type = "linear"  # either "spline" or "linear"
 LLT_twist = "real_twist"  # defines how the Lifting Line discretize the sail twist.
 # It can be "sheeting_angle_const" or "average_const" or "real_twist"
 
@@ -50,8 +50,15 @@ main_sail_centerline_twist_deg = 12. * main_sail_girths + 7
 # First digit describing maximum camber as percentage of the chord.
 # Second digit describing the distance of maximum camber from the airfoil leading edge in tenths of the chord.
 
-main_sail_camber= np.array([0.05, 0.12, 0.20, 0.20, 0.12, 0.05, 0.5])
-main_sail_camber_distance_from_LE = np.array([0.10, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10])
+#jib_sail_camber= np.array([0.05, 0.20, 0.20, 0.12, 0.5])
+jib_sail_camber= np.array([0.20, 0.20, 0.15, 0.15, 0.10])
+#jib_sail_camber_distance_from_LE = np.array([0.10, 0.10, 0.10, 0.10, 0.10])
+jib_sail_camber_distance_from_LE = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
+#main_sail_camber= np.array([0.05, 0.12, 0.20, 0.20, 0.12, 0.05, 0.5])
+main_sail_camber= np.array([0.095, 0.095, 0.095, 0.095, 0.095, 0.095, 0.095])
+#main_sail_camber_distance_from_LE = np.array([0.10, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10])
+main_sail_camber_distance_from_LE = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+
 
 
 jib_girths = np.array([0.00, 1./4, 1./2, 3./4, 1.00])
