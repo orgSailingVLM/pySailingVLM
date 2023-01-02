@@ -15,8 +15,10 @@ from numpy import diff
 # The NACA 0015 airfoil is symmetrical, the 00 indicating that it has no camber.
 # The 15 indicates that the airfoil has a 15% thickness to chord length ratio: it is 15% as thick as it is long.
 
-foil = Airfoil.NACA4('1028')
-Airfoil.gen_NACA4_airfoil()
+#foil = Airfoil.NACA4('1028')
+# to nie dziala tak jak to:
+# http://airfoiltools.com/airfoil/naca4digit?MNaca4DigitForm%5Bcamber%5D=9&MNaca4DigitForm%5Bposition%5D=50&MNaca4DigitForm%5Bthick%5D=2&MNaca4DigitForm%5BnumPoints%5D=100&MNaca4DigitForm%5BcosSpace%5D=0&MNaca4DigitForm%5BcosSpace%5D=1&MNaca4DigitForm%5BcloseTe%5D=0&yt0=Plot
+foil = Airfoil.NACA4('9502')
 foil.plot()
 print(f"foil.y_lower = {foil.y_lower(x=[0.2, 0.6, 0.85])} \n\n")
 
