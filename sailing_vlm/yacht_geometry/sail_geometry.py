@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt 
 
 from abc import abstractmethod, ABC
 from sailing_vlm.rotations.geometry_calc import rotation_matrix
@@ -8,7 +9,7 @@ from sailing_vlm.rotations.csys_transformations import CSYS_transformations
 from typing import List
 
 from sailing_vlm.solver.panels import make_panels_from_le_points_and_chords
-
+from sailing_vlm.solver.mesher import make_airfoil_mesh
 class BaseGeometry:
 
     @property
@@ -71,34 +72,88 @@ class SailGeometry(BaseGeometry, ABC):
             [tack_mounting[0], tack_mounting[1], -tack_mounting[2]])  # leading edge South - West coordinate - mirror
         le_SW_underwater = np.array(
             [head_mounting[0], head_mounting[1], -head_mounting[2]])  # leading edge North - West coordinate - mirror
+        
+        
+        chords_vec = np.array([chords, np.zeros(len(chords)), np.zeros(len(chords))])
+        chords_vec = chords_vec.transpose()
 
+        #### camber line tests
+        
+        mesh = make_airfoil_mesh([le_SW, le_NW],[self.__n_chordwise, self.__n_spanwise],chords_vec, interpolated_distance_from_LE, interpolated_camber)
+        ####
+        f = plt.figure(figsize=(12, 12))
+        ax = plt.axes(projection='3d')
+
+        ax.set_xlabel('X')
+        ax.set_ylabel('Y')
+        ax.set_zlabel('Z')
+        #ax = f1.add_axes(rect=[0.0, 0.0, 0.1, 0.1], projection='3d')
+        m = mesh.shape[0] * mesh.shape[1]
+    
+        
+        
+        # for i in range(mesh.shape[0]):
+        #     ax.plot(mesh[i, :, 0], mesh[i, :, 1], mesh[i, :, 2])
+        mesh_test = mesh.reshape(mesh.shape[0]* mesh.shape[1], 3)
+        ax.plot(mesh_test[:, 0], mesh_test[:, 1], mesh_test[:, 2], '*')
+        ########## 2D PLOT #########
+        sh = mesh.shape[0] * mesh.shape[1]
+        f2 = plt.figure()
+        
+        ax2 = f2.add_subplot(1, 1, 1)
+        ax2.set_xlim([0, 1])
+        ax2.axis('equal')
+        ax2.grid()
+
+        plt.subplots_adjust(left=0.10, bottom=0.10, right=0.98, top=0.98, wspace=None, hspace=None)
+        
+        
+        #ax2.plot(mesh[:, :, 0].reshape(sh), mesh[:, :, 2].reshape(sh))
+        for i in range(mesh.shape[0]):
+            ax2.plot(mesh[i, :, 0], mesh[i, :, 2])
+        
+        
+        mesh = mesh.reshape(mesh.shape[0]* mesh.shape[1], 3)
+        mesh_rotated = np.array([self.csys_transformations.rotate_point_with_mirror(x) for x in mesh])
+        
+        ########## 3D PLOT #########
+        
+        f3 = plt.figure(figsize=(12, 12))
+        #ax3 = plt.axes(projection='3d')
+        ax3 = f3.add_subplot(1, 1, 1, projection='3d')
+        
+        ax3.set_xlabel('X')
+        ax3.set_ylabel('Y')
+        ax3.set_zlabel('Z')
+
+        # mesh_rotated.shape[0]
+        # for i in range(100):
+        #     ax3.plot(mesh_rotated[i, 0], mesh_rotated[i, 1], mesh_rotated[i, 2])
+        ax3.plot(mesh_rotated[:,0], mesh_rotated[:,1], mesh_rotated[:,2], '*')
+        plt.show()
         le_NW = self.csys_transformations.rotate_point_with_mirror(le_NW)
         le_SW = self.csys_transformations.rotate_point_with_mirror(le_SW)
         le_SW_underwater = self.csys_transformations.rotate_point_with_mirror(le_SW_underwater)
         le_NW_underwater = self.csys_transformations.rotate_point_with_mirror(le_NW_underwater)
+        
+        rchords_vec = np.array([self.csys_transformations.rotate_point_with_mirror(c) for c in chords_vec])
+        frchords_vec = np.flip(rchords_vec, axis=0)
 
-        if chords is not None:
-            chords_vec = np.array([chords, np.zeros(len(chords)), np.zeros(len(chords))])
-            chords_vec = chords_vec.transpose()
-
-            rchords_vec = np.array([self.csys_transformations.rotate_point_with_mirror(c) for c in chords_vec])
-            frchords_vec = np.flip(rchords_vec, axis=0)
-
-            if initial_sail_twist_deg is not None and LLT_twist is not None:
-                print(f"Applying initial_sail_twist_deg to {self.name} -  Lifting Line, mode: {LLT_twist}")
-                twist_dict = {
-                    'sheeting_angle_const': np.full(len(initial_sail_twist_deg), np.average(initial_sail_twist_deg)),
-                    'average_const': np.full(len(initial_sail_twist_deg), np.average(initial_sail_twist_deg)),
-                    'real_twist': initial_sail_twist_deg
-                }
-                sail_twist_deg = twist_dict[LLT_twist]
-                axis = le_NW - le_SW  # head - tack
-                rchords_vec = self.rotate_chord_around_le(axis, rchords_vec, sail_twist_deg)
-                underwater_axis = le_NW_underwater - le_SW_underwater  # head - tack
-                frchords_vec = self.rotate_chord_around_le(underwater_axis, frchords_vec,
-                                                        np.flip(sail_twist_deg, axis=0))
-                pass
-            # inicjalizacja zmiennych? sa w ifie przeciez
+        if initial_sail_twist_deg is not None and LLT_twist is not None:
+            print(f"Applying initial_sail_twist_deg to {self.name} -  Lifting Line, mode: {LLT_twist}")
+            twist_dict = {
+                'sheeting_angle_const': np.full(len(initial_sail_twist_deg), np.average(initial_sail_twist_deg)),
+                'average_const': np.full(len(initial_sail_twist_deg), np.average(initial_sail_twist_deg)),
+                'real_twist': initial_sail_twist_deg
+            }
+            sail_twist_deg = twist_dict[LLT_twist]
+            axis = le_NW - le_SW  # head - tack
+            rchords_vec = self.rotate_chord_around_le(axis, rchords_vec, sail_twist_deg)
+            underwater_axis = le_NW_underwater - le_SW_underwater  # head - tack
+            frchords_vec = self.rotate_chord_around_le(underwater_axis, frchords_vec,
+                                                    np.flip(sail_twist_deg, axis=0))
+             
+            
 
             new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
                 [le_SW, le_NW],

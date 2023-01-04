@@ -67,5 +67,5 @@ class VlmAirfoil:
    
       
 ### tests
-foil = VlmAirfoil('9501', 100)
-foil.plot(True)
+# foil = VlmAirfoil('9501', 100)
+# foil.plot(True)

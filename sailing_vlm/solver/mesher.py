@@ -3,8 +3,9 @@ import airfoils
 
 import  matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
+from typing import List
 from sailing_vlm.solver.interpolator import Interpolator
-
+from sailing_vlm.thin_airfoil.vlm_airfoil import VlmAirfoil
 def discrete_segment(p1, p2, n):
     segment = []
     step = (p2 - p1) / n
@@ -31,62 +32,48 @@ def make_point_mesh(segment1, segment2, n):
 
     return np.array(mesh)
 
-def make_airfoil_mesh(segment1, segment2, n, distance, camber):
-    # segment1 , segemnt2 
-    # distance and camber interpolated from girths
-    # p = [0.4 0.45 0.56]
-    
-   
 
+
+    
+    
+    
+#def make_airfoil_mesh(segment1, segment2, n, distance, camber):
+def make_airfoil_mesh(le_points : List[np.ndarray], grid_size : List[int], chords_vec : np.ndarray, interpolated_distance_from_LE, interpolated_camber) -> np.ndarray:
+    le_SW,  le_NW = le_points
+    n_chordwise, n_spanwise = grid_size
+    le_line = discrete_segment(le_SW, le_NW, n_spanwise)
+    te_line = np.copy(le_line)  # deep copy
+    te_line += chords_vec
+    
+    n = n_chordwise + 1
+    segment1 = le_line
+    segment2 = te_line
+    distance = interpolated_distance_from_LE
+    camber = interpolated_camber
+    
+    # segment1 , segemnt2 
+    # http://www.airfoiltools.com/airfoil/naca4digit?MNaca4DigitForm%5Bcamber%5D=9&MNaca4DigitForm%5Bposition%5D=50&MNaca4DigitForm%5Bthick%5D=1&MNaca4DigitForm%5BnumPoints%5D=100&MNaca4DigitForm%5BcosSpace%5D=0&MNaca4DigitForm%5BcosSpace%5D=1&MNaca4DigitForm%5BcloseTe%5D=0&yt0=Plot
+    # p is the position of the maximum camber divided by 10. In the example P=4 so the maximum camber is at 0.4 or 40% of the chord.
+    # m is the maximum camber divided by 100. In the example M=2 so the camber is 0.02 or 2% of the chord
     mesh = []
     counter = 0
     for p1, p2 in zip(segment1, segment2):
-        p = int(distance[counter]*100)
+        p = int(distance[counter] *10)
         m = int(camber[counter]*100)
-        upper, lower = airfoils.gen_NACA4_airfoil(p=p, m=m, xx=0, n_points=n)
         
-        x_upper = upper[0]
-        y_upper = upper[1]
-        
-        x_lower = lower[0]
-        y_lower = lower[0]
-        
-        # blad w paczce!
-        foil = airfoils.Airfoil.NACA4('9502')
-        # foil = airfoils.Airfoil.NACA4(f'{p}{m}00')
-        foil.plot()
-        #print(f"foil.y_lower = {foil.y_lower(x=[0.2, 0.6, 0.85])} \n\n")
-
-
-
-        #step = 1. / n
-        #chord_x = [step * i for i in range(0, int(step))]
-        # tymczasowo
+        # do tesow dac n=100
         n = 100
-        chord_x = np.linspace(0, 1, num=n)
-        camber = np.array(foil.camber_line(x=chord_x))
-        y_upper = foil.y_upper(chord_x)
-
+        foil = VlmAirfoil(f'{m}{p}00', n=n)
         
-        plt.plot(chord_x, y_upper)
-        # print(f"chord_x \t\t camber")
-        # for x, c in zip(chord_x, camber):
-        #     print(f"{x:.4f} \t\t\t {c:.4f}")
-
-        # print(f"\nchord_x \t\t foil.y_upper")
-        # for x, c in zip(chord_x, y_upper):
-        #     print(f"{x:.4f} \t\t\t {c:.4f}")
-            
-        # x_prims = upper[0]
-        # y_prims = upper[1]
-        x_prims = lower[0]
-        y_prims = lower[1]
+        #foil.plot(True)
         
-        xs = (p2[0] - p1[0]) * x_prims + p1[0] 
-        ys = y_prims + p1[1]
-        zs = np.linspace(p2[2], p1[2], num=n, endpoint=True)
+        xs = (p2[0] - p1[0]) * foil.xs + p1[0] 
+        ys = [0.0] * n
+        #zs = (p2[2] - p1[2]) * foil.yc + p1[2]
+        zs = foil.yc + p1[2]
+        
         counter += 1
-        mesh.append(list(zip(xs,ys,zs)))
+        mesh.append(list(zip(xs,ys, zs)))
 
     return np.array(mesh)
     # import matplotlib.pyplot as plt  

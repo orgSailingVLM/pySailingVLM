@@ -85,7 +85,7 @@ def make_panels_from_le_points_and_chords(le_points : List[np.ndarray], grid_siz
     ###
     # moje dodatki
    
-    mesh = mesher.make_airfoil_mesh(le_line, te_line, n_chordwise + 1, interpolated_distance_from_LE, interpolated_camber)
+    #mesh = mesher.make_airfoil_mesh(le_line, te_line, n_chordwise + 1, interpolated_distance_from_LE, interpolated_camber)
     ###
     
     #mesh = mesher.make_point_mesh(le_line, te_line, n_chordwise)
