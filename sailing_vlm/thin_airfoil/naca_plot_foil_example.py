@@ -18,21 +18,21 @@ from numpy import diff
 #foil = Airfoil.NACA4('1028')
 # to nie dziala tak jak to:
 # http://airfoiltools.com/airfoil/naca4digit?MNaca4DigitForm%5Bcamber%5D=9&MNaca4DigitForm%5Bposition%5D=50&MNaca4DigitForm%5Bthick%5D=2&MNaca4DigitForm%5BnumPoints%5D=100&MNaca4DigitForm%5BcosSpace%5D=0&MNaca4DigitForm%5BcosSpace%5D=1&MNaca4DigitForm%5BcloseTe%5D=0&yt0=Plot
-foil = Airfoil.NACA4('9502')
-foil.plot()
-print(f"foil.y_lower = {foil.y_lower(x=[0.2, 0.6, 0.85])} \n\n")
+foil = Airfoil.NACA4('9501')
+foil.plot(settings={'camber': True})
+# print(f"foil.y_lower = {foil.y_lower(x=[0.2, 0.6, 0.85])} \n\n")
 
 
 
-step = 0.1
-chord_x = [step * i for i in range(0, int(1. / step))]
-camber = np.array(foil.camber_line(x=chord_x))
-y_upper = foil.y_upper(chord_x)
+# step = 0.1
+# chord_x = [step * i for i in range(0, int(1. / step))]
+# camber = np.array(foil.camber_line(x=chord_x))
+# y_upper = foil.y_upper(chord_x)
 
-print(f"chord_x \t\t camber")
-for x, c in zip(chord_x, camber):
-    print(f"{x:.4f} \t\t\t {c:.4f}")
+# print(f"chord_x \t\t camber")
+# for x, c in zip(chord_x, camber):
+#     print(f"{x:.4f} \t\t\t {c:.4f}")
 
-print(f"\nchord_x \t\t foil.y_upper")
-for x, c in zip(chord_x, y_upper):
-    print(f"{x:.4f} \t\t\t {c:.4f}")
+# print(f"\nchord_x \t\t foil.y_upper")
+# for x, c in zip(chord_x, y_upper):
+#     print(f"{x:.4f} \t\t\t {c:.4f}")
