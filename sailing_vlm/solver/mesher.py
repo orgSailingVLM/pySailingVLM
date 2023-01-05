@@ -67,12 +67,17 @@ def make_airfoil_mesh(le_points : List[np.ndarray], grid_size : List[int], chord
         
         #foil.plot(True)
         
-        xs = (p2[0] - p1[0]) * foil.xs + p1[0] 
-        ys = [0.0] * n
-        #zs = (p2[2] - p1[2]) * foil.yc + p1[2]
-        zs = foil.yc + p1[2]
+        # xs = (p2[0] - p1[0]) * foil.xs + p1[0] 
+        # ys = [0.0] * n
+        # #zs = (p2[2] - p1[2]) * foil.yc + p1[2]
+        # zs = foil.yc + p1[2]
+        
+        xs = (p2[0] - p1[0]) * foil.xs + p1[0]
+        ys = (p2[0] - p1[0]) * foil.yc # assert p1[1] = p2[1] = 0 at this stage neither the sail nor the yacht is rotated
+        zs =[p1[2]] * n # assert p1[2] = p2[2] at this stage neither the sail nor the yacht is rotated
         
         counter += 1
+        
         mesh.append(list(zip(xs,ys, zs)))
 
     return np.array(mesh)

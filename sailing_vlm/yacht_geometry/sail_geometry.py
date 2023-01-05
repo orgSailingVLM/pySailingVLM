@@ -131,6 +131,8 @@ class SailGeometry(BaseGeometry, ABC):
         #     ax3.plot(mesh_rotated[i, 0], mesh_rotated[i, 1], mesh_rotated[i, 2])
         ax3.plot(mesh_rotated[:,0], mesh_rotated[:,1], mesh_rotated[:,2], '*')
         plt.show()
+        
+        
         le_NW = self.csys_transformations.rotate_point_with_mirror(le_NW)
         le_SW = self.csys_transformations.rotate_point_with_mirror(le_SW)
         le_SW_underwater = self.csys_transformations.rotate_point_with_mirror(le_SW_underwater)
