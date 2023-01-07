@@ -10,12 +10,12 @@ class VlmAirfoil:
         self.n = n
         
         self._m, self._p, self._xx = self.__unpack_naca_attr()
-        self._xs = np.linspace(0, 1, self.n)
+        self._xc = np.linspace(0, 1, self.n)
         self._yc = self.__calculate_y_camber()
     
     @property
-    def xs(self) -> list:
-        return self._xs
+    def xc(self) -> list:
+        return self._xc
         
     @property
     def yc(self) -> list:
@@ -46,7 +46,7 @@ class VlmAirfoil:
             raise ValueError('x is not betwwen 0 and 1')
         
     def __calculate_y_camber(self):
-        return np.array([self.__get_y_camber(x) for x in self._xs])
+        return np.array([self.__get_y_camber(x) for x in self._xc])
     
     def plot(self, show : bool = False):
         
