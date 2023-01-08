@@ -62,7 +62,7 @@ def make_airfoil_mesh(le_points : List[np.ndarray], grid_size : List[int], chord
         m = int(camber[counter]*100)
         
         # do tesow dac n=100
-        n = 100
+        #n = 100
         foil = VlmAirfoil(f'{m}{p}00', n=n)
         
         #foil.plot(True)
@@ -72,7 +72,7 @@ def make_airfoil_mesh(le_points : List[np.ndarray], grid_size : List[int], chord
         # #zs = (p2[2] - p1[2]) * foil.yc + p1[2]
         # zs = foil.yc + p1[2]
         
-        xs = (p2[0] - p1[0]) * foil.xs + p1[0]
+        xs = (p2[0] - p1[0]) * foil.xc + p1[0]
         ys = (p2[0] - p1[0]) * foil.yc # assert p1[1] = p2[1] = 0 at this stage neither the sail nor the yacht is rotated
         zs =[p1[2]] * n # assert p1[2] = p2[2] at this stage neither the sail nor the yacht is rotated
         

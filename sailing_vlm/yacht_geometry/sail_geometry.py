@@ -10,6 +10,7 @@ from typing import List
 
 from sailing_vlm.solver.panels import make_panels_from_le_points_and_chords
 from sailing_vlm.solver.mesher import make_airfoil_mesh
+from sailing_vlm.solver.additional_functions import plot_mesh
 class BaseGeometry:
 
     @property
@@ -78,59 +79,20 @@ class SailGeometry(BaseGeometry, ABC):
         chords_vec = chords_vec.transpose()
 
         #### camber line tests
-        
         mesh = make_airfoil_mesh([le_SW, le_NW],[self.__n_chordwise, self.__n_spanwise],chords_vec, interpolated_distance_from_LE, interpolated_camber)
-        ####
-        f = plt.figure(figsize=(12, 12))
-        ax = plt.axes(projection='3d')
-
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
-        #ax = f1.add_axes(rect=[0.0, 0.0, 0.1, 0.1], projection='3d')
-        m = mesh.shape[0] * mesh.shape[1]
-    
         
-        
-        # for i in range(mesh.shape[0]):
-        #     ax.plot(mesh[i, :, 0], mesh[i, :, 1], mesh[i, :, 2])
-        mesh_test = mesh.reshape(mesh.shape[0]* mesh.shape[1], 3)
-        ax.plot(mesh_test[:, 0], mesh_test[:, 1], mesh_test[:, 2], '*')
-        ########## 2D PLOT #########
-        sh = mesh.shape[0] * mesh.shape[1]
-        f2 = plt.figure()
-        
-        ax2 = f2.add_subplot(1, 1, 1)
-        ax2.set_xlim([0, 1])
-        ax2.axis('equal')
-        ax2.grid()
-
-        plt.subplots_adjust(left=0.10, bottom=0.10, right=0.98, top=0.98, wspace=None, hspace=None)
-        
-        
-        #ax2.plot(mesh[:, :, 0].reshape(sh), mesh[:, :, 2].reshape(sh))
-        for i in range(mesh.shape[0]):
-            ax2.plot(mesh[i, :, 0], mesh[i, :, 2])
-        
-        
-        mesh = mesh.reshape(mesh.shape[0]* mesh.shape[1], 3)
-        mesh_rotated = np.array([self.csys_transformations.rotate_point_with_mirror(x) for x in mesh])
-        
-        ########## 3D PLOT #########
-        
-        f3 = plt.figure(figsize=(12, 12))
-        #ax3 = plt.axes(projection='3d')
-        ax3 = f3.add_subplot(1, 1, 1, projection='3d')
-        
-        ax3.set_xlabel('X')
-        ax3.set_ylabel('Y')
-        ax3.set_zlabel('Z')
-
-        # mesh_rotated.shape[0]
-        # for i in range(100):
-        #     ax3.plot(mesh_rotated[i, 0], mesh_rotated[i, 1], mesh_rotated[i, 2])
-        ax3.plot(mesh_rotated[:,0], mesh_rotated[:,1], mesh_rotated[:,2], '*')
-        plt.show()
+        # to potem zniknie, bedzie shape chordwise na spanwise na 3
+        sh0, sh1, sh2 = mesh.shape
+        plot_mesh(mesh, False, title='3d before rotation', color='green')
+        plot_mesh(mesh, False, dimentions=[0,2], color='darkorange', title='2d before rotation')
+        plot_mesh(mesh, False, dimentions=[0,1], color='darkgoldenrod', title='2d before rotation')
+       
+        rmesh = np.array([self.csys_transformations.rotate_point_with_mirror(x) for panel in mesh for x in panel])
+        mesh_rotated = rmesh.reshape(sh0, sh1, sh2)
+        plot_mesh(mesh_rotated, False, title='3d rotated', color='blue')
+        plot_mesh(mesh_rotated, False, dimentions=[0,2], color='navy', title='2d rotated')
+        plot_mesh(mesh_rotated, False, dimentions=[0,1], color='purple', title='2d rotated')
+        ### end of plots 
         
         
         le_NW = self.csys_transformations.rotate_point_with_mirror(le_NW)
@@ -140,7 +102,12 @@ class SailGeometry(BaseGeometry, ABC):
         
         rchords_vec = np.array([self.csys_transformations.rotate_point_with_mirror(c) for c in chords_vec])
         frchords_vec = np.flip(rchords_vec, axis=0)
-
+        
+        
+        ### moje dodatki
+        # rmesh dziala chyba jak rchords_vect ???
+        frmesh = np.flip(rmesh, axis=0)
+        ### end of moje dodatki
         if initial_sail_twist_deg is not None and LLT_twist is not None:
             print(f"Applying initial_sail_twist_deg to {self.name} -  Lifting Line, mode: {LLT_twist}")
             twist_dict = {
@@ -154,7 +121,25 @@ class SailGeometry(BaseGeometry, ABC):
             underwater_axis = le_NW_underwater - le_SW_underwater  # head - tack
             frchords_vec = self.rotate_chord_around_le(underwater_axis, frchords_vec,
                                                     np.flip(sail_twist_deg, axis=0))
-             
+            ## moje dodatki
+            # sail_twist_deg potem wraca do tego co bylo
+            # mnozymy razy 100 bo na sztywno generuje geste luki
+            #sail_twist_deg_test = sail_twist_deg * 100
+            rmesh = self.rotate_chord_around_le(axis, rmesh, sail_twist_deg)
+            frmesh = self.rotate_chord_around_le(underwater_axis, frmesh,
+                                                    np.flip(sail_twist_deg, axis=0))
+            ## end of moje dodatki
+            
+            #rmesh = rmesh.reshape(sh0, sh1, sh2)
+            #frmesh = frmesh.reshape(sh0, sh1, sh2)
+            plot_mesh(rmesh, False, title='3d above water', color='deepskyblue')
+            plot_mesh(rmesh, False, dimentions=[0,2], color='hotpink', title='2d above water')
+            plot_mesh(rmesh, False, dimentions=[0,1], color='teal', title='2d above water')
+        
+            plot_mesh(frmesh, False, title='3d underwater', color='lightcoral')
+            plot_mesh(frmesh, False, dimentions=[0,2], color='maroon', title='2d underwater')
+            plot_mesh(frmesh, True, dimentions=[0,1], color='sienna', title='2d underwater')
+        
             
 
             new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
