@@ -8,7 +8,7 @@ from sailing_vlm.rotations.csys_transformations import CSYS_transformations
 
 from typing import List
 
-from sailing_vlm.solver.panels import make_panels_from_le_points_and_chords
+from sailing_vlm.solver.panels import make_panels_from_mesh_spanwise
 from sailing_vlm.solver.mesher import make_airfoil_mesh
 from sailing_vlm.solver.additional_functions import plot_mesh
 class BaseGeometry:
@@ -85,22 +85,25 @@ class SailGeometry(BaseGeometry, ABC):
         
         # to potem zniknie, bedzie shape chordwise na spanwise na 3
         sh0, sh1, sh2 = mesh.shape
-        plot_mesh(mesh, mesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='mesh under and above without anything')
+        #plot_mesh(mesh, mesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='mesh under and above without anything')
         
         # rotation
         
         rmesh = np.array([self.csys_transformations.rotate_point_with_mirror(x) for panel in mesh for x in panel]).reshape(sh0, sh1, sh2)
         rmesh_underwater = np.array([self.csys_transformations.rotate_point_with_mirror(x) for panel in mesh_underwater for x in panel]).reshape(sh0, sh1, sh2)
+
+        #plot_mesh(rmesh, rmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation')
         
-        plot_mesh(rmesh, rmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation')
+        mesh = rmesh
+        mesh_underwater = rmesh_underwater
         
         ## twist
-        le_NW = self.csys_transformations.rotate_point_with_mirror(le_NW)
-        le_SW = self.csys_transformations.rotate_point_with_mirror(le_SW)
-        le_SW_underwater = self.csys_transformations.rotate_point_with_mirror(le_SW_underwater)
-        le_NW_underwater = self.csys_transformations.rotate_point_with_mirror(le_NW_underwater)
-        
         if initial_sail_twist_deg is not None and LLT_twist is not None:
+            le_NW = self.csys_transformations.rotate_point_with_mirror(le_NW)
+            le_SW = self.csys_transformations.rotate_point_with_mirror(le_SW)
+            le_SW_underwater = self.csys_transformations.rotate_point_with_mirror(le_SW_underwater)
+            le_NW_underwater = self.csys_transformations.rotate_point_with_mirror(le_NW_underwater)
+        
             print(f"Applying initial_sail_twist_deg to {self.name} -  Lifting Line, mode: {LLT_twist}")
             twist_dict = {
                 'sheeting_angle_const': np.full(len(initial_sail_twist_deg), np.average(initial_sail_twist_deg)),
@@ -111,23 +114,32 @@ class SailGeometry(BaseGeometry, ABC):
             axis = le_NW - le_SW  # head - tack
             underwater_axis = le_NW_underwater - le_SW_underwater  # head - tack
             
-            # nazwenicto trmesh -> mesh???
             trmesh = self.rotate_chord_around_le(axis, rmesh.reshape(sh0*sh1, sh2), sail_twist_deg).reshape(sh0, sh1, sh2)
             trmesh_underwater = self.rotate_chord_around_le(underwater_axis, rmesh_underwater.reshape(sh0*sh1, sh2),
                                                     np.flip(sail_twist_deg, axis=0)).reshape(sh0, sh1, sh2)
             
-            plot_mesh(trmesh, trmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation + twist')
+            #plot_mesh(trmesh, trmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation + twist')
             # 2 d plots for rotation + twisted above water
-            plot_mesh(trmesh, None,  True, dimentions = [0, 1], color1='green', color2=None,title='rotation + twist axiss 0 + 1')
-            plot_mesh(trmesh, None,  True, dimentions = [0, 2], color1='green', color2=None,title='rotation + twist axiss 0 + 2')
-            plot_mesh(trmesh, None,  True, dimentions = [1, 2], color1='green', color2=None,title='rotation + twist axiss 1 + 2')
+            #plot_mesh(trmesh, None,  True, dimentions = [0, 1], color1='green', color2=None,title='rotation + twist axiss 0 + 1')
+            #plot_mesh(trmesh, None,  True, dimentions = [0, 2], color1='green', color2=None,title='rotation + twist axiss 0 + 2')
+            #plot_mesh(trmesh, None,  True, dimentions = [1, 2], color1='green', color2=None,title='rotation + twist axiss 1 + 2')
             
+            mesh = trmesh
+            mesh_underwater = trmesh_underwater
         ### end of plots 
         
         
         # make panels from mesh
         # to be fixed
         
+        mesh = np.swapaxes(mesh, 0, 1)
+        mesh_underwater = np.swapaxes(mesh_underwater, 0, 1)
+        
+        new_approach_panels, trailing_edge_info, leading_edge_info= make_panels_from_mesh_spanwise(mesh)
+        new_approach_panels_mirror, trailing_edge_info_mirror, leading_edge_info_mirror = make_panels_from_mesh_spanwise(mesh_underwater)
+        
+        np.testing.assert_array_equal(trailing_edge_info, trailing_edge_info_mirror)
+        np.testing.assert_array_equal(leading_edge_info, leading_edge_info_mirror)
         # new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
         #     [le_SW, le_NW],
         #     [self.__n_chordwise, self.__n_spanwise],
