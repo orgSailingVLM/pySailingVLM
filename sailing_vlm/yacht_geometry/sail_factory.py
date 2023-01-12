@@ -36,7 +36,7 @@ class SailFactory:
                                  initial_sail_twist_deg=sail_twist_deg, name="main_sail", LLT_twist=LLT_twist, interpolated_camber=interpolated_camber, interpolated_distance_from_LE=interpolated_distance_from_LE)
         return main_sail
 
-    def make_jib(self, jib_luff, foretriangle_base, foretriangle_height, jib_chords=None, sail_twist_deg=None, sail_twist_deg_new=None, mast_LOA=0, LLT_twist=None, interpolated_camber=None, interpolated_distance_from_LE=None):
+    def make_jib(self, jib_luff, foretriangle_base, foretriangle_height, jib_chords=None, sail_twist_deg=None, mast_LOA=0, LLT_twist=None, interpolated_camber=None, interpolated_distance_from_LE=None):
         # cosine theorem
         forestay_length = np.sqrt(foretriangle_base * foretriangle_base
                                   + foretriangle_height * foretriangle_height
@@ -56,5 +56,5 @@ class SailFactory:
         jib = SailGeometry(head_mounting, tack_mounting,  self.csys_transformations,
                            n_spanwise=self._n_spanwise, n_chordwise=self._n_chordwise,
                            chords=jib_chords,
-                           initial_sail_twist_deg=sail_twist_deg, initial_sail_twist_deg_new=sail_twist_deg_new, name="jib", LLT_twist=LLT_twist, interpolated_camber=interpolated_camber, interpolated_distance_from_LE=interpolated_distance_from_LE)
+                           initial_sail_twist_deg=sail_twist_deg, name="jib", LLT_twist=LLT_twist, interpolated_camber=interpolated_camber, interpolated_distance_from_LE=interpolated_distance_from_LE)
         return jib

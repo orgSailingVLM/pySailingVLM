@@ -10,7 +10,7 @@ from typing import List
 
 from sailing_vlm.solver.panels import make_panels_from_le_points_and_chords
 from sailing_vlm.solver.mesher import make_airfoil_mesh
-from sailing_vlm.solver.additional_functions import plot_mesh, plot_both
+from sailing_vlm.solver.additional_functions import plot_mesh
 class BaseGeometry:
 
     @property
@@ -23,7 +23,7 @@ class SailGeometry(BaseGeometry, ABC):
     def __init__(self, head_mounting: np.array, tack_mounting: np.array,
                  csys_transformations: CSYS_transformations,
                  n_spanwise=10, n_chordwise=1, chords=None,
-                 initial_sail_twist_deg=None, initial_sail_twist_deg_new = None, name=None, LLT_twist=None,  interpolated_camber=None, interpolated_distance_from_LE=None
+                 initial_sail_twist_deg=None, name=None, LLT_twist=None,  interpolated_camber=None, interpolated_distance_from_LE=None
                  ):
 
         self.__n_spanwise = n_spanwise  # number of panels (span-wise) - above the water
@@ -77,43 +77,29 @@ class SailGeometry(BaseGeometry, ABC):
         
         chords_vec = np.array([chords, np.zeros(len(chords)), np.zeros(len(chords))])
         chords_vec = chords_vec.transpose()
-
-        #### camber line tests
+        fchords_vec = np.flip(chords_vec, axis=0)
+        
+        #### state "zero"
         mesh = make_airfoil_mesh([le_SW, le_NW],[self.__n_chordwise, self.__n_spanwise],chords_vec, interpolated_distance_from_LE, interpolated_camber)
-        #mesh_underwater = make_airfoil_mesh([le_SW_underwater, le_NW_underwater],[self.__n_chordwise, self.__n_spanwise],chords_vec, interpolated_distance_from_LE, interpolated_camber)
+        mesh_underwater = make_airfoil_mesh([le_SW_underwater, le_NW_underwater],[self.__n_chordwise, self.__n_spanwise],fchords_vec, interpolated_distance_from_LE, interpolated_camber)
         
         # to potem zniknie, bedzie shape chordwise na spanwise na 3
         sh0, sh1, sh2 = mesh.shape
-        # plot_mesh(mesh, False, title='3d before rotation', color='green')
-        # plot_mesh(mesh, False, dimentions=[0,2], color='darkorange', title='2d before rotation')
-        # plot_mesh(mesh, False, dimentions=[0,1], color='darkgoldenrod', title='2d before rotation')
-       
-        rmesh = np.array([self.csys_transformations.rotate_point_with_mirror(x) for panel in mesh for x in panel])
-        rmesh_sh = rmesh.reshape(sh0, sh1, sh2)
-        # plot_mesh(mesh_rotated, False, title='3d rotated', color='blue')
-        # plot_mesh(mesh_rotated, False, dimentions=[0,2], color='navy', title='2d rotated')
-        # plot_mesh(mesh_rotated, False, dimentions=[0,1], color='purple', title='2d rotated')
+        plot_mesh(mesh, mesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='mesh under and above without anything')
         
+        # rotation
         
-        ### end of plots 
+        rmesh = np.array([self.csys_transformations.rotate_point_with_mirror(x) for panel in mesh for x in panel]).reshape(sh0, sh1, sh2)
+        rmesh_underwater = np.array([self.csys_transformations.rotate_point_with_mirror(x) for panel in mesh_underwater for x in panel]).reshape(sh0, sh1, sh2)
         
+        plot_mesh(rmesh, rmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation')
         
+        ## twist
         le_NW = self.csys_transformations.rotate_point_with_mirror(le_NW)
         le_SW = self.csys_transformations.rotate_point_with_mirror(le_SW)
         le_SW_underwater = self.csys_transformations.rotate_point_with_mirror(le_SW_underwater)
         le_NW_underwater = self.csys_transformations.rotate_point_with_mirror(le_NW_underwater)
         
-        rchords_vec = np.array([self.csys_transformations.rotate_point_with_mirror(c) for c in chords_vec])
-        frchords_vec = np.flip(rchords_vec, axis=0)
-        
-        frmesh = np.flip(rmesh, axis=0)
-        frmesh_sh = frmesh.reshape(sh0, sh1, sh2)
-        plot_both(rmesh,frmesh,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='Comparoson')
-            
-        ### moje dodatki
-        # rmesh dziala chyba jak rchords_vect ???
-        frmesh = np.flip(rmesh, axis=0)
-        ### end of moje dodatki
         if initial_sail_twist_deg is not None and LLT_twist is not None:
             print(f"Applying initial_sail_twist_deg to {self.name} -  Lifting Line, mode: {LLT_twist}")
             twist_dict = {
@@ -123,42 +109,34 @@ class SailGeometry(BaseGeometry, ABC):
             }
             sail_twist_deg = twist_dict[LLT_twist]
             axis = le_NW - le_SW  # head - tack
-            rchords_vec = self.rotate_chord_around_le(axis, rchords_vec, sail_twist_deg)
             underwater_axis = le_NW_underwater - le_SW_underwater  # head - tack
-            frchords_vec = self.rotate_chord_around_le(underwater_axis, frchords_vec,
-                                                    np.flip(sail_twist_deg, axis=0))
-            ## moje dodatki
-            # sail_twist_deg potem wraca do tego co bylo
-            # mnozymy razy 100 bo na sztywno generuje geste luki
-            #sail_twist_deg_test = sail_twist_deg * 100
-            sail_twist_deg_new = initial_sail_twist_deg_new#twist_dict[LLT_twist]
-            rmesh = self.rotate_chord_around_le(axis, rmesh, sail_twist_deg_new)
-            frmesh = self.rotate_chord_around_le(underwater_axis, frmesh,
-                                                    np.flip(sail_twist_deg_new, axis=0))
-            ## end of moje dodatki
             
-            rmesh_resh = rmesh.reshape(sh0, sh1, sh2)
-            frmesh_resh= frmesh.reshape(sh0, sh1, sh2)
-            # plot_mesh(rmesh_resh, False, title='3d above water', color='deepskyblue')
-            # plot_mesh(rmesh_resh, False, dimentions=[0,2], color='hotpink', title='2d above water')
-            # plot_mesh(rmesh_resh, False, dimentions=[0,1], color='teal', title='2d above water')
+            # nazwenicto trmesh -> mesh???
+            trmesh = self.rotate_chord_around_le(axis, rmesh.reshape(sh0*sh1, sh2), sail_twist_deg).reshape(sh0, sh1, sh2)
+            trmesh_underwater = self.rotate_chord_around_le(underwater_axis, rmesh_underwater.reshape(sh0*sh1, sh2),
+                                                    np.flip(sail_twist_deg, axis=0)).reshape(sh0, sh1, sh2)
+            
+            plot_mesh(trmesh, trmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation + twist')
+            # 2 d plots for rotation + twisted above water
+            plot_mesh(trmesh, None,  True, dimentions = [0, 1], color1='green', color2=None,title='rotation + twist axiss 0 + 1')
+            plot_mesh(trmesh, None,  True, dimentions = [0, 2], color1='green', color2=None,title='rotation + twist axiss 0 + 2')
+            plot_mesh(trmesh, None,  True, dimentions = [1, 2], color1='green', color2=None,title='rotation + twist axiss 1 + 2')
+            
+        ### end of plots 
         
-            # plot_mesh(frmesh_resh, False, title='3d underwater', color='lightcoral')
-            # plot_mesh(frmesh_resh, False, dimentions=[0,2], color='maroon', title='2d underwater')
-            # plot_mesh(frmesh_resh, False, dimentions=[0,1], color='sienna', title='2d underwater')
         
-            
-            # plot_both(rmesh_resh,frmesh_resh,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='Comparoson')
-            
-            new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
-                [le_SW, le_NW],
-                [self.__n_chordwise, self.__n_spanwise],
-                rchords_vec, interpolated_camber, interpolated_distance_from_LE, gamma_orientation=-1)
+        # make panels from mesh
+        # to be fixed
+        
+        # new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
+        #     [le_SW, le_NW],
+        #     [self.__n_chordwise, self.__n_spanwise],
+        #     rchords_vec, interpolated_camber, interpolated_distance_from_LE, gamma_orientation=-1)
 
-            new_approach_panels_mirror, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
-                [le_SW_underwater, le_NW_underwater],
-                [self.__n_chordwise, self.__n_spanwise],
-                frchords_vec, interpolated_camber, interpolated_distance_from_LE, gamma_orientation=-1)
+        # new_approach_panels_mirror, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
+        #     [le_SW_underwater, le_NW_underwater],
+        #     [self.__n_chordwise, self.__n_spanwise],
+        #     frchords_vec, interpolated_camber, interpolated_distance_from_LE, gamma_orientation=-1)
 
         self.__panels_above = new_approach_panels
         self.__panels_under = new_approach_panels_mirror
