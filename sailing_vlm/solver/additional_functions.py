@@ -164,3 +164,40 @@ def plot_mesh(mesh : np.array, show : bool = False, dimentions : List  = [0, 1, 
         
     if show:
         plt.show()
+        
+def plot_both(mesh1 : np.array, mesh2 : np.array, show : bool = False, dimentions : List  = [0, 1, 2], color1 : str = 'green', color2 : str = 'green', title : str = '3d plot'):
+
+    f = plt.figure(figsize=(12, 12))
+    ax = plt.axes(projection='3d')
+    
+    # if len(dimentions) == 2:
+    #     ax = plt.axes()
+    # else:
+    #     ax = plt.axes(projection='3d')
+    
+    # ax.set_title(title)
+    
+    # for i in dimentions:
+    #     if i == 0:
+    #         ax.set_xlabel('X')
+    #     elif i == 1:
+    #         ax.set_ylabel('Y')
+    #     elif i == 2:
+    #         if len(dimentions) == 2:
+    #             ax.set_ylabel('Z')
+    #         elif len(dimentions) == 3:
+    #             ax.set_zlabel('Z')
+    
+    ax.scatter(mesh1[:, 0], mesh1[:, 1], mesh1[:, 2], color1, marker="*")
+    ax.scatter(mesh2[:, 0], mesh2[:, 1], mesh2[:, 2], color2, marker="*")
+    # for i in range(mesh1.shape[0]):
+    #     if len(dimentions) == 2:
+    #         ax.plot(mesh1[i, :, dimentions[0]], mesh1[i, :, dimentions[1]], color1)
+    #         ax.plot(mesh2[i, :, dimentions[0]], mesh2[i, :, dimentions[1]], color2)
+    #     else:
+    #         #ax.plot3D(mesh1[i, :, 0], mesh1[i, :, 1], mesh1[i, :, 2], color1)
+    #         #ax.plot3D(mesh2[i, :, 0], mesh2[i, :, 1], mesh2[i, :, 2], color2)
+    #         ax.scatter3D(mesh1[i, :, 0], mesh1[i, :, 1], mesh1[i, :, 2], color1)
+        
+    if show:
+        plt.show()

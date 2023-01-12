@@ -45,6 +45,7 @@ def main():
         foretriangle_height=foretriangle_height,
         jib_chords=interpolator.interpolate_girths(jib_girths, jib_chords, n_spanwise + 1),
         sail_twist_deg=interpolator.interpolate_girths(jib_girths, jib_centerline_twist_deg, n_spanwise + 1),
+        sail_twist_deg_new=interpolator.interpolate_girths(jib_girths, jib_centerline_twist_deg,(n_spanwise + 1)*(n_spanwise + 1)),
         mast_LOA=mast_LOA,
         LLT_twist=LLT_twist, 
         interpolated_camber=interpolator.interpolate_girths(jib_girths, jib_sail_camber, n_spanwise + 1),
