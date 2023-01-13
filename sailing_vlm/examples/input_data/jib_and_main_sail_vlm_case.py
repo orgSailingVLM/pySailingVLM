@@ -18,11 +18,11 @@ LLT_twist = "real_twist"  # defines how the Lifting Line discretize the sail twi
 # It can be "sheeting_angle_const" or "average_const" or "real_twist"
 
 # SAILING CONDITIONS
-leeway_deg = 5.    # [deg]
-heel_deg = 10.     # [deg]
+leeway_deg = 0*5.    # [deg]
+heel_deg = 0*10.     # [deg]
 SOG_yacht = 4.63   # [m/s] yacht speed - speed over ground (leeway is a separate variable)
 tws_ref = 4.63     # [m/s] true wind speed
-alpha_true_wind_deg = 50.   # [deg] true wind angle (with reference to course over ground) => Course Wind Angle to the boat track = true wind angle to centerline + Leeway
+alpha_true_wind_deg =10+ 50.   # [deg] true wind angle (with reference to course over ground) => Course Wind Angle to the boat track = true wind angle to centerline + Leeway
 reference_water_level_for_wind_profile = -0.  # [m] this is an attempt to mimick the deck effect
 # by lowering the sheer_above_waterline
 # while keeping the wind profile as in original geometry
@@ -44,18 +44,18 @@ mast_LOA = 0.15  # [m]
 # INPUT - GEOMETRY OF THE SAIL
 main_sail_girths = np.array([0.00, 1./8, 1./4, 1./2, 3./4, 7./8, 1.00])
 main_sail_chords = np.array([4.00, 3.82, 3.64, 3.20, 2.64, 2.32, 2.00])
-main_sail_centerline_twist_deg = 12. * main_sail_girths + 7
+main_sail_centerline_twist_deg = 10+7 + 0* 12. * main_sail_girths
 
 
 # First digit describing maximum camber as percentage of the chord.
 # Second digit describing the distance of maximum camber from the airfoil leading edge in tenths of the chord.
 
 #jib_sail_camber= np.array([0.05, 0.20, 0.20, 0.12, 0.5])
-jib_sail_camber= np.array([0.09, 0.09, 0.09, 0.09, 0.09])
+jib_sail_camber= 0*np.array([0.09, 0.09, 0.09, 0.09, 0.09])
 #jib_sail_camber_distance_from_LE = np.array([0.10, 0.10, 0.10, 0.10, 0.10])
 jib_sail_camber_distance_from_LE = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
 #main_sail_camber= np.array([0.05, 0.12, 0.20, 0.20, 0.12, 0.05, 0.5])
-main_sail_camber= np.array([0.09, 0.09, 0.09, 0.09, 0.09, 0.09, 0.09])
+main_sail_camber= 0*np.array([0.09, 0.09, 0.09, 0.09, 0.09, 0.09, 0.09])
 #main_sail_camber_distance_from_LE = np.array([0.10, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10])
 main_sail_camber_distance_from_LE = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
 
@@ -63,7 +63,7 @@ main_sail_camber_distance_from_LE = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
 
 jib_girths = np.array([0.00, 1./4, 1./2, 3./4, 1.00])
 jib_chords = np.array([3.80, 2.98, 2.15, 1.33, 0.5]) - 0.4
-jib_centerline_twist_deg = 15. * jib_girths + 5
+jib_centerline_twist_deg = 10+5  + 0*15. * jib_girths
 
 # REFERENCE CSYS
 # The origin of the default CSYS is located @ waterline level and aft face of the mast

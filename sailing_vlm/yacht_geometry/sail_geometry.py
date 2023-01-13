@@ -85,14 +85,14 @@ class SailGeometry(BaseGeometry, ABC):
         
         # to potem zniknie, bedzie shape chordwise na spanwise na 3
         sh0, sh1, sh2 = mesh.shape
-        plot_mesh(mesh, mesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='mesh under and above without anything')
+        #plot_mesh(mesh, mesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='mesh under and above without anything')
         
         # rotation
         
         rmesh = np.array([self.csys_transformations.rotate_point_with_mirror(x) for panel in mesh for x in panel]).reshape(sh0, sh1, sh2)
         rmesh_underwater = np.array([self.csys_transformations.rotate_point_with_mirror(x) for panel in mesh_underwater for x in panel]).reshape(sh0, sh1, sh2)
 
-        plot_mesh(rmesh, rmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation')
+        #plot_mesh(rmesh, rmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation')
         
         mesh = rmesh
         mesh_underwater = rmesh_underwater
@@ -119,11 +119,11 @@ class SailGeometry(BaseGeometry, ABC):
             trmesh_underwater = self.rotate_chord_around_le(underwater_axis, rmesh_underwater.reshape(sh0*sh1, sh2),
                                                     np.flip(sail_twist_deg, axis=0)).reshape(sh0, sh1, sh2)
             
-            plot_mesh(trmesh, trmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation + twist')
+            #plot_mesh(trmesh, trmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation + twist')
             # 2 d plots for rotation + twisted above water
-            plot_mesh(trmesh, None,  True, dimentions = [0, 1], color1='green', color2=None,title='rotation + twist axiss 0 + 1')
-            plot_mesh(trmesh, None,  True, dimentions = [0, 2], color1='green', color2=None,title='rotation + twist axiss 0 + 2')
-            plot_mesh(trmesh, None,  True, dimentions = [1, 2], color1='green', color2=None,title='rotation + twist axiss 1 + 2')
+            # plot_mesh(trmesh, None,  True, dimentions = [0, 1], color1='green', color2=None,title='rotation + twist axiss 0 + 1')
+            # plot_mesh(trmesh, None,  True, dimentions = [0, 2], color1='green', color2=None,title='rotation + twist axiss 0 + 2')
+            # plot_mesh(trmesh, None,  True, dimentions = [1, 2], color1='green', color2=None,title='rotation + twist axiss 1 + 2')
             
             mesh = trmesh
             mesh_underwater = trmesh_underwater
