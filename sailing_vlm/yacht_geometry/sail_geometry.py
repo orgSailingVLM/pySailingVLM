@@ -91,7 +91,9 @@ class SailGeometry(BaseGeometry, ABC):
         
         rmesh = np.array([self.csys_transformations.rotate_point_with_mirror(x) for panel in mesh for x in panel]).reshape(sh0, sh1, sh2)
         rmesh_underwater = np.array([self.csys_transformations.rotate_point_with_mirror(x) for panel in mesh_underwater for x in panel]).reshape(sh0, sh1, sh2)
-
+        np.testing.assert_almost_equal(mesh[:, 0, :], rmesh[:, 0, :])
+        np.testing.assert_almost_equal(mesh_underwater[:, 0, :], rmesh_underwater[:, 0, :])
+        # mesh and rmesh are the same :o
         #plot_mesh(rmesh, rmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation')
         
         mesh = rmesh
@@ -111,14 +113,16 @@ class SailGeometry(BaseGeometry, ABC):
                 'real_twist': initial_sail_twist_deg
             }
             sail_twist_deg = twist_dict[LLT_twist]
-            sail_twist_deg = np.array([initial_sail_twist_deg] * (self.__n_spanwise + 1)).reshape(sh0 * sh1)
+            sail_twist_deg = np.array([initial_sail_twist_deg] * sh1).reshape(sh0 * sh1)
+            sail_twist_deg = np.hstack([sail_twist_deg] * (sh1))
             axis = le_NW - le_SW  # head - tack
             underwater_axis = le_NW_underwater - le_SW_underwater  # head - tack
             
             trmesh = self.rotate_chord_around_le(axis, rmesh.reshape(sh0*sh1, sh2), sail_twist_deg).reshape(sh0, sh1, sh2)
             trmesh_underwater = self.rotate_chord_around_le(underwater_axis, rmesh_underwater.reshape(sh0*sh1, sh2),
                                                     np.flip(sail_twist_deg, axis=0)).reshape(sh0, sh1, sh2)
-            
+            np.testing.assert_almost_equal(mesh[:, 0, :], trmesh[:, 0, :])
+            np.testing.assert_almost_equal(mesh_underwater[:, 0, :], trmesh_underwater[:, 0, :])
             #plot_mesh(trmesh, trmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation + twist')
             # 2 d plots for rotation + twisted above water
             # plot_mesh(trmesh, None,  True, dimentions = [0, 1], color1='green', color2=None,title='rotation + twist axiss 0 + 1')
@@ -168,7 +172,11 @@ class SailGeometry(BaseGeometry, ABC):
         # m = rotation_matrix(axis, np.deg2rad(sail_twist_deg))
         rchords_vec = np.array([
             np.dot(rotation_matrix(axis, np.deg2rad(t)), c) for t, c in zip(sail_twist_deg_vec, chords_vec)])
-
+        arr = []
+        for t, c in zip(sail_twist_deg_vec, chords_vec):
+            arr.append(np.dot(rotation_matrix(axis, np.deg2rad(t)), c))
+        
+        rchords_vec2 = np.array(arr)
         return rchords_vec
     
     @property
