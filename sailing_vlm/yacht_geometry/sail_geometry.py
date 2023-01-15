@@ -118,6 +118,13 @@ class SailGeometry(BaseGeometry, ABC):
             axis = le_NW - le_SW  # head - tack
             underwater_axis = le_NW_underwater - le_SW_underwater  # head - tack
             
+            #### testy
+            sail_twist_deg = np.array([15.])
+            axis = mesh[5, 0, :] - mesh[0, 0, :]
+            self.rotate_chord_around_le(axis, mesh[0, 0, :], sail_twist_deg)
+            
+            #### end of testy
+            
             trmesh = self.rotate_chord_around_le(axis, rmesh.reshape(sh0*sh1, sh2), sail_twist_deg).reshape(sh0, sh1, sh2)
             trmesh_underwater = self.rotate_chord_around_le(underwater_axis, rmesh_underwater.reshape(sh0*sh1, sh2),
                                                     np.flip(sail_twist_deg, axis=0)).reshape(sh0, sh1, sh2)
@@ -174,7 +181,7 @@ class SailGeometry(BaseGeometry, ABC):
             np.dot(rotation_matrix(axis, np.deg2rad(t)), c) for t, c in zip(sail_twist_deg_vec, chords_vec)])
         arr = []
         for t, c in zip(sail_twist_deg_vec, chords_vec):
-            arr.append(np.dot(rotation_matrix(axis, np.deg2rad(t)), c))
+            arr.append(np.dot(rotation_matrix(axis, np.deg2rad(t)), chords_vec))
         
         rchords_vec2 = np.array(arr)
         return rchords_vec
