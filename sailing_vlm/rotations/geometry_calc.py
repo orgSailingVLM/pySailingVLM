@@ -72,7 +72,7 @@ def rotate_points_around_arbitrary_axis(ps : np.ndarray, p1 : np.array, p2 : np.
 
 def rotate_points_around_origin_axis(ps : np.ndarray, axis : np.array, theta : float) -> np.ndarray:
     """
-    rotate_points_around_origin_axis _summary_
+    rotate_points_around_origin_axis rotate points around axis (from origin)
 
     :param np.ndarray ps: array with points
     :param np.array axis: rotation axis

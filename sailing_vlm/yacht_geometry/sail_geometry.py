@@ -81,18 +81,23 @@ class SailGeometry(BaseGeometry, ABC):
         
         #### state "zero"
         mesh = make_airfoil_mesh([le_SW, le_NW],[self.__n_chordwise, self.__n_spanwise],chords_vec, interpolated_distance_from_LE, interpolated_camber)
-        mesh_underwater = make_airfoil_mesh([le_SW_underwater, le_NW_underwater],[self.__n_chordwise, self.__n_spanwise],fchords_vec, interpolated_distance_from_LE, interpolated_camber)
-        
-        # to potem zniknie, bedzie shape chordwise na spanwise na 3
         sh0, sh1, sh2 = mesh.shape
+        mesh = mesh.reshape(sh0*sh1, sh2)
+        mesh_underwater = make_airfoil_mesh([le_SW_underwater, le_NW_underwater],[self.__n_chordwise, self.__n_spanwise],fchords_vec, interpolated_distance_from_LE, interpolated_camber).reshape(sh0*sh1, sh2)
+        mesh_underwater = mesh_underwater.reshape(sh0*sh1, sh2)
+        # to potem zniknie, bedzie shape chordwise na spanwise na 3
+        
         #plot_mesh(mesh, mesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='mesh under and above without anything')
         
         # rotation
-        
-        rmesh = np.array([self.csys_transformations.rotate_point_with_mirror(x) for panel in mesh for x in panel]).reshape(sh0, sh1, sh2)
-        rmesh_underwater = np.array([self.csys_transformations.rotate_point_with_mirror(x) for panel in mesh_underwater for x in panel]).reshape(sh0, sh1, sh2)
-        np.testing.assert_almost_equal(mesh[:, 0, :], rmesh[:, 0, :])
-        np.testing.assert_almost_equal(mesh_underwater[:, 0, :], rmesh_underwater[:, 0, :])
+        #mesh:  le NW p1 p2 ... te
+        #       le p1 p2 ... te
+        #       le p1 p2 ... te
+        #       le SW p2 ... te
+        rmesh = np.array([self.csys_transformations.rotate_point_with_mirror(point) for point in mesh])
+        rmesh_underwater = np.array([self.csys_transformations.rotate_point_with_mirror(point) for point in mesh_underwater])
+        np.testing.assert_almost_equal(mesh[::sh1], rmesh[::sh1])
+        np.testing.assert_almost_equal(mesh_underwater[::sh1], rmesh_underwater[::sh1])
         # mesh and rmesh are the same :o
         #plot_mesh(rmesh, rmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation')
         
@@ -119,21 +124,21 @@ class SailGeometry(BaseGeometry, ABC):
             underwater_axis = le_NW_underwater - le_SW_underwater  # head - tack
             
             #### testy
-            sail_twist_deg = np.array([15.])
-            p2 = mesh[5, 0, :]
-            p1 = mesh[0, 0, :]
-            #self.rotate_chord_around_le(axis, mesh[0, 0, :], sail_twist_deg)
-            rotated_point = rotate_points_around_arbitrary_axis(np.array([mesh[0, 0, :]]), p1, p2, np.deg2rad(sail_twist_deg[0]))
+
+            p2 = mesh[::sh1][-1]
+            p1 = mesh[::sh1][0]
+            trmesh = self.rotate_points_around_le(mesh, p1, p2, sail_twist_deg)
+            # check if points on forestay are not rotated (they are on axis of rotation)
+            np.testing.assert_almost_equal(trmesh[::sh1], mesh[::sh1])
+           
+            p2_u = mesh_underwater[::sh1][-1]
+            p1_u = mesh_underwater[::sh1][0]
+            trmesh_underwater = self.rotate_points_around_le(mesh_underwater, p1_u, p2_u, sail_twist_deg)
+            # check if points on forestay are not rotated (they are on axis of rotation)
+            np.testing.assert_almost_equal(trmesh_underwater[::sh1], mesh_underwater[::sh1])
             
-            np.testing.assert_almost_equal(rotated_point, np.array([mesh[0, 0, :]]))
-            #### end of testy
-            
-            trmesh = self.rotate_chord_around_le(axis, rmesh.reshape(sh0*sh1, sh2), sail_twist_deg).reshape(sh0, sh1, sh2)
-            trmesh_underwater = self.rotate_chord_around_le(underwater_axis, rmesh_underwater.reshape(sh0*sh1, sh2),
-                                                    np.flip(sail_twist_deg, axis=0)).reshape(sh0, sh1, sh2)
-            np.testing.assert_almost_equal(mesh[:, 0, :], trmesh[:, 0, :])
-            np.testing.assert_almost_equal(mesh_underwater[:, 0, :], trmesh_underwater[:, 0, :])
-            #plot_mesh(trmesh, trmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation + twist')
+
+            plot_mesh(trmesh.reshape(sh0, sh1, sh2), trmesh_underwater.reshape(sh0, sh1, sh2),  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation + twist')
             # 2 d plots for rotation + twisted above water
             # plot_mesh(trmesh, None,  True, dimentions = [0, 1], color1='green', color2=None,title='rotation + twist axiss 0 + 1')
             # plot_mesh(trmesh, None,  True, dimentions = [0, 2], color1='green', color2=None,title='rotation + twist axiss 0 + 2')
@@ -175,22 +180,19 @@ class SailGeometry(BaseGeometry, ABC):
 
         
         
-    def rotate_chord_around_le(self, axis, chords_vec, sail_twist_deg_vec):
-        # sail_twist = np.deg2rad(45.)
-        # todo: dont forget to reverse rotations in postprocessing (plots)
+    def rotate_points_around_le(self, points, p1, p2, sail_twist_deg_vec):
+     
+        # if all elements are the same -> only once do the calculation -> less matrix multiplications
+        result = np.all(sail_twist_deg_vec == sail_twist_deg_vec[0])
+        rotated_points = points
+        if result:
+            rotated_points = rotate_points_around_arbitrary_axis(points, p1, p2, np.deg2rad(sail_twist_deg_vec[0]))
+        else:
+            # squezee removes "1" diemntion
+            # rotate_points_around_arbitrary_axis needs [[a, b, c]] or [[a, b, c], [e, f, g], ...] 
+            rotated_points = np.array([np.squeeze(rotate_points_around_arbitrary_axis(np.array([point]), p1, p2, np.deg2rad(deg))) for point, deg in zip(points, sail_twist_deg_vec) ])
 
-        # m = rotation_matrix(axis, np.deg2rad(sail_twist_deg))
-        # rchords_vec = np.array([
-        #     np.dot(rotation_matrix_v3(axis, np.deg2rad(t)), c) for t, c in zip(sail_twist_deg_vec, chords_vec)])
-        # arr = []
-        # for t, c in zip(sail_twist_deg_vec, chords_vec):
-        #     arr.append(np.dot(rotation_matrix_v3(axis, np.deg2rad(t)), c))
-        
-        # rchords_vec2 = np.array(arr)
-        # rchords_vec = np.array([
-        #     rotate_vector_around_arbitrary_vetor(axis, np.deg2rad(t), c) for t, c in zip(sail_twist_deg_vec, chords_vec)])
-        
-        return rchords_vec
+        return rotated_points
     
     @property
     def n_chordwise(self):
