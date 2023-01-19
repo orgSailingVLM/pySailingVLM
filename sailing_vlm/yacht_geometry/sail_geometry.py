@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 
 from abc import abstractmethod, ABC
-from sailing_vlm.rotations.geometry_calc import rotation_matrix, rotate_points_around_arbitrary_axis
+from sailing_vlm.rotations.geometry_calc import rotate_points_around_arbitrary_axis
 
 from sailing_vlm.rotations.csys_transformations import CSYS_transformations
 
@@ -120,11 +120,12 @@ class SailGeometry(BaseGeometry, ABC):
             
             #### testy
             sail_twist_deg = np.array([15.])
-            axis = mesh[5, 0, :] - mesh[0, 0, :]
+            p2 = mesh[5, 0, :]
+            p1 = mesh[0, 0, :]
             #self.rotate_chord_around_le(axis, mesh[0, 0, :], sail_twist_deg)
-            #rotated_point = rotate_vector_around_arbitrary_vetor(axis, np.deg2rad(sail_twist_deg[0]), mesh[2, 0, :] )
+            rotated_point = rotate_points_around_arbitrary_axis(np.array([mesh[0, 0, :]]), p1, p2, np.deg2rad(sail_twist_deg[0]))
             
-            #np.testing.assert_almost_equal(rotated_point, mesh[2, 0, :])
+            np.testing.assert_almost_equal(rotated_point, np.array([mesh[0, 0, :]]))
             #### end of testy
             
             trmesh = self.rotate_chord_around_le(axis, rmesh.reshape(sh0*sh1, sh2), sail_twist_deg).reshape(sh0, sh1, sh2)

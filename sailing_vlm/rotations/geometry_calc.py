@@ -80,6 +80,7 @@ def rotate_points_around_origin_axis(ps : np.ndarray, axis : np.array, theta : f
     :return np.ndarray: rotated points
     """
     # origin is inside np.array([0, 0, 0])
+    axis = axis / norm(axis)
     r = R.from_rotvec(theta * axis)
     return r.apply(ps)
 

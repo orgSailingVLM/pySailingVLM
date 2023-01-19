@@ -1,7 +1,9 @@
 import numpy as np
+
+from scipy.spatial.transform import Rotation as R
+
 from sailing_vlm.solver.additional_functions import extract_above_water_quantities
 from sailing_vlm.rotations.geometry_calc import rotation_matrix
-
 
 class CSYS_transformations:
     def __init__(self, heel_deg=0, leeway_deg=0, v_from_original_xyz_2_reference_csys_xyz=np.array([0, 0, 0])):
@@ -12,6 +14,27 @@ class CSYS_transformations:
         self.reverse_heeling_rotation_matrix = rotation_matrix([1, 0, 0], np.deg2rad(heel_deg))  # first rotation - for the mirror part
         self.leeway_rotation_matrix = rotation_matrix([0, 0, 1], np.deg2rad(leeway_deg))  # second rotation
         self.reverse_leeway_rotation_matrix = rotation_matrix([0, 0, 1], np.deg2rad(-leeway_deg))
+        
+        axis = [1, 0, 0]
+        axis = axis / np.linalg.norm(axis)
+        r = R.from_rotvec(np.deg2rad(-heel_deg) * axis)
+        np.testing.assert_almost_equal(self.heeling_rotation_matrix, r.as_matrix())
+        
+        axis = [1, 0, 0]
+        axis = axis / np.linalg.norm(axis)
+        r = R.from_rotvec(np.deg2rad(heel_deg) * axis)
+        np.testing.assert_almost_equal(self.reverse_heeling_rotation_matrix, r.as_matrix())
+        
+        axis = [0, 0, 1]
+        axis = axis / np.linalg.norm(axis)
+        r = R.from_rotvec(np.deg2rad(leeway_deg) * axis)
+        np.testing.assert_almost_equal(self.leeway_rotation_matrix, r.as_matrix())
+        
+        axis = [0, 0, 1]
+        axis = axis / np.linalg.norm(axis)
+        r = R.from_rotvec(np.deg2rad(-leeway_deg) * axis)
+        np.testing.assert_almost_equal(self.reverse_leeway_rotation_matrix, r.as_matrix())
+        
         self.__leeway_deg = leeway_deg
         self.__heel_deg = heel_deg
 
