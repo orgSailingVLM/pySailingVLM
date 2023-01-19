@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 
 from abc import abstractmethod, ABC
-from sailing_vlm.rotations.geometry_calc import rotation_matrix
+from sailing_vlm.rotations.geometry_calc import rotation_matrix, rotate_points_around_arbitrary_axis
 
 from sailing_vlm.rotations.csys_transformations import CSYS_transformations
 
@@ -121,8 +121,10 @@ class SailGeometry(BaseGeometry, ABC):
             #### testy
             sail_twist_deg = np.array([15.])
             axis = mesh[5, 0, :] - mesh[0, 0, :]
-            self.rotate_chord_around_le(axis, mesh[0, 0, :], sail_twist_deg)
+            #self.rotate_chord_around_le(axis, mesh[0, 0, :], sail_twist_deg)
+            #rotated_point = rotate_vector_around_arbitrary_vetor(axis, np.deg2rad(sail_twist_deg[0]), mesh[2, 0, :] )
             
+            #np.testing.assert_almost_equal(rotated_point, mesh[2, 0, :])
             #### end of testy
             
             trmesh = self.rotate_chord_around_le(axis, rmesh.reshape(sh0*sh1, sh2), sail_twist_deg).reshape(sh0, sh1, sh2)
@@ -177,13 +179,16 @@ class SailGeometry(BaseGeometry, ABC):
         # todo: dont forget to reverse rotations in postprocessing (plots)
 
         # m = rotation_matrix(axis, np.deg2rad(sail_twist_deg))
-        rchords_vec = np.array([
-            np.dot(rotation_matrix(axis, np.deg2rad(t)), c) for t, c in zip(sail_twist_deg_vec, chords_vec)])
-        arr = []
-        for t, c in zip(sail_twist_deg_vec, chords_vec):
-            arr.append(np.dot(rotation_matrix(axis, np.deg2rad(t)), chords_vec))
+        # rchords_vec = np.array([
+        #     np.dot(rotation_matrix_v3(axis, np.deg2rad(t)), c) for t, c in zip(sail_twist_deg_vec, chords_vec)])
+        # arr = []
+        # for t, c in zip(sail_twist_deg_vec, chords_vec):
+        #     arr.append(np.dot(rotation_matrix_v3(axis, np.deg2rad(t)), c))
         
-        rchords_vec2 = np.array(arr)
+        # rchords_vec2 = np.array(arr)
+        # rchords_vec = np.array([
+        #     rotate_vector_around_arbitrary_vetor(axis, np.deg2rad(t), c) for t, c in zip(sail_twist_deg_vec, chords_vec)])
+        
         return rchords_vec
     
     @property

@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_almost_equal
 from unittest import TestCase
 
-from sailing_vlm.rotations.geometry_calc import rotation_matrix
+from sailing_vlm.rotations.geometry_calc import rotation_matrix, rotate_points_around_arbitrary_axis, rotate_points_around_origin_axis
 from sailing_vlm.yacht_geometry.sail_factory import SailFactory
 from sailing_vlm.yacht_geometry.sail_geometry import SailSet
 from sailing_vlm.solver.interpolator import Interpolator
@@ -43,7 +43,47 @@ class TestRotations(TestCase):
         expected_result = [1.41421356, 456, 0]
 
         assert_almost_equal(expected_result, result)
-
+    def test_rotate_points_around_arbitrary_axis(self):
+ 
+        x1 = np.array([6, -2, 0])
+        x2 = np.array([12, 8, 0])
+        ps = np.array([[3, 5, 0], [10, 6, 0]])
+        good = np.array([[ 5.64705882,  3.41176471,  5.34679673],
+                        [10.29411765,  5.82352941,  0.59408853]])
+        out = rotate_points_around_arbitrary_axis(ps, x1, x2, np.pi / 3)
+        np.testing.assert_array_almost_equal(out, good)
+        rotate_points_around_basic_axis
+        x1 = np.array([2, 0, 3/2])
+        x2 = np.array([1, 1, 1])
+        ps = np.array([[3, -1, 2]])
+        good = np.array([[3, -1, 2]])
+        # degree do not have any influence because point in ps array is on the same line as x1 and x2
+        out = rotate_points_around_arbitrary_axis(ps, x1, x2, np.pi / 12)
+        np.testing.assert_array_almost_equal(out, good)
+        
+        x1 = np.array([1, 1, 0])
+        x2 = np.array([2, 2, 0])
+        ps = np.array([[2, 0, 0]])
+        good = np.array([[0, 2, 0]])
+        # degree do not have any influence because point in ps array is on the same line as x1 and x2
+        out = rotate_points_around_arbitrary_axis(ps, x1, x2, np.pi)
+        np.testing.assert_array_almost_equal(out, good)
+        
+    def test_rotate_points_around_origin_axis(self):
+        
+        ps = np.array([[3, 3, 0]])
+        axis = np.array([1, 0, 0])
+        theta = np.deg2rad(180)
+        good = np.array([[3, -3, 0]])
+        out = rotate_points_around_origin_axis(ps, axis, theta)
+        np.testing.assert_array_almost_equal(out, good)
+        
+        out = rotate_points_around_origin_axis(ps, np.array([0, 1, 0]), theta)
+        np.testing.assert_array_almost_equal(out, np.array([[-3, 3, 0]]))
+        
+        out = rotate_points_around_origin_axis(ps, np.array([0, 0, 1]), theta)
+        np.testing.assert_array_almost_equal(out, np.array([[-3, -3, 0]]))
+        
     def test_csys_rotations(self):
         point = np.array([10, 20, 30])
 

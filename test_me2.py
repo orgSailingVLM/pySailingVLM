@@ -1,36 +1,7 @@
 import numpy as np
 import math
+from numpy.linalg import multi_dot
 
-from scipy.spatial.transform import Rotation as R
-from numpy.linalg import multi_dot, norm
-
-def rotation_matrix(axis, theta):
-    """
-    Return the rotation matrix associated with counterclockwise rotation about
-    the given axis by theta radians.
-    
-    example
-    v = [3, 5, 0]
-    axis = [4, 4, 1]
-    theta = 1.2 
-    
-    np.dot(rotation_matrix(axis,theta), v)
-    # [ 2.74911638  4.77180932  1.91629719]
-    
-    Ry = rotation_matrix([0,1,0], np.deg2rad(45))
-    np.dot(Ry, [1,456,1]) 
-    # [  1.41421356e+00   4.56000000e+02  -1.11022302e-16]
-
-    """
-    axis = np.asarray(axis)
-    axis = axis/math.sqrt(np.dot(axis, axis))
-    a = math.cos(theta/2.0)
-    b, c, d = -axis*math.sin(theta/2.0)
-    aa, bb, cc, dd = a*a, b*b, c*c, d*d
-    bc, ad, ac, ab, bd, cd = b*c, a*d, a*c, a*b, b*d, c*d
-    return np.array([[aa+bb-cc-dd, 2*(bc+ad), 2*(bd-ac)],
-                     [2*(bc-ad), aa+cc-bb-dd, 2*(cd+ab)],
-                     [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]])
 
 def rotate_points_around_arbitrary_axis(ps : np.ndarray, p1 : np.array, p2 : np.array, theta : float) -> np.ndarray:
     # see https://www.engr.uvic.ca/~mech410/lectures/4_2_RotateArbi.pdf
@@ -49,7 +20,7 @@ def rotate_points_around_arbitrary_axis(ps : np.ndarray, p1 : np.array, p2 : np.
     x1, y1, z1 = p1
     axis = p2 - p1
   
-    l = norm(axis)
+    l = np.linalg.norm(axis)
     a,b,c = axis
     v = np.sqrt(b**2 + c**2)
 
@@ -69,18 +40,13 @@ def rotate_points_around_arbitrary_axis(ps : np.ndarray, p1 : np.array, p2 : np.
     ps_new = multi_dot([D_inv, R_x_inv, R_y_inv, R_z, R_y, R_x, D, ps])
     return ps_new[:3].transpose()
 
-
-def rotate_points_around_origin_axis(ps : np.ndarray, axis : np.array, theta : float) -> np.ndarray:
-    """
-    rotate_points_around_origin_axis _summary_
-
-    :param np.ndarray ps: array with points
-    :param np.array axis: rotation axis
-    :param float theta: angle in radians
-    :return np.ndarray: rotated points
-    """
-    # origin is inside np.array([0, 0, 0])
-    r = R.from_rotvec(theta * axis)
-    return r.apply(ps)
-
-
+# dziala
+# x1 = np.array([6, -2, 0])
+# x2 = np.array([12, 8, 0])
+# p = np.array([[3, 5, 0], [10, 6, 0]])
+x1 = np.array([2, 0, 3/2])
+x2 = np.array([1, 1, 1])
+#[-1, 3, 0]
+p = np.array([[3, -1, 2]])
+p2 = rotate_points_around_arbitrary_axis(p, x1, x2, np.pi / 3)
+print(p2)
