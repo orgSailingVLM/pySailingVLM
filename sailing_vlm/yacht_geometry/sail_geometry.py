@@ -118,12 +118,7 @@ class SailGeometry(BaseGeometry, ABC):
                 'real_twist': initial_sail_twist_deg
             }
             sail_twist_deg = twist_dict[LLT_twist]
-            sail_twist_deg = np.array([initial_sail_twist_deg] * sh1).reshape(sh0 * sh1)
-            sail_twist_deg = np.hstack([sail_twist_deg] * (sh1))
-            axis = le_NW - le_SW  # head - tack
-            underwater_axis = le_NW_underwater - le_SW_underwater  # head - tack
-            
-            #### testy
+            sail_twist_deg = np.hstack([initial_sail_twist_deg] * (sh1))
 
             p2 = mesh[::sh1][-1]
             p1 = mesh[::sh1][0]
@@ -138,7 +133,7 @@ class SailGeometry(BaseGeometry, ABC):
             np.testing.assert_almost_equal(trmesh_underwater[::sh1], mesh_underwater[::sh1])
             
 
-            plot_mesh(trmesh.reshape(sh0, sh1, sh2), trmesh_underwater.reshape(sh0, sh1, sh2),  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation + twist')
+            #plot_mesh(trmesh.reshape(sh0, sh1, sh2), trmesh_underwater.reshape(sh0, sh1, sh2),  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation + twist')
             # 2 d plots for rotation + twisted above water
             # plot_mesh(trmesh, None,  True, dimentions = [0, 1], color1='green', color2=None,title='rotation + twist axiss 0 + 1')
             # plot_mesh(trmesh, None,  True, dimentions = [0, 2], color1='green', color2=None,title='rotation + twist axiss 0 + 2')
@@ -146,13 +141,11 @@ class SailGeometry(BaseGeometry, ABC):
             
             mesh = trmesh
             mesh_underwater = trmesh_underwater
-        ### end of plots 
-        
-        
-        # make panels from mesh
-        # to be fixed
-        
+     
+        # come back to original shape 
+        mesh = mesh.reshape(sh0, sh1, sh2)
         mesh = np.swapaxes(mesh, 0, 1)
+        mesh_underwater = mesh_underwater.reshape(sh0, sh1, sh2)
         mesh_underwater = np.swapaxes(mesh_underwater, 0, 1)
         
         new_approach_panels, trailing_edge_info, leading_edge_info= make_panels_from_mesh_spanwise(mesh)
