@@ -51,11 +51,11 @@ main_sail_centerline_twist_deg = 10+7 + 0* 12. * main_sail_girths
 # Second digit describing the distance of maximum camber from the airfoil leading edge in tenths of the chord.
 
 #jib_sail_camber= np.array([0.05, 0.20, 0.20, 0.12, 0.5])
-jib_sail_camber= 0*np.array([0.09, 0.09, 0.09, 0.09, 0.09])
+jib_sail_camber= np.array([0.09, 0.09, 0.09, 0.09, 0.09])
 #jib_sail_camber_distance_from_LE = np.array([0.10, 0.10, 0.10, 0.10, 0.10])
 jib_sail_camber_distance_from_LE = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
 #main_sail_camber= np.array([0.05, 0.12, 0.20, 0.20, 0.12, 0.05, 0.5])
-main_sail_camber= 0*np.array([0.09, 0.09, 0.09, 0.09, 0.09, 0.09, 0.09])
+main_sail_camber= np.array([0.09, 0.09, 0.09, 0.09, 0.09, 0.09, 0.09])
 #main_sail_camber_distance_from_LE = np.array([0.10, 0.10, 0.10, 0.10, 0.10, 0.10, 0.10])
 main_sail_camber_distance_from_LE = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
 
