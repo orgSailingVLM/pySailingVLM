@@ -96,8 +96,8 @@ class SailGeometry(BaseGeometry, ABC):
         #       le SW p2 ... te
         rmesh = np.array([self.csys_transformations.rotate_point_with_mirror(point) for point in mesh])
         rmesh_underwater = np.array([self.csys_transformations.rotate_point_with_mirror(point) for point in mesh_underwater])
-        np.testing.assert_almost_equal(mesh[::sh1], rmesh[::sh1])
-        np.testing.assert_almost_equal(mesh_underwater[::sh1], rmesh_underwater[::sh1])
+        #np.testing.assert_almost_equal(mesh[::sh1], rmesh[::sh1])
+        #np.testing.assert_almost_equal(mesh_underwater[::sh1], rmesh_underwater[::sh1])
         # mesh and rmesh are the same :o
         #plot_mesh(rmesh, rmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation')
         

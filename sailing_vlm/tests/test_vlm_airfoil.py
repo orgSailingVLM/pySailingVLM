@@ -8,9 +8,12 @@ from sailing_vlm.thin_airfoil.vlm_airfoil import VlmAirfoil
 class TestVlmAirfoil(TestCase):
     
     def test_airfoil(self):
-        foil1 = VlmAirfoil('9501')
-        foil2 = VlmAirfoil('2415')
-        foil3 = VlmAirfoil('1800')
+        # 9501
+        foil1 = VlmAirfoil(0.09, 0.5, 0.01)
+        # 2415
+        foil2 = VlmAirfoil(0.02, 0.4, 0.15)
+        # 1800
+        foil3 = VlmAirfoil(0.01, 0.8, 0.0)
         dirname = os.path.dirname(__file__)
         filename = os.path.join(dirname, 'input_files/airfoils_coordinates.xlsx')
 
@@ -27,3 +30,21 @@ class TestVlmAirfoil(TestCase):
         np.testing.assert_array_almost_equal(foil3.xc, np.array(e3[0]))
         np.testing.assert_array_almost_equal(foil3.yc, np.array(e3[1]))
         
+        
+        # test raise exception for bad input
+        # 0 <= m <= 9.5%
+        # 0 <= p <= 90%
+        # 0 <= xx <= 40%
+        bad_args = [[-0.01, 0.8, 0.0], 
+                    [0.1, 0.8, 0.0],
+                    [0.1, 0.95, 0.0],
+                    [0.1, 0.8, 0.5]]
+        foil_errors = ['Max camber must be between 0 and 9.5%!',
+                        'Max camber must be between 0 and 9.5%!'
+                        'Max camber position must be between 0 and 90%!',
+                        'Thickness must be between 0 and 40%!']
+          
+        for args, err in zip(bad_args, foil_errors):      
+            with self.assertRaises(SystemExit) as context:
+                VlmAirfoil(*args)
+                self.assertEqual(context.exception.args[0], err)
