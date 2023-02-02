@@ -58,19 +58,16 @@ def make_airfoil_mesh(le_points : List[np.ndarray], grid_size : List[int], chord
     mesh = []
     counter = 0
     for p1, p2 in zip(segment1, segment2):
-        p = int(distance[counter] *10)
-        m = int(camber[counter]*100)
+        p = distance[counter]
+        m = camber[counter]
         
         # do tesow dac n=100
         #n = 100
-        foil = VlmAirfoil(f'{m}{p}00', n=n)
+        foil = VlmAirfoil(m, p, 0.0, n=n)
         
         #foil.plot(True)
         
-        # xs = (p2[0] - p1[0]) * foil.xs + p1[0] 
-        # ys = [0.0] * n
-        # #zs = (p2[2] - p1[2]) * foil.yc + p1[2]
-        # zs = foil.yc + p1[2]
+       
         
         xs = (p2[0] - p1[0]) * foil.xc + p1[0]
         ys = (p2[0] - p1[0]) * foil.yc # assert p1[1] = p2[1] = 0 at this stage neither the sail nor the yacht is rotated

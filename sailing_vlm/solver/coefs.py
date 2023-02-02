@@ -71,8 +71,12 @@ def calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(p
         p3 = panel[2]
         p4 = panel[3]
 
-        vect_A = p4 - p2
-        vect_B = p3 - p1
+        # tutaj bylo zmienione!!!
+        #vect_A = p4 - p2
+        #vect_B = p3 - p1
+        
+        vect_B = p4 - p2
+        vect_A = p3 - p1
 
         leading_mid_points[idx] = get_leading_edge_mid_point(p2, p3)
         trailing_edge_mid_points[idx] = get_trailing_edge_mid_points(p1, p4)
