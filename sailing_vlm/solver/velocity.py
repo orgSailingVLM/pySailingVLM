@@ -13,8 +13,9 @@ def is_in_vortex_core(vector_list : numba.typed.List) -> bool:
     :return bool: True or False
     """
     #todo: polepszyc to
+    
     for vec in vector_list:
-        if np.linalg.norm(vec) < 1e-9:
+        if np.linalg.norm(vec) < 1e-8:
             return True
     return False
 
@@ -81,6 +82,33 @@ def vortex_infinite_line(P: np.ndarray, A: np.array, r0: np.ndarray, gamma : flo
     v_ind *= gamma / (4. * np.pi)
     return v_ind
 
+#mytests
+@numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True, cache=True) 
+def vortex_horseshoe_infinite_components(p: np.array, B: np.array, C: np.array, V_app_infw: np.ndarray,
+                        gamma: float = 1.0) -> np.array:
+    """
+    vortex_horseshoe_infinite_components contaims onlu c --- +oo and B --- +oo for calculating b component
+    # see page 335 katz and plotkin
+
+    :param np.array p: point form which calculation is done
+    :param np.array B: point B
+    :param np.array C: point C
+    :param np.ndarray V_app_infw: apparent wind velocity for infinite sail
+    :param float gamma: gamma orientation, defaults to 1.0
+    :return np.array: velocity component
+    
+    
+    B ------------------ +oo
+    |
+    |
+    C ------------------ +oo
+    """
+    
+    sub1 = vortex_infinite_line(p, C, V_app_infw, gamma)
+    sub3 = vortex_infinite_line(p, B, V_app_infw, -1.0 * gamma)
+    q_ind = sub1  + sub3
+    return q_ind
+
 @numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True, cache=True) 
 def vortex_horseshoe(p: np.array, B: np.array, C: np.array, V_app_infw: np.ndarray,
                         gamma: float = 1.0) -> np.array:
@@ -106,6 +134,34 @@ def vortex_horseshoe(p: np.array, B: np.array, C: np.array, V_app_infw: np.ndarr
     sub3 = vortex_infinite_line(p, B, V_app_infw, -1.0 * gamma)
     q_ind = sub1 + sub2 + sub3
     return q_ind
+
+@numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True, cache=True) 
+def vortex_ring_components(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
+                gamma: float = 1.0) -> np.array:
+    """
+    vortex_ring_components vortex ring components  AB + CD
+
+    B ------------------ A
+    |
+    |
+    C ------------------ D
+    
+    :param np.array p: point form which calculation is done
+    :param np.array A: point A
+    :param np.array B: point B
+    :param np.array C: point C
+    :param np.array D: point D
+    :param float gamma: gamma orientation, defaults to 1.0
+    :return np.array: velocity component
+    """
+
+   
+    sub2 = vortex_line(p, B, C, gamma)
+    sub4 = vortex_line(p, D, A, gamma)
+
+    q_ind = sub2 + sub4
+    return q_ind
+
 
 # @numba.jit(nopython=True, cache=True) daje ten sam wynik co:
 @numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True, cache=True) 
@@ -134,7 +190,8 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
 
 
 # parallel - no time change
-@numba.jit(numba.float64[:, ::1](numba.float64[:, :, ::1], numba.float64[::1]), nopython=True, debug = True, cache=True) 
+#@numba.jit(numba.float64[:, ::1](numba.float64[:, :, ::1], numba.float64[::1]), nopython=True, debug = True, cache=True) 
+@numba.jit(numba.float64[:, ::1](numba.float64[:, ::1], numba.float64[::1]), nopython=True, debug = True, cache=True) 
 #@numba.jit(nopython=True, cache=True)
 def calc_induced_velocity(v_ind_coeff : np.ndarray, gamma_magnitude : float) -> np.ndarray:
     """

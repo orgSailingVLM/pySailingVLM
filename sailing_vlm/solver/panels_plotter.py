@@ -138,6 +138,8 @@ def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inle
     for V_wind, color in zip(V_winds, colors):
         # V_wind = V_winds[2]
         # color = colors[2]
+
+        step = int(N / 4)
         for i in range(N):
             # vx = np.array([cp_points[i, 0], cp_points[i, 0] + V_wind[i, 0]])
             # vy = np.array([cp_points[i, 1], cp_points[i, 1] + V_wind[i, 1]])
@@ -147,10 +149,29 @@ def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inle
 
             # ax.plot(vx, vy, vz,color='red', alpha=0.8, lw=1)  # old way
             # arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>",  c=cp_points[:, 2], cmap='Greys')
-            if cp_points[i, 2] > 0:
-                arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.75)
+            
+            # cp_cpoints - first half is above water
+            # second part under water
+            # first and third quater are jib
+            # second and fourth quater are main
+            
+            # above water
+            if i <= 2*step -1:
+                
+                # jib above
+                if i <= step -1:
+                    # if we paint V_app_fs_at_cp
+                    color_tmp = color
+                    if color == 'red':
+                        color_tmp = 'darkorange'
+
+                    arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color_tmp, alpha=0.75)
+                else:
+
+                    arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.75)
             else:
                 arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.15)
+
             ax.add_artist(arrow)
 
 

@@ -6,17 +6,19 @@ from numpy.linalg import norm
 
 import numba
 
-from sailing_vlm.solver.velocity import vortex_ring, vortex_horseshoe
+from sailing_vlm.solver.velocity import vortex_ring, vortex_horseshoe, vortex_horseshoe_infinite_components, vortex_ring_components
 
 # parallel slows down beacuse loop is not big
-@numba.jit(numba.types.Tuple((numba.float64[:, ::1], numba.float64[:, :, ::1])) (numba.float64[:, ::1], numba.float64[:, ::1], numba.float64[:, :, ::1], numba.float64[:, ::1], numba.boolean[::1], numba.float64), nopython=True, debug = True, cache=True)
+#@numba.jit(numba.types.Tuple((numba.float64[:, ::1], numba.float64[:, :, ::1])) (numba.float64[:, ::1], numba.float64[:, ::1], numba.float64[:, :, ::1], numba.float64[:, ::1], numba.boolean[::1], numba.float64), nopython=True, debug = True, cache=True)
+@numba.jit(numba.types.Tuple((numba.float64[:, ::1], numba.float64[:, ::1])) (numba.float64[:, ::1], numba.float64[:, ::1], numba.float64[:, :, ::1], numba.float64[:, ::1], numba.boolean[::1], numba.float64), nopython=True, debug = True, cache=True)
 def calc_wind_coefs(V_app_infw, points_for_calculations, rings, normals, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
 
     m = points_for_calculations.shape[0]
 
     coefs = np.zeros((m,m))
 
-    wind_coefs = np.zeros((m, m, 3))
+    wind_coefs = np.zeros((m, m))
+    #wind_coefs = np.zeros((m, m, 3))
     for i in range(points_for_calculations.shape[0]):
 
         # loop over other vortices
@@ -27,17 +29,23 @@ def calc_wind_coefs(V_app_infw, points_for_calculations, rings, normals, trailin
             D = rings[j][3]
             
             a = vortex_ring(points_for_calculations[i], A, B, C, D, gamma_orientation)
-
+            b = vortex_ring_components(points_for_calculations[i], A, B, C, D, gamma_orientation)
             # poprawka na trailing edge
             # todo: zrobic to w drugim, oddzielnym ifie
             if trailing_edge_info[j]:
                 a = vortex_horseshoe(points_for_calculations[i], B, C, V_app_infw[j], gamma_orientation)
-
+                b = vortex_horseshoe_infinite_components(points_for_calculations[i], B, C, V_app_infw[j], gamma_orientation) 
             coefs[i, j] = np.dot(a, normals[i].reshape(3, 1))[0]
             # this is faster than wind_coefs[i, j, :] = a around 0.1s (case 10x10)
-            wind_coefs[i, j, 0] = a[0]
-            wind_coefs[i, j, 1] = a[1]
-            wind_coefs[i, j, 2] = a[2]
+            
+            
+            # wind_coefs[i, j, 0] = a[0]
+            # wind_coefs[i, j, 1] = a[1]
+            # wind_coefs[i, j, 2] = a[2]
+            
+            wind_coefs[i, j] = np.dot(b, normals[i].reshape(3, 1))[0]
+            #wind_coefs[i, j, 1] = bb[1]
+            #wind_coefs[i, j, 2] = bb[2]
             
     return coefs, wind_coefs 
 
