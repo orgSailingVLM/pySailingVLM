@@ -190,8 +190,8 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
 
 
 # parallel - no time change
-#@numba.jit(numba.float64[:, ::1](numba.float64[:, :, ::1], numba.float64[::1]), nopython=True, debug = True, cache=True) 
-@numba.jit(numba.float64[:, ::1](numba.float64[:, ::1], numba.float64[::1]), nopython=True, debug = True, cache=True) 
+numba.jit(numba.float64[:, ::1](numba.float64[:, :, ::1], numba.float64[::1]), nopython=True, debug = True, cache=True) 
+#@numba.jit(numba.float64[:, ::1](numba.float64[:, ::1], numba.float64[::1]), nopython=True, debug = True, cache=True) 
 #@numba.jit(nopython=True, cache=True)
 def calc_induced_velocity(v_ind_coeff : np.ndarray, gamma_magnitude : float) -> np.ndarray:
     """
