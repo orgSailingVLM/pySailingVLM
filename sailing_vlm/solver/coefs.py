@@ -113,7 +113,7 @@ def calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(p
         ns[idx] = n
     return ns, collocation_points, center_of_pressure, rings, span_vectors, leading_mid_points, trailing_edge_mid_points
 
-def calculate_stuff(panels: np.ndarray, leading_edge_info : np.ndarray, gamma_orientation : float, n_chordwise : int, n_spanwise: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def calculate_stuff(panels: np.ndarray, trailing_edge_info : np.ndarray, gamma_orientation : float, n_chordwise : int, n_spanwise: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points _summary_
 
@@ -148,7 +148,7 @@ def calculate_stuff(panels: np.ndarray, leading_edge_info : np.ndarray, gamma_or
     
     G = int (K / (n_chordwise * n_spanwise))
     panels_splitted = np.array_split(panels, G)
-    leading_edge_info_splitted = np.array_split(leading_edge_info, G)
+    trailing_edge_info_splitted = np.array_split(trailing_edge_info, G)
     
     rings = np.zeros(shape=(G, n_chordwise * n_spanwise, 4, 3))
     ns = np.zeros(shape=(G, n_chordwise * n_spanwise, 3))
@@ -158,51 +158,57 @@ def calculate_stuff(panels: np.ndarray, leading_edge_info : np.ndarray, gamma_or
     leading_mid_points = np.zeros((G, n_chordwise * n_spanwise, 3))
     trailing_edge_mid_points = np.zeros((G, n_chordwise * n_spanwise, 3))
     
-    for idx, (grid_panels, leading_grid_info) in enumerate(zip(panels_splitted,leading_edge_info_splitted)):
-       # grid_panels = grid_panels.reshape(n_chordwise, n_spanwise, 4, 3)
-        #grid_panels = grid_panels.reshape(n_spanwise, n_chordwise, 4, 3)
+    for idx, (grid_panels, trailing_grid_info) in enumerate(zip(panels_splitted,trailing_edge_info_splitted)):
+     
         n_panels = grid_panels.shape[0]
         for k in range(n_panels):
-        #for i in range(n_chordwise):
-        #    for j in range(n_spanwise):
-                # current panel
-            panel = grid_panels[k]
-            p1 = panel[0]
-            p2 = panel[1]
-            p3 = panel[2]
-            p4 = panel[3]
-            
-            vect_B = p4 - p2
-            vect_A = p3 - p1
 
-            leading_mid_points[idx, k] = get_leading_edge_mid_point(p2, p3)
-            trailing_edge_mid_points[idx, k] = get_trailing_edge_mid_points(p1, p4)
+            currnet_panel = grid_panels[k]
+            c_p1 = currnet_panel[0]
+            c_p2 = currnet_panel[1]
+            c_p3 = currnet_panel[2]
+            c_p4 = currnet_panel[3]
+            
+            vect_B = c_p4 - c_p2
+            vect_A = c_p3 - c_p1
+
+            leading_mid_points[idx, k] = (c_p2 + c_p3) / 2.0 
+            trailing_edge_mid_points[idx, k] = (c_p1 + c_p4) / 2.0 
             dist = trailing_edge_mid_points[idx, k] - leading_mid_points[idx, k]
 
             collocation_points[idx, k] = leading_mid_points[idx, k] + 0.75 * dist
             center_of_pressure[idx, k] = leading_mid_points[idx, k] + 0.25 * dist
 
-            p2_p1 = p1 - p2
-            p3_p4 = p4 - p3
+            c_p2_p1 = c_p1 - c_p2
+            c_p3_p4 = c_p4 - c_p3
             
+            B = c_p2 + c_p2_p1 / 4.
+            C = c_p3 + c_p3_p4 / 4.
+                
             n = np.cross(vect_A, vect_B)
             n = n / np.linalg.norm(n)
             ns[idx, k] = n
             
-            if leading_grid_info[k]:  
-            #if i == 0:
-                # leading edge
-                A = p1 + p2_p1 / 4.
-                B = p2 + p2_p1 / 4.
-                C = p3 + p3_p4 / 4.
-                D = p4 + p3_p4 / 4.
+            if trailing_grid_info[k]:  
+                # if trailing edge
+                A = c_p1 + c_p2_p1 / 4.
+                D = c_p4 + c_p3_p4 / 4.
             else:
-                # not leading edge
-                A = p1 + p2_p1 / 4.
-                B = rings[idx, k - n_spanwise][0]
-                C = rings[idx, k -n_spanwise][3]
-                D = p4 + p3_p4 / 4.
+                # if not trailing edge
+                next_panel = grid_panels[k + n_spanwise]
+                n_p1 = next_panel[0]
+                n_p2 = next_panel[1]
+                n_p3 = next_panel[2]
+                n_p4 = next_panel[3]
+
+                n_p2_p1 = n_p1 - n_p2
+                n_p3_p4 = n_p4 - n_p3
                 
+                n_B = n_p2 + n_p2_p1 / 4.
+                n_C = n_p3 + n_p3_p4 / 4.
+            
+                A = n_B
+                D = n_C
                 
             rings[idx, k] = np.array([A, B, C, D])
             # span vectors
@@ -210,7 +216,7 @@ def calculate_stuff(panels: np.ndarray, leading_edge_info : np.ndarray, gamma_or
             bc *= gamma_orientation
             span_vectors[idx,k] = bc
 
-    #K2 = G*n_chordwise*n_spanwise
+
     span_vectors = span_vectors.reshape(K,3)
     rings = rings.reshape(K, 4, 3)
 

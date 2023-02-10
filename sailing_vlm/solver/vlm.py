@@ -59,8 +59,17 @@ class Vlm:
         # N = chordwise, linia laczaca leading i trailing
         self.areas = panels.get_panels_area(self.panels)
         self.normals, self.collocation_points, self.center_of_pressure, self.rings, self.span_vectors, self.leading_mid_points, self.trailing_mid_points = coefs.calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(self.panels, self.gamma_orientation)
-        self.normals2, self.collocation_points2, self.center_of_pressure2, self.rings2, self.span_vectors2, self.leading_mid_points2, self.trailing_mid_points2 = coefs.calculate_stuff(self.panels, self.leading_edge_info, self.gamma_orientation, self.n_chordwise, self.n_spanwise)
+        self.normals2, self.collocation_points2, self.center_of_pressure2, self.rings2, self.span_vectors2, self.leading_mid_points2, self.trailing_mid_points2 = coefs.calculate_stuff(self.panels, self.trailing_edge_info, self.gamma_orientation, self.n_chordwise, self.n_spanwise)
         
+        np.testing.assert_almost_equal(self.normals, self.normals2)
+        np.testing.assert_almost_equal(self.collocation_points, self.collocation_points2)
+        np.testing.assert_almost_equal(self.center_of_pressure, self.center_of_pressure2)
+        np.testing.assert_almost_equal(self.span_vectors, self.span_vectors2)
+        np.testing.assert_almost_equal(self.leading_mid_points, self.leading_mid_points2)
+        np.testing.assert_almost_equal(self.trailing_mid_points, self.trailing_mid_points2)
+        
+        # tylko rigi beda inne ale tak ma byc wiec assert nie przejdzie
+        # np.testing.assert_almost_equal(self.rings, self.rings2)
         self.normals = self.normals2
         self.collocation_points = self.collocation_points2
         self.center_of_pressure = self.center_of_pressure2
