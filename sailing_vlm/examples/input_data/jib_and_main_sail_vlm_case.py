@@ -11,8 +11,8 @@ output_dir_name = os.path.join("results_example_jib_and_mainsail_vlm", time_stam
 
 
 # SOLVER SETTINGS
-n_spanwise =  10 # No of control points (above the water) per sail, recommended: 50
-n_chordwise = 5 # No of control points (above the water) per sail, recommended: 50
+n_spanwise =  2 # No of control points (above the water) per sail, recommended: 50
+n_chordwise = 3 # No of control points (above the water) per sail, recommended: 50
 interpolation_type = "linear"  # either "spline" or "linear"
 LLT_twist = "real_twist"  # defines how the Lifting Line discretize the sail twist.
 # It can be "sheeting_angle_const" or "average_const" or "real_twist"

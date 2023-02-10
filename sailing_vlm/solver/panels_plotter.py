@@ -173,7 +173,7 @@ def display_hull(ax: plt.Axes, hull: HullGeometry):
     ax.plot(hull.deck_starboard_line_underwater[:, 0], hull.deck_starboard_line_underwater[:, 1], hull.deck_starboard_line_underwater[:, 2], 'gray', alpha=0.25)
 
 
-def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inlet_condition: InletConditions, inviscid_flow_results :  InviscidFlowResults):
+def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inlet_condition: InletConditions, inviscid_flow_results :  InviscidFlowResults, n_spanwise : int, n_chordwise : int):
     """
     display_winds displays winds on final plot
 
@@ -193,13 +193,34 @@ def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inle
     V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs, inviscid_flow_results.V_app_fs_at_cp]
     colors = ['green', 'blue', 'red']  # G: True wind, B: - Apparent wind, R: Apparent + Induced wind
 
-   
+    #######
+    # example:
+    # cp_points has 24 points, n_spanwose = 2, n_chordise=3 it means that
+    # we have: 24 / (2*3) = 24 / 6 = 4 elements: jib + main above water and jib and main under water
+    l = int(cp_points.shape[0] / (n_spanwise * n_chordwise))
+    app_induced_colors = ['peru', 'red', 'peru', 'red']
+    # check if colors are defined for appaernt + induced wind - above and under water
+    assert (len(app_induced_colors) == l and len(app_induced_colors) % 2 == 0)
+    color_counter = 0
     for V_wind, color in zip(V_winds, colors):
         # V_wind = V_winds[2]
         # color = colors[2]
         for i in range(N):
             # vx = np.array([cp_points[i, 0], cp_points[i, 0] + V_wind[i, 0]])
             # vy = np.array([cp_points[i, 1], cp_points[i, 1] + V_wind[i, 1]])
+
+            draw_color = color
+            if color == 'red':
+                if i % (n_spanwise  * n_chordwise) == 0 and i !=0:
+                    color_counter += 1
+                draw_color = app_induced_colors[color_counter]
+                    
+                # shift_x = 1.2*shift_x0 + cp_points[i, 0]
+                # shift_y = 1.2*shift_y0 + cp_points[i, 1]
+
+                shift_x = cp_points[i, 0]
+                shift_y = cp_points[i, 1]
+
             vx = np.array([shift_x, shift_x+V_wind[i, 0]])
             vy = np.array([shift_y, shift_y+V_wind[i, 1]])
             vz = np.array([cp_points[i, 2], cp_points[i, 2]])
@@ -207,16 +228,15 @@ def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inle
             # ax.plot(vx, vy, vz,color='red', alpha=0.8, lw=1)  # old way
             # arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>",  c=cp_points[:, 2], cmap='Greys')
             if cp_points[i, 2] > 0:
-                arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.75)
+                arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=draw_color, alpha=0.75)
             else:
-                arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.15)
+                arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=draw_color, alpha=0.05)
             ax.add_artist(arrow)
-            
+
+    # #######
     # for V_wind, color in zip(V_winds, colors):
     #     # V_wind = V_winds[2]
     #     # color = colors[2]
-
-    #     step = int(N / 4)
     #     for i in range(N):
     #         # vx = np.array([cp_points[i, 0], cp_points[i, 0] + V_wind[i, 0]])
     #         # vy = np.array([cp_points[i, 1], cp_points[i, 1] + V_wind[i, 1]])
@@ -226,30 +246,12 @@ def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inle
 
     #         # ax.plot(vx, vy, vz,color='red', alpha=0.8, lw=1)  # old way
     #         # arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>",  c=cp_points[:, 2], cmap='Greys')
-            
-    #         # cp_cpoints - first half is above water
-    #         # second part under water
-    #         # first and third quater are jib
-    #         # second and fourth quater are main
-            
-    #         # above water
-    #         if i <= 2*step -1:
-                
-    #             # jib above
-    #             if i <= step -1:
-    #                 # if we paint V_app_fs_at_cp
-    #                 color_tmp = color
-    #                 if color == 'red':
-    #                     color_tmp = 'darkorange'
-
-    #                 arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color_tmp, alpha=0.75)
-    #             else:
-
-    #                 arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.75)
+    #         if cp_points[i, 2] > 0:
+    #             arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.75)
     #         else:
     #             arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.15)
-
     #         ax.add_artist(arrow)
+
 
 
 def display_CE_CLR(ax : plt.Axes,
@@ -306,7 +308,7 @@ def display_panels_xyz_and_winds(vlm :Vlm, inviscid_flow_results: InviscidFlowRe
     
     display_hull(ax, hull)
 
-    display_winds(ax, vlm.center_of_pressure, water_size, inlet_condition, inviscid_flow_results)
+    display_winds(ax, vlm.center_of_pressure, water_size, inlet_condition, inviscid_flow_results, vlm.n_spanwise, vlm.n_chordwise)
 
     scale, clr, ce, F = display_CE_CLR(ax, inviscid_flow_results, hull)
     
