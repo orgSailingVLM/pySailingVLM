@@ -62,7 +62,7 @@ def main():
         )
 
     sail_set = SailSet([jib_geometry, main_sail_geometry])
-    # sail_set = SailSet([main_sail_geometry])
+    #sail_set = SailSet([main_sail_geometry])
 
     wind = ExpWindProfile(
         alpha_true_wind_deg, tws_ref, SOG_yacht,

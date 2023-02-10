@@ -198,9 +198,12 @@ def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inle
     # cp_points has 24 points, n_spanwose = 2, n_chordise=3 it means that
     # we have: 24 / (2*3) = 24 / 6 = 4 elements: jib + main above water and jib and main under water
     l = int(cp_points.shape[0] / (n_spanwise * n_chordwise))
+    # if you have main and jib this list should have 4 elements
+    # if only jib - 2 elements
     app_induced_colors = ['peru', 'red', 'peru', 'red']
+    #app_induced_colors = ['peru', 'red']
     # check if colors are defined for appaernt + induced wind - above and under water
-    assert (len(app_induced_colors) == l and len(app_induced_colors) % 2 == 0)
+    assert (len(app_induced_colors) == l and len(app_induced_colors) % 2 == 0), "Bad length of app_induced_colors list"
     color_counter = 0
     for V_wind, color in zip(V_winds, colors):
         # V_wind = V_winds[2]
