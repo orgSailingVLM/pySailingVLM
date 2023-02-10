@@ -1,4 +1,13 @@
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sailing_vlm.solver.vlm import Vlm
+    from sailing_vlm.results.inviscid_flow import InviscidFlowResults
+    from sailing_vlm.inlet.inlet_conditions import InletConditions
+    from sailing_vlm.yacht_geometry.hull_geometry import HullGeometry
 import numpy as np
 import math
 
@@ -7,18 +16,10 @@ import matplotlib.pyplot as plt
 from sailing_vlm.solver.additional_functions import normalize
 from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d import proj3d
-
-
 import mpl_toolkits.mplot3d as a3
 import matplotlib.cm as cm
 import matplotlib as mpl
 
-from sailing_vlm.results.inviscid_flow import InviscidFlowResults
-from sailing_vlm.inlet.inlet_conditions import InletConditions
-from sailing_vlm.results.inviscid_flow import InviscidFlowResults
-from sailing_vlm.yacht_geometry.hull_geometry import HullGeometry
-
-from sailing_vlm.solver.vlm import Vlm
 from typing import Tuple
 
 class Arrow3D(FancyArrowPatch):
@@ -99,7 +100,64 @@ def display_panels_xyz(vlm : Vlm) -> Tuple[plt.axes, int]:
     set_ax_eq(ax, xx, yy, zz)
     return ax, water_size
 
+def display_panels_or_rings(things : np.ndarray, pressure : np.ndarray, leading_mid_points : np.ndarray, trailing_mid_points : np.ndarray) -> Tuple[plt.axes, int]:
+    """
+    display_panels_or_rings display panels or rings  in 3 dimentions
 
+    :param Vlm vlm: vlm class instance
+    :return List[plt.axes, int]: list containing matplotlib plt ax and size of water (int)
+    """
+    fig = plt.figure(figsize=(12, 12))
+    ax = plt.axes(projection='3d')
+
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+
+    def set_ax_eq(ax : plt.Axes, X : np.ndarray, Y : np.ndarray, Z : np.ndarray) -> float:
+        """
+        set_ax_eq sets limits on x, y, z axes
+
+        :param plt.Axes ax: ax to be modified
+        :param np.ndarray X: x array
+        :param np.ndarray Y: y array
+        :param np.ndarray Z: z array
+        :return float: max range number 
+        """
+        # ax.set_aspect('equal') - matplotlib bug
+        # dirty hack: NotImplementedError: It is not currently possible to manually set the aspect on 3D axes
+        max_range = np.array([X.max() - X.min(), Y.max() - Y.min(), Z.max() - Z.min()]).max() / 2.0
+
+        mid_x = (X.max() + X.min()) * 0.5
+        mid_y = (Y.max() + Y.min()) * 0.5
+        mid_z = (Z.max() + Z.min()) * 0.5
+        ax.set_xlim(mid_x - max_range, mid_x + max_range)
+        ax.set_ylim(mid_y - max_range, mid_y + max_range)
+        ax.set_zlim(mid_z - max_range, mid_z + max_range)
+
+        return max_range
+
+
+    #norm = mpl.colors.Normalize(vmin=min(pressure), vmax=max(pressure))
+    #cmap = cm.hot
+    #m = cm.ScalarMappable(norm=norm, cmap=cmap)
+
+    for vtx, p in zip(things, pressure):
+        tri = a3.art3d.Poly3DCollection([vtx])
+        #tri.set_color(m.to_rgba(p))
+        tri.set_edgecolor('k')
+        ax.add_collection3d(tri)
+
+    #fig.colorbar(m, ax=ax)
+    ###
+    # plot water level
+    water_size = int(1.1*math.ceil(max(max(abs(leading_mid_points[:, 2])), max(abs(trailing_mid_points[:, 2])))))
+    xx, yy = np.meshgrid(range(-water_size, water_size), range(-water_size, water_size))
+    zz = 0 * xx + 0 * yy
+    ax.plot_surface(xx, yy, zz, alpha=0.25)
+
+    set_ax_eq(ax, xx, yy, zz)
+    return ax, water_size
 
 def display_hull(ax: plt.Axes, hull: HullGeometry):
     """
@@ -135,11 +193,10 @@ def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inle
     V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs, inviscid_flow_results.V_app_fs_at_cp]
     colors = ['green', 'blue', 'red']  # G: True wind, B: - Apparent wind, R: Apparent + Induced wind
 
+   
     for V_wind, color in zip(V_winds, colors):
         # V_wind = V_winds[2]
         # color = colors[2]
-
-        step = int(N / 4)
         for i in range(N):
             # vx = np.array([cp_points[i, 0], cp_points[i, 0] + V_wind[i, 0]])
             # vy = np.array([cp_points[i, 1], cp_points[i, 1] + V_wind[i, 1]])
@@ -149,30 +206,50 @@ def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inle
 
             # ax.plot(vx, vy, vz,color='red', alpha=0.8, lw=1)  # old way
             # arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>",  c=cp_points[:, 2], cmap='Greys')
-            
-            # cp_cpoints - first half is above water
-            # second part under water
-            # first and third quater are jib
-            # second and fourth quater are main
-            
-            # above water
-            if i <= 2*step -1:
-                
-                # jib above
-                if i <= step -1:
-                    # if we paint V_app_fs_at_cp
-                    color_tmp = color
-                    if color == 'red':
-                        color_tmp = 'darkorange'
-
-                    arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color_tmp, alpha=0.75)
-                else:
-
-                    arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.75)
+            if cp_points[i, 2] > 0:
+                arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.75)
             else:
                 arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.15)
-
             ax.add_artist(arrow)
+            
+    # for V_wind, color in zip(V_winds, colors):
+    #     # V_wind = V_winds[2]
+    #     # color = colors[2]
+
+    #     step = int(N / 4)
+    #     for i in range(N):
+    #         # vx = np.array([cp_points[i, 0], cp_points[i, 0] + V_wind[i, 0]])
+    #         # vy = np.array([cp_points[i, 1], cp_points[i, 1] + V_wind[i, 1]])
+    #         vx = np.array([shift_x, shift_x+V_wind[i, 0]])
+    #         vy = np.array([shift_y, shift_y+V_wind[i, 1]])
+    #         vz = np.array([cp_points[i, 2], cp_points[i, 2]])
+
+    #         # ax.plot(vx, vy, vz,color='red', alpha=0.8, lw=1)  # old way
+    #         # arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>",  c=cp_points[:, 2], cmap='Greys')
+            
+    #         # cp_cpoints - first half is above water
+    #         # second part under water
+    #         # first and third quater are jib
+    #         # second and fourth quater are main
+            
+    #         # above water
+    #         if i <= 2*step -1:
+                
+    #             # jib above
+    #             if i <= step -1:
+    #                 # if we paint V_app_fs_at_cp
+    #                 color_tmp = color
+    #                 if color == 'red':
+    #                     color_tmp = 'darkorange'
+
+    #                 arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color_tmp, alpha=0.75)
+    #             else:
+
+    #                 arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.75)
+    #         else:
+    #             arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.15)
+
+    #         ax.add_artist(arrow)
 
 
 def display_CE_CLR(ax : plt.Axes,

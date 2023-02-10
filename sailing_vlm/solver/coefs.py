@@ -17,7 +17,7 @@ def calc_wind_coefs(V_app_infw, points_for_calculations, rings, normals, trailin
 
     coefs = np.zeros((m,m))
 
-    # wind_coefs = np.zeros((m, m))
+    #bs = np.zeros((m, m))
     wind_coefs = np.zeros((m, m, 3))
     for i in range(points_for_calculations.shape[0]):
 
@@ -29,12 +29,12 @@ def calc_wind_coefs(V_app_infw, points_for_calculations, rings, normals, trailin
             D = rings[j][3]
             
             a = vortex_ring(points_for_calculations[i], A, B, C, D, gamma_orientation)
-            b = vortex_ring_components(points_for_calculations[i], A, B, C, D, gamma_orientation)
+            #b = vortex_ring_components(points_for_calculations[i], A, B, C, D, gamma_orientation)
             # poprawka na trailing edge
             # todo: zrobic to w drugim, oddzielnym ifie
             if trailing_edge_info[j]:
                 a = vortex_horseshoe(points_for_calculations[i], B, C, V_app_infw[j], gamma_orientation)
-                b = vortex_horseshoe_infinite_components(points_for_calculations[i], B, C, V_app_infw[j], gamma_orientation) 
+                #b = vortex_horseshoe_infinite_components(points_for_calculations[i], B, C, V_app_infw[j], gamma_orientation) 
             coefs[i, j] = np.dot(a, normals[i].reshape(3, 1))[0]
             # this is faster than wind_coefs[i, j, :] = a around 0.1s (case 10x10)
             
@@ -43,12 +43,12 @@ def calc_wind_coefs(V_app_infw, points_for_calculations, rings, normals, trailin
             wind_coefs[i, j, 1] = a[1]
             wind_coefs[i, j, 2] = a[2]
             
-            # wind_coefs[i, j] = a # np.dot(a, normals[i].reshape(3, 1))[0]
+            #bs[i, j] = np.dot(b, normals[i].reshape(3, 1))[0]
             #wind_coefs[i, j, 1] = bb[1]
             #wind_coefs[i, j, 2] = bb[2]
     
             
-    return coefs, wind_coefs 
+    return coefs, wind_coefs
 
 
 def get_leading_edge_mid_point(p2: np.ndarray, p3: np.ndarray) -> np.ndarray:
@@ -113,6 +113,115 @@ def calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(p
         ns[idx] = n
     return ns, collocation_points, center_of_pressure, rings, span_vectors, leading_mid_points, trailing_edge_mid_points
 
+def calculate_stuff(panels: np.ndarray, leading_edge_info : np.ndarray, gamma_orientation : float, n_chordwise : int, n_spanwise: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """
+    calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points _summary_
+
+    :param np.ndarray panels: panels
+    :param float gamma_orientation: gamma orientation
+    :param int n_chordwise: number of panels chordwise
+    :param int n_spanwise: number of panels spanwise
+    :return Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]: normals, collocation points, center of pressure, rings, span vectors, leading mid points, trailing edge mid points
+    """
+    K = panels.shape[0]
+    # ns = np.zeros((K, 3))
+    # span_vectors = np.zeros((K, 3))
+    # collocation_points = np.zeros((K, 3))
+    # center_of_pressure = np.zeros((K, 3))
+    # leading_mid_points = np.zeros((K, 3))
+    # trailing_edge_mid_points = np.zeros((K, 3))
+    
+    
+    
+    # jib, main, jib underwater, main underwater - 4 times panels grid
+    # but if someone like only jib?, then calculate number of grids like this
+    # G = int (K / (n_chordwise * n_spanwise))
+    # panels_splitted = np.array_split(panels, G)
+    # rings = np.zeros(shape=(G, n_chordwise, n_spanwise, 4, 3))
+
+    # ns = np.zeros(shape=(G, n_chordwise, n_spanwise, 3))
+    # span_vectors = np.zeros((G, n_chordwise, n_spanwise, 3))
+    # collocation_points = np.zeros((G, n_chordwise, n_spanwise, 3))
+    # center_of_pressure = np.zeros((G, n_chordwise, n_spanwise, 3))
+    # leading_mid_points = np.zeros((G, n_chordwise, n_spanwise, 3))
+    # trailing_edge_mid_points = np.zeros((G, n_chordwise, n_spanwise, 3))
+    
+    G = int (K / (n_chordwise * n_spanwise))
+    panels_splitted = np.array_split(panels, G)
+    leading_edge_info_splitted = np.array_split(leading_edge_info, G)
+    
+    rings = np.zeros(shape=(G, n_chordwise * n_spanwise, 4, 3))
+    ns = np.zeros(shape=(G, n_chordwise * n_spanwise, 3))
+    span_vectors = np.zeros((G, n_chordwise * n_spanwise, 3))
+    collocation_points = np.zeros((G, n_chordwise * n_spanwise, 3))
+    center_of_pressure = np.zeros((G, n_chordwise * n_spanwise, 3))
+    leading_mid_points = np.zeros((G, n_chordwise * n_spanwise, 3))
+    trailing_edge_mid_points = np.zeros((G, n_chordwise * n_spanwise, 3))
+    
+    for idx, (grid_panels, leading_grid_info) in enumerate(zip(panels_splitted,leading_edge_info_splitted)):
+       # grid_panels = grid_panels.reshape(n_chordwise, n_spanwise, 4, 3)
+        #grid_panels = grid_panels.reshape(n_spanwise, n_chordwise, 4, 3)
+        n_panels = grid_panels.shape[0]
+        for k in range(n_panels):
+        #for i in range(n_chordwise):
+        #    for j in range(n_spanwise):
+                # current panel
+            panel = grid_panels[k]
+            p1 = panel[0]
+            p2 = panel[1]
+            p3 = panel[2]
+            p4 = panel[3]
+            
+            vect_B = p4 - p2
+            vect_A = p3 - p1
+
+            leading_mid_points[idx, k] = get_leading_edge_mid_point(p2, p3)
+            trailing_edge_mid_points[idx, k] = get_trailing_edge_mid_points(p1, p4)
+            dist = trailing_edge_mid_points[idx, k] - leading_mid_points[idx, k]
+
+            collocation_points[idx, k] = leading_mid_points[idx, k] + 0.75 * dist
+            center_of_pressure[idx, k] = leading_mid_points[idx, k] + 0.25 * dist
+
+            p2_p1 = p1 - p2
+            p3_p4 = p4 - p3
+            
+            n = np.cross(vect_A, vect_B)
+            n = n / np.linalg.norm(n)
+            ns[idx, k] = n
+            
+            if leading_grid_info[k]:  
+            #if i == 0:
+                # leading edge
+                A = p1 + p2_p1 / 4.
+                B = p2 + p2_p1 / 4.
+                C = p3 + p3_p4 / 4.
+                D = p4 + p3_p4 / 4.
+            else:
+                # not leading edge
+                A = p1 + p2_p1 / 4.
+                B = rings[idx, k - n_spanwise][0]
+                C = rings[idx, k -n_spanwise][3]
+                D = p4 + p3_p4 / 4.
+                
+                
+            rings[idx, k] = np.array([A, B, C, D])
+            # span vectors
+            bc = C - B
+            bc *= gamma_orientation
+            span_vectors[idx,k] = bc
+
+    #K2 = G*n_chordwise*n_spanwise
+    span_vectors = span_vectors.reshape(K,3)
+    rings = rings.reshape(K, 4, 3)
+
+    ns =ns.reshape(K,3)
+
+    collocation_points = collocation_points.reshape(K,3)
+    center_of_pressure = center_of_pressure.reshape(K,3)
+    leading_mid_points = leading_mid_points.reshape(K,3)
+    trailing_edge_mid_points = trailing_edge_mid_points.reshape(K,3)         
+    
+    return ns, collocation_points, center_of_pressure, rings, span_vectors, leading_mid_points, trailing_edge_mid_points
 
 # sails = [jib, main]
 

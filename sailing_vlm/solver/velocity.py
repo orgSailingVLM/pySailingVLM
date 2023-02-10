@@ -156,10 +156,10 @@ def vortex_ring_components(p: np.array, A: np.array, B: np.array, C: np.array, D
     """
 
    
-    sub2 = vortex_line(p, B, C, gamma)
-    sub4 = vortex_line(p, D, A, gamma)
+    sub1 = vortex_line(p, A, B, gamma)
+    sub3 = vortex_line(p, C, D, gamma)
 
-    q_ind = sub2 + sub4
+    q_ind = sub1 + sub3
     return q_ind
 
 

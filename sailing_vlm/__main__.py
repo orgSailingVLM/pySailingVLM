@@ -9,7 +9,7 @@ from sailing_vlm.yacht_geometry.hull_geometry import HullGeometry
 from sailing_vlm.inlet.winds import ExpWindProfile
 
 from sailing_vlm.results.save_utils import save_results_to_file
-from sailing_vlm.solver.panels_plotter import display_panels_xyz_and_winds
+from sailing_vlm.solver.panels_plotter import display_panels_xyz_and_winds, display_panels_or_rings
 
 
 from sailing_vlm.results.inviscid_flow import prepare_inviscid_flow_results_vlm
@@ -83,7 +83,7 @@ def main():
 
     print("Preparing visualization.")   
     display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=True)
-
+    #display_panels_or_rings(myvlm.rings, myvlm.pressure, myvlm.leading_mid_points, myvlm.trailing_mid_points)
     df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, sail_set, output_dir_name)
 
     

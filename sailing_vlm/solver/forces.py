@@ -58,44 +58,12 @@ def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rin
     # import matplotlib.pyplot as plt    
     # fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
     # [ax.plot(rings[i].transpose()[0], rings[i].transpose()[1], rings[i].transpose()[2] , 'xb-') for i in range(3)]
-    coefs, wind_coefs = calc_wind_coefs(V_app_infw, center_of_pressure, rings, normals, trailing_edge_info, gamma_orientation)
+    _, wind_coefs = calc_wind_coefs(V_app_infw, center_of_pressure, rings, normals, trailing_edge_info, gamma_orientation)
     V_induced, V_at_cp = calculate_app_fs(V_app_infw, wind_coefs, gamma_magnitude)
-
-    #sh0, sh1, sh2 = wind_coefs.shape
-    # np.savetxt('V_app_infw_cop.txt', V_app_infw)
-    # np.savetxt('gamma_orientation_cop.txt', [gamma_orientation])
-    # np.savetxt('center_of_pressure_cop.txt', center_of_pressure)
-    # np.savetxt('coefs_cop.txt', coefs)
-
-    
-    # wind_coefs_reshaped = wind_coefs.reshape(sh0, -1)
-    # #np.savetxt('wind_coefs_cop.txt', wind_coefs_reshaped)
-    # # retrieving data from file.
-    # loaded_arr = np.loadtxt("wind_coefs_cop.txt")
-    # load_wind_coefs = loaded_arr.reshape(loaded_arr.shape[0], loaded_arr.shape[1] // sh2, sh2)
-    
-    # # podejrzani
-    # i = [1, 2, 4, 5, 7, 8, 10, 11]
-    # j = [0, 1, 3, 4, 6, 7, 9, 10]
-    
-    # for ii, jj in zip(i,j):
-    #     print(load_wind_coefs[ii, jj, :])
-    #     print(wind_coefs[ii, jj, :])
-    #     print()
-    # np.testing.assert_almost_equal(np.loadtxt('V_app_infw_cop.txt'), V_app_infw)
-    # np.testing.assert_almost_equal(np.loadtxt('gamma_orientation_cop.txt'), gamma_orientation)
-    # np.testing.assert_almost_equal(np.loadtxt('center_of_pressure_cop.txt'), center_of_pressure, decimal=6)
     
     
-    # loaded_coefs = np.loadtxt('coefs_cop.txt')
-    # for i in range(coefs.shape[0]):
-    #     for j in range(coefs.shape[1]):
-    #         print(i, j)
-    #         np.testing.assert_almost_equal(coefs[i,j], loaded_coefs[i,j], decimal=4)
     
-    # np.testing.assert_almost_equal(np.loadtxt('coefs_cop.txt'), coefs) # podejrzany Max absolute difference: 1.08741931 
-    # np.testing.assert_almost_equal(np.loadtxt('wind_coefs_cop.txt'), wind_coefs.reshape(sh0*sh1, sh2)) # max absolute difference: 4068021.60469184 
-    
+  
     # if case 1x1 leading_edges_info is False False False False
     # horseshoe_edge_info i True True True True
     # caclulating winds as for trailing edges
@@ -111,9 +79,12 @@ def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rin
         gamma = 0.0
         if leading_edges_info[i] or case1x1:
             gamma = span_vectors[i] * gamma_magnitude[i]
+            gamma2 = span_vectors[i] * gamma_magnitude[i] 
         else:
             gamma = span_vectors[i] * (gamma_magnitude[i] - gamma_magnitude[i-M])
+            gamma2 = span_vectors[i] * (gamma_magnitude[i] - gamma_magnitude[i-M]) 
         force_xyz[i] = rho * np.cross(V_at_cp[i], gamma)
+        
     return force_xyz, V_at_cp, V_induced
 
 
