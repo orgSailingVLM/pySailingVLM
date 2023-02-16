@@ -85,10 +85,7 @@ class SailGeometry(BaseGeometry, ABC):
         mesh = mesh.reshape(sh0*sh1, sh2)
         mesh_underwater = make_airfoil_mesh([le_SW_underwater, le_NW_underwater],[self.__n_chordwise, self.__n_spanwise],fchords_vec, interpolated_distance_from_LE, interpolated_camber).reshape(sh0*sh1, sh2)
         mesh_underwater = mesh_underwater.reshape(sh0*sh1, sh2)
-        # to potem zniknie, bedzie shape chordwise na spanwise na 3
-        
-        #plot_mesh(mesh, mesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='mesh under and above without anything')
-        
+
         # rotation
         #mesh:  le NW p1 p2 ... te
         #       le p1 p2 ... te
@@ -96,11 +93,7 @@ class SailGeometry(BaseGeometry, ABC):
         #       le SW p2 ... te
         rmesh = np.array([self.csys_transformations.rotate_point_with_mirror(point) for point in mesh])
         rmesh_underwater = np.array([self.csys_transformations.rotate_point_with_mirror(point) for point in mesh_underwater])
-        #np.testing.assert_almost_equal(mesh[::sh1], rmesh[::sh1])
-        #np.testing.assert_almost_equal(mesh_underwater[::sh1], rmesh_underwater[::sh1])
-        # mesh and rmesh are the same :o
-        #plot_mesh(rmesh, rmesh_underwater,  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation')
-        
+
         mesh = rmesh
         mesh_underwater = rmesh_underwater
         
@@ -131,14 +124,7 @@ class SailGeometry(BaseGeometry, ABC):
             trmesh_underwater = self.rotate_points_around_le(mesh_underwater, p1_u, p2_u, sail_twist_deg)
             # check if points on forestay are not rotated (they are on axis of rotation)
             np.testing.assert_almost_equal(trmesh_underwater[::sh1], mesh_underwater[::sh1])
-            
 
-            #plot_mesh(trmesh.reshape(sh0, sh1, sh2), trmesh_underwater.reshape(sh0, sh1, sh2),  True, dimentions = [0, 1, 2], color1='green', color2='blue',title='rotation + twist')
-            # 2 d plots for rotation + twisted above water
-            # plot_mesh(trmesh, None,  True, dimentions = [0, 1], color1='green', color2=None,title='rotation + twist axiss 0 + 1')
-            # plot_mesh(trmesh, None,  True, dimentions = [0, 2], color1='green', color2=None,title='rotation + twist axiss 0 + 2')
-            # plot_mesh(trmesh, None,  True, dimentions = [1, 2], color1='green', color2=None,title='rotation + twist axiss 1 + 2')
-            
             mesh = trmesh
             mesh_underwater = trmesh_underwater
      
@@ -153,16 +139,7 @@ class SailGeometry(BaseGeometry, ABC):
         
         np.testing.assert_array_equal(trailing_edge_info, trailing_edge_info_mirror)
         np.testing.assert_array_equal(leading_edge_info, leading_edge_info_mirror)
-        # new_approach_panels, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
-        #     [le_SW, le_NW],
-        #     [self.__n_chordwise, self.__n_spanwise],
-        #     rchords_vec, interpolated_camber, interpolated_distance_from_LE, gamma_orientation=-1)
-
-        # new_approach_panels_mirror, trailing_edge_info, leading_edge_info = make_panels_from_le_points_and_chords(
-        #     [le_SW_underwater, le_NW_underwater],
-        #     [self.__n_chordwise, self.__n_spanwise],
-        #     frchords_vec, interpolated_camber, interpolated_distance_from_LE, gamma_orientation=-1)
-
+        
         self.__panels_above = new_approach_panels
         self.__panels_under = new_approach_panels_mirror
         self.__panels = np.concatenate([self.__panels_above, self.__panels_under])
