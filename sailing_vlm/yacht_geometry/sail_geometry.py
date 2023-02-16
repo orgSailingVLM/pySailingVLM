@@ -10,7 +10,7 @@ from typing import List
 
 from sailing_vlm.solver.panels import make_panels_from_mesh_spanwise
 from sailing_vlm.solver.mesher import make_airfoil_mesh
-from sailing_vlm.solver.additional_functions import plot_mesh
+#from sailing_vlm.solver.additional_functions import plot_mesh
 class BaseGeometry:
 
     @property

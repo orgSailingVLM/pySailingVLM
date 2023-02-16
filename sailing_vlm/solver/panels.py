@@ -6,7 +6,6 @@ from sailing_vlm.rotations import geometry_calc
 from typing import List, Tuple
 import numba
 
-# to be used
 
 def make_panels_from_mesh_spanwise(mesh : np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -81,32 +80,9 @@ def make_panels_from_le_points_and_chords(le_points : List[np.ndarray], grid_siz
     le_line = mesher.discrete_segment(le_SW, le_NW, n_spanwise)
     te_line = np.copy(le_line)  # deep copy
     te_line += chords_vec
+  
+    mesh = mesher.make_point_mesh(le_line, te_line, n_chordwise)
 
-    ###
-    # moje dodatki
-   
-    #mesh = mesher.make_airfoil_mesh(le_line, te_line, n_chordwise + 1, interpolated_distance_from_LE, interpolated_camber)
-    ###
-    
-    #mesh = mesher.make_point_mesh(le_line, te_line, n_chordwise)
-    
-    # do testowania 
-    # import matplotlib.pyplot as plt  
-    # ax = plt.axes(projection='3d')
-    
-    # m = mesh.shape[0] * mesh.shape[1]
-    
-    # ax.set_xlabel('X')
-    # ax.set_ylabel('Y')
-    # ax.set_zlabel('Z')
-    
-    
-    # for i in range(mesh.shape[0]):
-    #     ax.plot(mesh[i, :, 0], mesh[i, :, 1], mesh[i, :, 2])
-    # #ax.plot(mesh.reshape(m,3)[:,0], mesh.reshape(m,3)[:,1], mesh.reshape(m,3)[:,2])
-    # #ax.scatter3D(mesh.reshape(m,3)[:,0], mesh.reshape(m,3)[:,1], mesh.reshape(m,3)[:,2])
-    
-    
     mesh = np.swapaxes(mesh, 0, 1)
     panels, trailing_edge_info, leading_edge_info = make_panels_from_mesh_spanwise(mesh)
     

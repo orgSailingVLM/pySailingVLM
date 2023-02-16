@@ -6,19 +6,17 @@ from numpy.linalg import norm
 
 import numba
 
-from sailing_vlm.solver.velocity import vortex_ring, vortex_horseshoe, vortex_horseshoe_infinite_components, vortex_ring_components
+from sailing_vlm.solver.velocity import vortex_ring, vortex_horseshoe
 
 # parallel slows down beacuse loop is not big
 @numba.jit(numba.types.Tuple((numba.float64[:, ::1], numba.float64[:, :, ::1])) (numba.float64[:, ::1], numba.float64[:, ::1], numba.float64[:, :, ::1], numba.float64[:, ::1], numba.boolean[::1], numba.float64), nopython=True, debug = True, cache=True)
 # @numba.jit(numba.types.Tuple((numba.float64[:, ::1], numba.float64[:, ::1])) (numba.float64[:, ::1], numba.float64[:, ::1], numba.float64[:, :, ::1], numba.float64[:, ::1], numba.boolean[::1], numba.float64), nopython=True, debug = True, cache=True)
-def calc_wind_coefs(V_app_infw, points_for_calculations, rings, normals, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
+def calc_velocity_coefs(V_app_infw, points_for_calculations, rings, normals, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
 
     m = points_for_calculations.shape[0]
 
-    coefs = np.zeros((m,m))
-
-    #bs = np.zeros((m, m))
-    wind_coefs = np.zeros((m, m, 3))
+    coefs = np.zeros((m,m)) # coefs calculated for normalized velocity
+    v_ind_coeff = np.zeros((m, m, 3))
     for i in range(points_for_calculations.shape[0]):
 
         # loop over other vortices
@@ -29,26 +27,18 @@ def calc_wind_coefs(V_app_infw, points_for_calculations, rings, normals, trailin
             D = rings[j][3]
             
             a = vortex_ring(points_for_calculations[i], A, B, C, D, gamma_orientation)
-            #b = vortex_ring_components(points_for_calculations[i], A, B, C, D, gamma_orientation)
             # poprawka na trailing edge
             # todo: zrobic to w drugim, oddzielnym ifie
             if trailing_edge_info[j]:
                 a = vortex_horseshoe(points_for_calculations[i], B, C, V_app_infw[j], gamma_orientation)
-                #b = vortex_horseshoe_infinite_components(points_for_calculations[i], B, C, V_app_infw[j], gamma_orientation) 
             coefs[i, j] = np.dot(a, normals[i].reshape(3, 1))[0]
             # this is faster than wind_coefs[i, j, :] = a around 0.1s (case 10x10)
             
+            v_ind_coeff[i, j, 0] = a[0] # FOR NUMBA
+            v_ind_coeff[i, j, 1] = a[1]
+            v_ind_coeff[i, j, 2] = a[2]
             
-            wind_coefs[i, j, 0] = a[0]
-            wind_coefs[i, j, 1] = a[1]
-            wind_coefs[i, j, 2] = a[2]
-            
-            #bs[i, j] = np.dot(b, normals[i].reshape(3, 1))[0]
-            #wind_coefs[i, j, 1] = bb[1]
-            #wind_coefs[i, j, 2] = bb[2]
-    
-            
-    return coefs, wind_coefs
+    return coefs, v_ind_coeff
 
 
 def get_leading_edge_mid_point(p2: np.ndarray, p3: np.ndarray) -> np.ndarray:
@@ -68,8 +58,8 @@ def calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(p
     K = panels.shape[0]
     ns = np.zeros((K, 3))
     span_vectors = np.zeros((K, 3))
-    collocation_points = np.zeros((K, 3))
-    center_of_pressure = np.zeros((K, 3))
+    ctr_p = np.zeros((K, 3))
+    cp = np.zeros((K, 3))
     leading_mid_points = np.zeros((K, 3))
     trailing_edge_mid_points = np.zeros((K, 3))
     
@@ -91,8 +81,8 @@ def calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(p
         trailing_edge_mid_points[idx] = get_trailing_edge_mid_points(p1, p4)
         dist = trailing_edge_mid_points[idx] - leading_mid_points[idx]
 
-        collocation_points[idx] = leading_mid_points[idx] + 0.75 * dist
-        center_of_pressure[idx] = leading_mid_points[idx] + 0.25 * dist
+        ctr_p[idx] = leading_mid_points[idx] + 0.75 * dist
+        cp[idx] = leading_mid_points[idx] + 0.25 * dist
 
         p2_p1 = p1 - p2
         p3_p4 = p4 - p3
@@ -111,7 +101,7 @@ def calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(p
         n = np.cross(vect_A, vect_B)
         n = n / np.linalg.norm(n)
         ns[idx] = n
-    return ns, collocation_points, center_of_pressure, rings, span_vectors, leading_mid_points, trailing_edge_mid_points
+    return ns, ctr_p, cp, rings, span_vectors, leading_mid_points, trailing_edge_mid_points
 
 def calculate_stuff(panels: np.ndarray, trailing_edge_info : np.ndarray, gamma_orientation : float, n_chordwise : int, n_spanwise: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -124,28 +114,7 @@ def calculate_stuff(panels: np.ndarray, trailing_edge_info : np.ndarray, gamma_o
     :return Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]: normals, collocation points, center of pressure, rings, span vectors, leading mid points, trailing edge mid points
     """
     K = panels.shape[0]
-    # ns = np.zeros((K, 3))
-    # span_vectors = np.zeros((K, 3))
-    # collocation_points = np.zeros((K, 3))
-    # center_of_pressure = np.zeros((K, 3))
-    # leading_mid_points = np.zeros((K, 3))
-    # trailing_edge_mid_points = np.zeros((K, 3))
-    
-    
-    
-    # jib, main, jib underwater, main underwater - 4 times panels grid
-    # but if someone like only jib?, then calculate number of grids like this
-    # G = int (K / (n_chordwise * n_spanwise))
-    # panels_splitted = np.array_split(panels, G)
-    # rings = np.zeros(shape=(G, n_chordwise, n_spanwise, 4, 3))
-
-    # ns = np.zeros(shape=(G, n_chordwise, n_spanwise, 3))
-    # span_vectors = np.zeros((G, n_chordwise, n_spanwise, 3))
-    # collocation_points = np.zeros((G, n_chordwise, n_spanwise, 3))
-    # center_of_pressure = np.zeros((G, n_chordwise, n_spanwise, 3))
-    # leading_mid_points = np.zeros((G, n_chordwise, n_spanwise, 3))
-    # trailing_edge_mid_points = np.zeros((G, n_chordwise, n_spanwise, 3))
-    
+  
     G = int (K / (n_chordwise * n_spanwise))
     panels_splitted = np.array_split(panels, G)
     trailing_edge_info_splitted = np.array_split(trailing_edge_info, G)
@@ -153,13 +122,13 @@ def calculate_stuff(panels: np.ndarray, trailing_edge_info : np.ndarray, gamma_o
     rings = np.zeros(shape=(G, n_chordwise * n_spanwise, 4, 3))
     ns = np.zeros(shape=(G, n_chordwise * n_spanwise, 3))
     span_vectors = np.zeros((G, n_chordwise * n_spanwise, 3))
-    collocation_points = np.zeros((G, n_chordwise * n_spanwise, 3))
-    center_of_pressure = np.zeros((G, n_chordwise * n_spanwise, 3))
+    ctr_p = np.zeros((G, n_chordwise * n_spanwise, 3))
+    cp = np.zeros((G, n_chordwise * n_spanwise, 3))
     leading_mid_points = np.zeros((G, n_chordwise * n_spanwise, 3))
     trailing_edge_mid_points = np.zeros((G, n_chordwise * n_spanwise, 3))
     
     for idx, (grid_panels, trailing_grid_info) in enumerate(zip(panels_splitted,trailing_edge_info_splitted)):
-     
+
         n_panels = grid_panels.shape[0]
         for k in range(n_panels):
 
@@ -176,8 +145,8 @@ def calculate_stuff(panels: np.ndarray, trailing_edge_info : np.ndarray, gamma_o
             trailing_edge_mid_points[idx, k] = (c_p1 + c_p4) / 2.0 
             dist = trailing_edge_mid_points[idx, k] - leading_mid_points[idx, k]
 
-            collocation_points[idx, k] = leading_mid_points[idx, k] + 0.75 * dist
-            center_of_pressure[idx, k] = leading_mid_points[idx, k] + 0.25 * dist
+            ctr_p[idx, k] = leading_mid_points[idx, k] + 0.75 * dist
+            cp[idx, k] = leading_mid_points[idx, k] + 0.25 * dist
 
             c_p2_p1 = c_p1 - c_p2
             c_p3_p4 = c_p4 - c_p3
@@ -222,15 +191,14 @@ def calculate_stuff(panels: np.ndarray, trailing_edge_info : np.ndarray, gamma_o
 
     ns =ns.reshape(K,3)
 
-    collocation_points = collocation_points.reshape(K,3)
-    center_of_pressure = center_of_pressure.reshape(K,3)
+    ctr_p = ctr_p.reshape(K,3)
+    cp = cp.reshape(K,3)
     leading_mid_points = leading_mid_points.reshape(K,3)
     trailing_edge_mid_points = trailing_edge_mid_points.reshape(K,3)         
     
-    return ns, collocation_points, center_of_pressure, rings, span_vectors, leading_mid_points, trailing_edge_mid_points
+    return ns, ctr_p, cp, rings, span_vectors, leading_mid_points, trailing_edge_mid_points
 
 # sails = [jib, main]
-
 def calculate_RHS(V_app_infw, normals):
     RHS = -V_app_infw.dot(normals.transpose()).diagonal()
     RHS = np.asarray(RHS)
@@ -240,23 +208,26 @@ def calculate_RHS(V_app_infw, normals):
 # # numba tutaj nie rozumie typow -> do poprawki
 # #@numba.jit(nopython=True)
 # #@numba.njit(parallel=True)
-def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, V_app_infw: np.ndarray, trailing_edge_info : np.ndarray, gamma_orientation : float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """
-    get_influence_coefficients_spanwise calculate coefs spanwise
 
-    :param np.ndarray collocation_points: collocation points
-    :param np.ndarray rings: rings
-    :param np.ndarray normals: normals
-    :param np.ndarray V_app_infw: wind apparent infinite sail velocity
-    :param np.ndarray trailing_edge_info: if panel is hourseshoe, ten horseshoe_info is True 
-    :param float gamma_orientation: gamma orientation, defaults to 1.0
-    :return Tuple[np.ndarray, np.ndarray, np.ndarray]: coefs, RHS, wind coefs
-    """
+# uzywac oddzielnie calc_velocity_coefs i calculate_RHS
+#  inaczej to jest wieksze zamiesznaie 
+# def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, V_app_infw: np.ndarray, trailing_edge_info : np.ndarray, gamma_orientation : float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+#     """
+#     get_influence_coefficients_spanwise calculate coefs spanwise
 
-    coefs, wind_coefs = calc_wind_coefs(V_app_infw, collocation_points, rings, normals, trailing_edge_info, gamma_orientation)
-    RHS = calculate_RHS(V_app_infw, normals)
+#     :param np.ndarray collocation_points: collocation points
+#     :param np.ndarray rings: rings
+#     :param np.ndarray normals: normals
+#     :param np.ndarray V_app_infw: wind apparent infinite sail velocity
+#     :param np.ndarray trailing_edge_info: if panel is hourseshoe, ten horseshoe_info is True 
+#     :param float gamma_orientation: gamma orientation, defaults to 1.0
+#     :return Tuple[np.ndarray, np.ndarray, np.ndarray]: coefs, RHS, wind coefs
+#     """
 
-    return coefs, RHS, wind_coefs
+#     coefs, v_ind_coeff = calc_velocity_coefs(V_app_infw, collocation_points, rings, normals, trailing_edge_info, gamma_orientation)
+#     RHS = calculate_RHS(V_app_infw, normals)
+
+#     return coefs, RHS, v_ind_coeff
 
 def solve_eq(coefs: np.ndarray, RHS: np.ndarray) -> np.ndarray:
     """

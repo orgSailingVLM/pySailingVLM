@@ -125,46 +125,6 @@ def get_cp_z_as_girths_all_above(cp_z_as_girths_all : np.ndarray, sail_set : Sai
     return cp_z_as_girths_all_above, names      
 
 
-
-# def plot_mesh(mesh : np.array, show : bool = False, dimentions : List  = [0, 1, 2], color : str = 'green', title : str = '3d plot'):
-#     """
-#     plot_mesh plot mesh in 2d or 3d 
-
-#     :param np.array mesh: mesh with shape n x m x 3
-#     :param bool show: true if plot should be shown, defaults to False
-#     :param List dimentions: array indexes to be shown , defaults to [0, 1, 2] means X, Y and Z
-#     """
-#     f = plt.figure(figsize=(12, 12))
-    
-    
-#     if len(dimentions) == 2:
-#         ax = plt.axes()
-#     else:
-#         ax = plt.axes(projection='3d')
-    
-#     ax.set_title(title)
-    
-#     for i in dimentions:
-#         if i == 0:
-#             ax.set_xlabel('X')
-#         elif i == 1:
-#             ax.set_ylabel('Y')
-#         elif i == 2:
-#             if len(dimentions) == 2:
-#                 ax.set_ylabel('Z')
-#             elif len(dimentions) == 3:
-#                 ax.set_zlabel('Z')
-    
-    
-#     for i in range(mesh.shape[0]):
-#         if len(dimentions) == 2:
-#             ax.plot(mesh[i, :, dimentions[0]], mesh[i, :, dimentions[1]], color)
-#         else:
-#             ax.plot3D(mesh[i, :, 0], mesh[i, :, 1], mesh[i, :, 2], color)
-        
-#     if show:
-#         plt.show()
-        
 def plot_mesh(mesh1 : np.array, mesh2 : np.array = None, show : bool = False, dimentions : List  = [0, 1, 2], color1 : str = 'green', color2 : str = None, title : str = '3d plot'):
 
     f = plt.figure(figsize=(12, 12))

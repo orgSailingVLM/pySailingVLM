@@ -38,7 +38,7 @@ class InviscidFlowResults:
         self.F_xyz = myvlm.force
         self.F_xyz_above_water, self.F_xyz_total = extract_above_water_quantities(self.F_xyz)
 
-        r = calc_moment_arm_in_shifted_csys(myvlm.center_of_pressure, csys_transformations.v_from_original_xyz_2_reference_csys_xyz)
+        r = calc_moment_arm_in_shifted_csys(myvlm.cp, csys_transformations.v_from_original_xyz_2_reference_csys_xyz)
      
         dyn_dict = {}
         # for jib and main, quantities is always dividable by 2

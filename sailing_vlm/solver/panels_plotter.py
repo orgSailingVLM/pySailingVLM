@@ -311,7 +311,7 @@ def display_panels_xyz_and_winds(vlm :Vlm, inviscid_flow_results: InviscidFlowRe
     
     display_hull(ax, hull)
 
-    display_winds(ax, vlm.center_of_pressure, water_size, inlet_condition, inviscid_flow_results, vlm.n_spanwise, vlm.n_chordwise)
+    display_winds(ax, vlm.cp, water_size, inlet_condition, inviscid_flow_results, vlm.n_spanwise, vlm.n_chordwise)
 
     scale, clr, ce, F = display_CE_CLR(ax, inviscid_flow_results, hull)
     

@@ -1,6 +1,6 @@
 import numpy as np
 
-from sailing_vlm.solver.coefs import calc_wind_coefs
+from sailing_vlm.solver.coefs import calc_velocity_coefs
 from sailing_vlm.solver.velocity import calculate_app_fs
 
 def calc_moment_arm_in_shifted_csys(cp_points, v_from_old_2_new_csys):
@@ -46,31 +46,21 @@ def determine_vector_from_its_dot_and_cross_product(F, r_dot_F, r_cross_F):
 # # are treated as standard range based loops. Essentially, nested parallelism does not occur."
 # #@numba.jit(nopython=True, parallel=True)
 
-# import problem
-# sails  :List[SailGeometry], 
-def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, M, normals, span_vectors, trailing_edge_info : np.ndarray, leading_edges_info : np.ndarray, gamma_orientation : float = 1.0):
+# cp - center of pressure
+def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, cp, rings, n_spanwise, normals, span_vectors, trailing_edge_info : np.ndarray, leading_edges_info : np.ndarray, gamma_orientation : float = 1.0):
     # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     # f. Secondary Computations: Pressures, Loads, Velocities, Etc
-    #Eq (12.25)
-    ##### WAZNE #####
-    # N - odleglosc miedzy leading a trailing edge
-    # M - rozpietosc skrzydel
-    # import matplotlib.pyplot as plt    
-    # fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    # [ax.plot(rings[i].transpose()[0], rings[i].transpose()[1], rings[i].transpose()[2] , 'xb-') for i in range(3)]
-    _, wind_coefs = calc_wind_coefs(V_app_infw, center_of_pressure, rings, normals, trailing_edge_info, gamma_orientation)
-    V_induced, V_at_cp = calculate_app_fs(V_app_infw, wind_coefs, gamma_magnitude)
+    # Eq (12.25)
+    _, v_ind_coeff = calc_velocity_coefs(V_app_infw, cp, rings, normals, trailing_edge_info, gamma_orientation)
+    V_induced, V_at_cp = calculate_app_fs(V_app_infw, v_ind_coeff, gamma_magnitude)
     
-    
-    
-  
     # if case 1x1 leading_edges_info is False False False False
     # horseshoe_edge_info i True True True True
     # caclulating winds as for trailing edges
     # forces and pressure like "leading edge"
     case1x1 = np.logical_not(np.any(leading_edges_info)) 
     
-    K = center_of_pressure.shape[0]
+    K = cp.shape[0]
     force_xyz = np.zeros((K, 3))
     #numba.prange
     for i in range(K):
@@ -79,10 +69,8 @@ def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rin
         gamma = 0.0
         if leading_edges_info[i] or case1x1:
             gamma = span_vectors[i] * gamma_magnitude[i]
-            gamma2 = span_vectors[i] * gamma_magnitude[i] 
         else:
-            gamma = span_vectors[i] * (gamma_magnitude[i] - gamma_magnitude[i-M])
-            gamma2 = span_vectors[i] * (gamma_magnitude[i] - gamma_magnitude[i-M]) 
+            gamma = span_vectors[i] * (gamma_magnitude[i] - gamma_magnitude[i-n_spanwise])
         force_xyz[i] = rho * np.cross(V_at_cp[i], gamma)
         
     return force_xyz, V_at_cp, V_induced
@@ -95,8 +83,6 @@ def calc_pressure(forces, normals, areas):
 
 
 def is_no_flux_BC_satisfied(V_app_fw, panels, areas, normals):
-
-    N = panels.shape[0]
 
     flux_through_panel = -V_app_fw.dot(normals.transpose()).diagonal()
 

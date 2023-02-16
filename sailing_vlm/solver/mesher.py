@@ -1,10 +1,6 @@
 import numpy as np
-import airfoils
 
-import  matplotlib.pyplot as plt
-from scipy.interpolate import interp1d
 from typing import List
-from sailing_vlm.solver.interpolator import Interpolator
 from sailing_vlm.thin_airfoil.vlm_airfoil import VlmAirfoil
 def discrete_segment(p1, p2, n):
     segment = []
@@ -18,10 +14,6 @@ def discrete_segment(p1, p2, n):
     return np.array(segment)
 
 
-# def interpolate_segemnt(p1, p2, n, interpolation_type, girths, chords):
-#     interpolator = Interpolator(interpolation_type)
-#     interpolator.interpolate_girths(girths, chords, n + 1),
-    
 def make_point_mesh(segment1, segment2, n):
     mesh = []
     # TODO: dodac camber w stylu NACA airfoil --> wzorek z wikipedii
@@ -33,12 +25,17 @@ def make_point_mesh(segment1, segment2, n):
     return np.array(mesh)
 
 
-
-    
-    
-    
-#def make_airfoil_mesh(segment1, segment2, n, distance, camber):
 def make_airfoil_mesh(le_points : List[np.ndarray], grid_size : List[int], chords_vec : np.ndarray, interpolated_distance_from_LE, interpolated_camber) -> np.ndarray:
+    """
+    make_airfoil_mesh make airfoil mesh before any rotation/twist etc
+
+    :param List[np.ndarray] le_points: list with points on leading edge 
+    :param List[int] grid_size: size of grid
+    :param np.ndarray chords_vec: vector with chords
+    :param _type_ interpolated_distance_from_LE: interpolated distance from leading edge
+    :param _type_ interpolated_camber: interpolated camber
+    :return np.ndarray: array with generated mesh
+    """
     le_SW,  le_NW = le_points
     n_chordwise, n_spanwise = grid_size
     le_line = discrete_segment(le_SW, le_NW, n_spanwise)
@@ -59,28 +56,16 @@ def make_airfoil_mesh(le_points : List[np.ndarray], grid_size : List[int], chord
     counter = 0
     for p1, p2 in zip(segment1, segment2):
         p = distance[counter]
-        m = camber[counter]
-        
-        # do tesow dac n=100
-        #n = 100
+        m = camber[counter] 
         foil = VlmAirfoil(m, p, 0.0, n=n)
         
-        #foil.plot(True)
-        
-       
-        
         xs = (p2[0] - p1[0]) * foil.xc + p1[0]
-        ys = (p2[0] - p1[0]) * foil.yc # assert p1[1] = p2[1] = 0 at this stage neither the sail nor the yacht is rotated
-        zs =[p1[2]] * n # assert p1[2] = p2[2] at this stage neither the sail nor the yacht is rotated
-        
+        ys = (p2[0] - p1[0]) * foil.yc 
+        zs =[p1[2]] * n 
+    
         counter += 1
-        
         mesh.append(list(zip(xs,ys, zs)))
 
     return np.array(mesh)
-    # import matplotlib.pyplot as plt  
-    # ax = plt.axes(projection='3d')
-    # ax.plot3D(xs, ys, zs)
-    # ax.plot3D(x_primes, y_primes, zs)
-
+   
     
