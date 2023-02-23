@@ -18,7 +18,7 @@ LLT_twist = "real_twist"  # defines how the Lifting Line discretize the sail twi
 # It can be "sheeting_angle_const" or "average_const" or "real_twist"
 
 # SAILING CONDITIONS
-leeway_deg = 90.    # [deg]
+leeway_deg = 0*5.    # [deg]
 heel_deg = 0*10.     # [deg]
 SOG_yacht = 4.63   # [m/s] yacht speed - speed over ground (leeway is a separate variable)
 tws_ref = 4.63     # [m/s] true wind speed
@@ -42,10 +42,10 @@ rake_deg = 92 #90.  # rake angle [deg]
 mast_LOA = 0.15  # [m]
 
 # INPUT - GEOMETRY OF THE SAIL
+sails_def = 'jib_and_main' # definition of sail set, possible: 'jib' or 'main' or 'jib_and_main'
 main_sail_girths = np.array([0.00, 1./8, 1./4, 1./2, 3./4, 7./8, 1.00])
 main_sail_chords = np.array([4.00, 3.82, 3.64, 3.20, 2.64, 2.32, 2.00])
 main_sail_centerline_twist_deg =  10 + 12. * main_sail_girths  # 0*10 + 0* 12. * main_sail_girths # 
-
 
 # First digit describing maximum camber as percentage of the chord.
 # Second digit describing the distance of maximum camber from the airfoil leading edge in tenths of the chord.
@@ -56,7 +56,6 @@ main_sail_camber_distance_from_LE = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
 
 jib_girths = np.array([0.00, 1./4, 1./2, 3./4, 1.00])
 jib_chords = np.array([3.80, 2.98, 2.15, 1.33, 0.5]) - 0.4
-# jib_chords = 0.5* np.array([1.00, 1.00, 1.00, 1.00, 1.00]) 
 jib_centerline_twist_deg =  (10+5)  + 15. * jib_girths # 0*(10+5)  + 0*15. * jib_girths # 
 
 # REFERENCE CSYS

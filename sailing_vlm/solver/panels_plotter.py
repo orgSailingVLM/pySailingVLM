@@ -201,7 +201,8 @@ def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inle
     # if you have main and jib this list should have 4 elements
     # if only jib - 2 elements
     app_induced_colors = ['peru', 'red', 'peru', 'red']
-    #app_induced_colors = ['peru', 'red']
+    if l == 2:
+        app_induced_colors = ['peru', 'red']
     # check if colors are defined for appaernt + induced wind - above and under water
     assert (len(app_induced_colors) == l and len(app_induced_colors) % 2 == 0), "Bad length of app_induced_colors list"
     color_counter = 0

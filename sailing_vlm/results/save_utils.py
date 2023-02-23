@@ -16,7 +16,7 @@ def save_results_to_file(myvlm, csys_transformations,
                          output_dir="output"):
 
 
-    cp_z_as_girths_all, cp_straight_yacht_all = get_cp_z_as_girths_all(sail_set, csys_transformations, myvlm.center_of_pressure)
+    cp_z_as_girths_all, cp_straight_yacht_all = get_cp_z_as_girths_all(sail_set, csys_transformations, myvlm.cp)
     cp_z_as_girths_all_above, names_all_above = get_cp_z_as_girths_all_above(cp_z_as_girths_all, sail_set)
 
     # take every second element

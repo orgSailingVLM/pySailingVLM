@@ -30,6 +30,9 @@ from contextlib import redirect_stdout
 
 
 def main():
+    
+    
+        
     try:
         assert len(jib_girths) == len(jib_chords), "ERROR!: jib_girths array must have same size as jib_chords!"
         assert len(jib_girths) == len(jib_centerline_twist_deg), "ERROR!: jib_girths array must have same size as jib_centerline_twist_deg!"
@@ -41,7 +44,12 @@ def main():
         assert len(main_sail_girths) == len(main_sail_camber), "ERROR!: main_sail_girths array must have same size as main_sail_camber!"
         assert len(main_sail_girths) == len(main_sail_camber_distance_from_LE), "ERROR!: main_sail_girths array must have same size as main_sail_camber_distance_from_LE!"
         
-    except AssertionError as err:
+        allowed_sails_def = ['jib', 'main', 'jib_and_main']
+        
+        if sails_def not in allowed_sails_def:
+            raise ValueError(f'ERROR!: {sails_def} not allowed as sails_def variable!')
+            
+    except (AssertionError, ValueError) as err:
         print(err)
         sys.exit()
     
@@ -53,31 +61,35 @@ def main():
 
     factory = SailFactory(csys_transformations=csys_transformations, n_spanwise=n_spanwise, n_chordwise=n_chordwise,
                             rake_deg=rake_deg, sheer_above_waterline=sheer_above_waterline)
+    
+    geoms = []
+    if sails_def == 'jib' or sails_def == 'jib_and_main':
+        jib_geometry = factory.make_jib(
+            jib_luff=jib_luff,
+            foretriangle_base=foretriangle_base,
+            foretriangle_height=foretriangle_height,
+            jib_chords=interpolator.interpolate_girths(jib_girths, jib_chords, n_spanwise + 1),
+            sail_twist_deg=interpolator.interpolate_girths(jib_girths, jib_centerline_twist_deg,n_spanwise + 1),
+            mast_LOA=mast_LOA,
+            LLT_twist=LLT_twist, 
+            interpolated_camber=interpolator.interpolate_girths(jib_girths, jib_sail_camber, n_spanwise + 1),
+            interpolated_distance_from_LE=interpolator.interpolate_girths(jib_girths, jib_sail_camber_distance_from_LE, n_spanwise + 1)
+            )
+        geoms.append(jib_geometry)
+        
+    if sails_def == 'main' or sails_def =='jib_and_main':
+        main_sail_geometry = factory.make_main_sail(
+            main_sail_luff=main_sail_luff,
+            boom_above_sheer=boom_above_sheer,
+            main_sail_chords=interpolator.interpolate_girths(main_sail_girths, main_sail_chords, n_spanwise + 1),
+            sail_twist_deg=interpolator.interpolate_girths(main_sail_girths, main_sail_centerline_twist_deg, n_spanwise + 1),
+            LLT_twist=LLT_twist,
+            interpolated_camber=interpolator.interpolate_girths(main_sail_girths, main_sail_camber, n_spanwise + 1),
+            interpolated_distance_from_LE=interpolator.interpolate_girths(main_sail_girths, main_sail_camber_distance_from_LE, n_spanwise + 1)
+            )
+        geoms.append(main_sail_geometry)
 
-    jib_geometry = factory.make_jib(
-        jib_luff=jib_luff,
-        foretriangle_base=foretriangle_base,
-        foretriangle_height=foretriangle_height,
-        jib_chords=interpolator.interpolate_girths(jib_girths, jib_chords, n_spanwise + 1),
-        sail_twist_deg=interpolator.interpolate_girths(jib_girths, jib_centerline_twist_deg,n_spanwise + 1),
-        mast_LOA=mast_LOA,
-        LLT_twist=LLT_twist, 
-        interpolated_camber=interpolator.interpolate_girths(jib_girths, jib_sail_camber, n_spanwise + 1),
-        interpolated_distance_from_LE=interpolator.interpolate_girths(jib_girths, jib_sail_camber_distance_from_LE, n_spanwise + 1)
-        )
-
-    main_sail_geometry = factory.make_main_sail(
-        main_sail_luff=main_sail_luff,
-        boom_above_sheer=boom_above_sheer,
-        main_sail_chords=interpolator.interpolate_girths(main_sail_girths, main_sail_chords, n_spanwise + 1),
-        sail_twist_deg=interpolator.interpolate_girths(main_sail_girths, main_sail_centerline_twist_deg, n_spanwise + 1),
-        LLT_twist=LLT_twist,
-        interpolated_camber=interpolator.interpolate_girths(main_sail_girths, main_sail_camber, n_spanwise + 1),
-        interpolated_distance_from_LE=interpolator.interpolate_girths(main_sail_girths, main_sail_camber_distance_from_LE, n_spanwise + 1)
-        )
-
-    sail_set = SailSet([jib_geometry, main_sail_geometry])
-    #sail_set = SailSet([main_sail_geometry])
+    sail_set = SailSet(geoms)
 
     wind = ExpWindProfile(
         alpha_true_wind_deg, tws_ref, SOG_yacht,
