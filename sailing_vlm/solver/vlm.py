@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -71,6 +72,14 @@ class Vlm:
         self.force, self.V_app_fs_at_cp, self.V_induced_at_cp = forces.calc_force_wrapper(self.inlet_conditions.V_app_infs, self.gamma_magnitude, self.rho, self.cp, self.rings, self.n_spanwise, self.normals, self.span_vectors, self.trailing_edge_info, self.leading_edge_info, self.gamma_orientation)
         self.pressure = forces.calc_pressure(self.force, self.normals, self.areas)
 
+        try:
+            pressure_signs = np.sign(self.pressure).astype(int)
+            result = np.all(pressure_signs == pressure_signs[0])
+            if not result:
+                raise ValueError('ERROR!: Pressure signs are not the same, check input data!\nKeep in mind that this program generates camber in one direction only.')
+        except ValueError as err:
+            print(err)
+            sys.exit()
 
         #display_panels_or_rings(self.rings, self.pressure, self.leading_mid_points, self.trailing_mid_points)
         # comment this section if debugging camber
