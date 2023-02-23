@@ -26,8 +26,8 @@ class VlmAirfoil:
    
     def __check_naca_params(self):
         try:
-            if not(self._m <= 0.095 and self._m >= 0):
-                raise ValueError('Max camber must be between 0 and 9.5%!')
+            if not(self._m <= 0.3 and self._m >= 0):
+                raise ValueError('Max camber must be between 0 and 30%!')
             
             if not(self._p <= 0.9 and self._p >= 0):
                 raise ValueError('Max camber position must be between 0 and 90%!')

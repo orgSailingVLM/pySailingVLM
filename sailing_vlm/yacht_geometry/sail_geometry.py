@@ -106,12 +106,13 @@ class SailGeometry(BaseGeometry, ABC):
         
             print(f"Applying initial_sail_twist_deg to {self.name} -  Lifting Line, mode: {LLT_twist}")
             twist_dict = {
-                'sheeting_angle_const': np.full(len(initial_sail_twist_deg), np.average(initial_sail_twist_deg)),
+                'sheeting_angle_const': np.full(len(initial_sail_twist_deg), np.min(initial_sail_twist_deg)),
                 'average_const': np.full(len(initial_sail_twist_deg), np.average(initial_sail_twist_deg)),
                 'real_twist': initial_sail_twist_deg
             }
             sail_twist_deg = twist_dict[LLT_twist]
             sail_twist_deg = np.hstack([initial_sail_twist_deg] * (sh1))
+            sail_twist_deg = sail_twist_deg.reshape(sh1, sh0).transpose().flatten()
 
             p2 = mesh[::sh1][-1]
             p1 = mesh[::sh1][0]
@@ -121,7 +122,7 @@ class SailGeometry(BaseGeometry, ABC):
            
             p2_u = mesh_underwater[::sh1][-1]
             p1_u = mesh_underwater[::sh1][0]
-            trmesh_underwater = self.rotate_points_around_le(mesh_underwater, p1_u, p2_u, sail_twist_deg)
+            trmesh_underwater = self.rotate_points_around_le(mesh_underwater, p1_u, p2_u, np.flip(sail_twist_deg))
             # check if points on forestay are not rotated (they are on axis of rotation)
             np.testing.assert_almost_equal(trmesh_underwater[::sh1], mesh_underwater[::sh1])
 
