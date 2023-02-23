@@ -28,8 +28,23 @@ from contextlib import redirect_stdout
 ### GEOMETRY DEFINITION ###
 
 
+
 def main():
+    try:
+        assert len(jib_girths) == len(jib_chords), "ERROR!: jib_girths array must have same size as jib_chords!"
+        assert len(jib_girths) == len(jib_centerline_twist_deg), "ERROR!: jib_girths array must have same size as jib_centerline_twist_deg!"
+        assert len(jib_girths) == len(jib_sail_camber), "ERROR!: jib_girths array must have same size as jib_sail_camber!"
+        assert len(jib_girths) == len(jib_sail_camber_distance_from_LE), "ERROR!: jib_girths array must have same size as jib_sail_camber_distance_from_LE!"
         
+        assert len(main_sail_girths) == len(main_sail_chords), "ERROR!: main_sail_girths array must have same size as main_sail_chords!"
+        assert len(main_sail_girths) == len(main_sail_centerline_twist_deg), "ERROR!: main_sail_girths array must have same size as main_sail_centerline_twist_deg!"
+        assert len(main_sail_girths) == len(main_sail_camber), "ERROR!: main_sail_girths array must have same size as main_sail_camber!"
+        assert len(main_sail_girths) == len(main_sail_camber_distance_from_LE), "ERROR!: main_sail_girths array must have same size as main_sail_camber_distance_from_LE!"
+        
+    except AssertionError as err:
+        print(err)
+        sys.exit()
+    
     interpolator = Interpolator(interpolation_type)
 
     csys_transformations = CSYS_transformations(
