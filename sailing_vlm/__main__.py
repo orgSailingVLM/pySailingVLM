@@ -1,12 +1,14 @@
 import timeit
 import shutil
 
+from varname import nameof
+
 from sailing_vlm.yacht_geometry.sail_factory import SailFactory
 from sailing_vlm.yacht_geometry.sail_geometry import SailSet
 from sailing_vlm.rotations.csys_transformations import CSYS_transformations
 from sailing_vlm.solver.interpolator import Interpolator
 from sailing_vlm.yacht_geometry.hull_geometry import HullGeometry
-from sailing_vlm.inlet.winds import ExpWindProfile
+from sailing_vlm.inlet.winds import ExpWindProfile, FlatWindProfile, LogWindProfile
 
 from sailing_vlm.results.save_utils import save_results_to_file
 from sailing_vlm.solver.panels_plotter import display_panels_xyz_and_winds, display_panels_or_rings
@@ -25,40 +27,69 @@ import time
 import sys, os
 from pstats import SortKey
 from contextlib import redirect_stdout
-### GEOMETRY DEFINITION ###
 
 
+def check_var(var: str, allowed_vars : list, var_name : str):
+    """
+    check_var check if variable is allowed
 
-def main():
-    
-    
-        
+    :param str var: variable to check
+    :param list allowed_vars: list with allowed variables
+    :raises ValueError: raises error message for user
+    """
+    if var not in allowed_vars:
+        raise ValueError(f'ERROR!: {var} not allowed as {var_name} variable!')
+
+def assert_array_input(arr1 : np.array, arr2 : np.array, name_arr1: str, name_arr2 : str):
+    """
+    assert_array_input check if arrays hase the same length and print error message
+
+    :param np.array arr1: arr1
+    :param np.array arr2: arr2
+    :param str name_arr1: name of arr1
+    :param str name_arr2: name of arr2
+    """
+    assert len(arr1) == len(arr2), f'ERROR!: {name_arr1} array must have same size as {name_arr2}!'
+
+def check_input_variables():
     try:
-        assert len(jib_girths) == len(jib_chords), "ERROR!: jib_girths array must have same size as jib_chords!"
-        assert len(jib_girths) == len(jib_centerline_twist_deg), "ERROR!: jib_girths array must have same size as jib_centerline_twist_deg!"
-        assert len(jib_girths) == len(jib_sail_camber), "ERROR!: jib_girths array must have same size as jib_sail_camber!"
-        assert len(jib_girths) == len(jib_sail_camber_distance_from_LE), "ERROR!: jib_girths array must have same size as jib_sail_camber_distance_from_LE!"
+        assert_array_input(jib_girths, jib_chords, 'jib_girths', 'job_chords')
+        assert_array_input(jib_girths, jib_centerline_twist_deg, 'jib_girths', 'jib_centerline_twist_deg')
+        assert_array_input(jib_girths, jib_sail_camber, 'jib_girths', 'jib_sail_camber')
+        assert_array_input(jib_girths, jib_sail_camber_distance_from_LE, 'jib_girths', 'jib_sail_camber_distance_from_LE')
         
-        assert len(main_sail_girths) == len(main_sail_chords), "ERROR!: main_sail_girths array must have same size as main_sail_chords!"
-        assert len(main_sail_girths) == len(main_sail_centerline_twist_deg), "ERROR!: main_sail_girths array must have same size as main_sail_centerline_twist_deg!"
-        assert len(main_sail_girths) == len(main_sail_camber), "ERROR!: main_sail_girths array must have same size as main_sail_camber!"
-        assert len(main_sail_girths) == len(main_sail_camber_distance_from_LE), "ERROR!: main_sail_girths array must have same size as main_sail_camber_distance_from_LE!"
+        assert_array_input(main_sail_girths, main_sail_chords, 'main_sail_girths', 'main_sail_chords')
+        assert_array_input(main_sail_girths, main_sail_centerline_twist_deg, 'main_sail_girths', 'main_sail_centerline_twist_deg')
+        assert_array_input(main_sail_girths, main_sail_camber, 'main_sail_girths', 'main_sail_camber')
+        assert_array_input(main_sail_girths, main_sail_camber_distance_from_LE, 'main_sail_girths', 'main_sail_camber_distance_from_LE')
         
-        allowed_sails_def = ['jib', 'main', 'jib_and_main']
+        check_var(sails_def, ['jib', 'main', 'jib_and_main'], 'sails_def')
+        check_var(interpolation_type, ['spline', 'linear'], 'interpolation_type')
+        check_var(LLT_twist, ['real_twist', 'sheeting_angle_const', 'average_const'], 'LLT_twist')
+        check_var(wind_profile, ['exponential', 'flat', 'logarithmic'], 'wind_profile')
         
-        if sails_def not in allowed_sails_def:
-            raise ValueError(f'ERROR!: {sails_def} not allowed as sails_def variable!')
-            
     except (AssertionError, ValueError) as err:
         print(err)
         sys.exit()
-    
+
+def set_wind():
+    if wind_profile == 'exponential':
+        wind = ExpWindProfile(
+            alpha_true_wind_deg, tws_ref, SOG_yacht,
+            exp_coeff=wind_exp_coeff,
+            reference_measurment_height=wind_reference_measurment_height,
+            reference_water_level_for_wind_profile=reference_water_level_for_wind_profile)
+    elif wind_profile == 'flat':
+        wind = FlatWindProfile(alpha_true_wind_deg, tws_ref, SOG_yacht)
+    else:
+        wind = LogWindProfile(
+            alpha_true_wind_deg, tws_ref, SOG_yacht,
+            roughness=roughness,
+            reference_measurment_height=wind_reference_measurment_height)
+    return wind
+
+def generate_sail_set(csys_transformations : CSYS_transformations) -> SailSet:
     interpolator = Interpolator(interpolation_type)
-
-    csys_transformations = CSYS_transformations(
-        heel_deg, leeway_deg,
-        v_from_original_xyz_2_reference_csys_xyz=reference_level_for_moments)
-
     factory = SailFactory(csys_transformations=csys_transformations, n_spanwise=n_spanwise, n_chordwise=n_chordwise,
                             rake_deg=rake_deg, sheer_above_waterline=sheer_above_waterline)
     
@@ -89,18 +120,19 @@ def main():
             )
         geoms.append(main_sail_geometry)
 
-    sail_set = SailSet(geoms)
-
-    wind = ExpWindProfile(
-        alpha_true_wind_deg, tws_ref, SOG_yacht,
-        exp_coeff=wind_exp_coeff,
-        reference_measurment_height=wind_reference_measurment_height,
-        reference_water_level_for_wind_profile=reference_water_level_for_wind_profile)
-
-
-    hull = HullGeometry(sheer_above_waterline, foretriangle_base, csys_transformations, center_of_lateral_resistance_upright)
-
+    return SailSet(geoms)
     
+def main():
+    
+    check_input_variables()
+
+    csys_transformations = CSYS_transformations(
+        heel_deg, leeway_deg,
+        v_from_original_xyz_2_reference_csys_xyz=reference_level_for_moments)
+
+    sail_set = generate_sail_set(csys_transformations)
+    wind = set_wind()
+    hull = HullGeometry(sheer_above_waterline, foretriangle_base, csys_transformations, center_of_lateral_resistance_upright)
     myvlm = Vlm(sail_set.panels, n_chordwise, n_spanwise, rho, wind, sail_set.trailing_edge_info, sail_set.leading_edge_info)
 
 
@@ -110,8 +142,7 @@ def main():
 
     print("Preparing visualization.")   
     display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=True)
-    #display_panels_or_rings(myvlm.rings, myvlm.pressure, myvlm.leading_mid_points, myvlm.trailing_mid_points)
-    df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, sail_set, output_dir_name)
+    df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, sail_set, output_dir_name, file_name)
 
     
     shutil.copy(os.path.join(case_dir, case_name), os.path.join(output_dir_name, case_name))

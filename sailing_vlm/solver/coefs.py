@@ -40,10 +40,12 @@ def calc_velocity_coefs(V_app_infw, points_for_calculations, rings, normals, tra
             
     return coefs, v_ind_coeff
 
-
+# do wywalenia pozniej
 def get_leading_edge_mid_point(p2: np.ndarray, p3: np.ndarray) -> np.ndarray:
     return (p2 + p3) / 2.
 
+
+# do wywalenia pozniej
 def get_trailing_edge_mid_points(p1: np.ndarray, p4: np.ndarray) -> np.ndarray:
     return (p4 + p1) / 2.
 
@@ -103,9 +105,9 @@ def calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(p
         ns[idx] = n
     return ns, ctr_p, cp, rings, span_vectors, leading_mid_points, trailing_edge_mid_points
 
-def calculate_stuff(panels: np.ndarray, trailing_edge_info : np.ndarray, gamma_orientation : float, n_chordwise : int, n_spanwise: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def calculaye_vlm_variables(panels: np.ndarray, trailing_edge_info : np.ndarray, gamma_orientation : float, n_chordwise : int, n_spanwise: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
-    calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points _summary_
+    calculaye_vlm_variables calculate normals, control points, center of pressure, rings, span vectors, leading mid points, trailing edge mid points
 
     :param np.ndarray panels: panels
     :param float gamma_orientation: gamma orientation
@@ -114,7 +116,6 @@ def calculate_stuff(panels: np.ndarray, trailing_edge_info : np.ndarray, gamma_o
     :return Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]: normals, collocation points, center of pressure, rings, span vectors, leading mid points, trailing edge mid points
     """
     K = panels.shape[0]
-  
     G = int (K / (n_chordwise * n_spanwise))
     panels_splitted = np.array_split(panels, G)
     trailing_edge_info_splitted = np.array_split(trailing_edge_info, G)
@@ -198,36 +199,12 @@ def calculate_stuff(panels: np.ndarray, trailing_edge_info : np.ndarray, gamma_o
     
     return ns, ctr_p, cp, rings, span_vectors, leading_mid_points, trailing_edge_mid_points
 
-# sails = [jib, main]
+
 def calculate_RHS(V_app_infw, normals):
     RHS = -V_app_infw.dot(normals.transpose()).diagonal()
     RHS = np.asarray(RHS)
     return RHS
 
-# tak bylo w starej funkcji:
-# # numba tutaj nie rozumie typow -> do poprawki
-# #@numba.jit(nopython=True)
-# #@numba.njit(parallel=True)
-
-# uzywac oddzielnie calc_velocity_coefs i calculate_RHS
-#  inaczej to jest wieksze zamiesznaie 
-# def get_influence_coefficients_spanwise(collocation_points: np.ndarray, rings: np.ndarray, normals: np.ndarray, V_app_infw: np.ndarray, trailing_edge_info : np.ndarray, gamma_orientation : float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-#     """
-#     get_influence_coefficients_spanwise calculate coefs spanwise
-
-#     :param np.ndarray collocation_points: collocation points
-#     :param np.ndarray rings: rings
-#     :param np.ndarray normals: normals
-#     :param np.ndarray V_app_infw: wind apparent infinite sail velocity
-#     :param np.ndarray trailing_edge_info: if panel is hourseshoe, ten horseshoe_info is True 
-#     :param float gamma_orientation: gamma orientation, defaults to 1.0
-#     :return Tuple[np.ndarray, np.ndarray, np.ndarray]: coefs, RHS, wind coefs
-#     """
-
-#     coefs, v_ind_coeff = calc_velocity_coefs(V_app_infw, collocation_points, rings, normals, trailing_edge_info, gamma_orientation)
-#     RHS = calculate_RHS(V_app_infw, normals)
-
-#     return coefs, RHS, v_ind_coeff
 
 def solve_eq(coefs: np.ndarray, RHS: np.ndarray) -> np.ndarray:
     """

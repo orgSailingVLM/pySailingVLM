@@ -20,3 +20,4 @@ PyQt5  # python to avoid blurry figures on Windows
 # pyqt # anaconda?
 
 numba
+varname

@@ -8,7 +8,7 @@ case_name = os.path.basename(__file__)  # get name of the current file
 case_dir = os.path.dirname(os.path.realpath(__file__))  # get dir of the current file
 time_stamp = time.strftime("%Y-%m-%d_%Hh%Mm%Ss")
 output_dir_name = os.path.join("results_example_jib_and_mainsail_vlm", time_stamp)
-
+file_name = 'my_fancy_results' # name of xlsx excel file
 
 # SOLVER SETTINGS
 n_spanwise =  2 # No of control points (above the water) per sail, recommended: 50
@@ -30,6 +30,8 @@ reference_water_level_for_wind_profile = -0.  # [m] this is an attempt to mimick
 wind_exp_coeff = 0.1428  # [-] coefficient to determine the exponential wind profile
 wind_reference_measurment_height = 10.  # [m] reference height for exponential wind profile
 rho = 1.225  # air density [kg/m3]
+wind_profile = 'exponential' # allowed: 'exponential' or 'flat' or 'logarithmic'
+roughness = 0.05 # for logarithmic profile only
 
 # GEOMETRY OF THE RIG
 main_sail_luff = 12.4  # [m]
@@ -42,7 +44,7 @@ rake_deg = 92 #90.  # rake angle [deg]
 mast_LOA = 0.15  # [m]
 
 # INPUT - GEOMETRY OF THE SAIL
-sails_def = 'jib_and_main' # definition of sail set, possible: 'jib' or 'main' or 'jib_and_main'
+sails_def = 'jib' # definition of sail set, possible: 'jib' or 'main' or 'jib_and_main'
 main_sail_girths = np.array([0.00, 1./8, 1./4, 1./2, 3./4, 7./8, 1.00])
 main_sail_chords = np.array([4.00, 3.82, 3.64, 3.20, 2.64, 2.32, 2.00])
 main_sail_centerline_twist_deg =  10 + 12. * main_sail_girths  # 0*10 + 0* 12. * main_sail_girths # 

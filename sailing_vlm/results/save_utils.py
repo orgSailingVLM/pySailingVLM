@@ -9,13 +9,10 @@ from sailing_vlm.yacht_geometry.sail_geometry import SailSet
 
 from sailing_vlm.solver.additional_functions import get_cp_z_as_girths_all, get_cp_z_as_girths_all_above
 
-# jak juz bedzie dzialac to zrzucic jakis przypadek z excela i porownywac w unittestach
 def save_results_to_file(myvlm, csys_transformations,
                          inviscid_flow_results: InviscidFlowResults,
                          sail_set: SailSet,
-                         output_dir="output"):
-
-
+                         output_dir="output", file_name='results'):
     cp_z_as_girths_all, cp_straight_yacht_all = get_cp_z_as_girths_all(sail_set, csys_transformations, myvlm.cp)
     cp_z_as_girths_all_above, names_all_above = get_cp_z_as_girths_all_above(cp_z_as_girths_all, sail_set)
 
@@ -24,28 +21,24 @@ def save_results_to_file(myvlm, csys_transformations,
     a = tuple(np.array_split(cp_straight_yacht_all, n)[::2])
     cp_straight_yacht_above = np.concatenate(a) 
     
-
     df_inlet_conditions = np.array_split(myvlm.inlet_conditions.to_df_full(sail_set.sails[0].csys_transformations), 2)
     df_inlet_conditions_above = df_inlet_conditions[0]
     
-
     df_inviscid_flow = np.array_split(inviscid_flow_results.to_df_full(), 2)
     df_inviscid_flow_above = df_inviscid_flow[0]
-
 
     df_cp_straight_yacht_above = pd.DataFrame(cp_straight_yacht_above[:, 2], columns=['cp_points_upright.z'])
     df_cp_z_as_girths_all_above = pd.DataFrame(cp_z_as_girths_all_above, columns=['girths'])
     df_names_all_above = pd.DataFrame(names_all_above, columns=['sail_name'])
 
-    
-    list_of_df_my = [df_inviscid_flow_above, df_inlet_conditions_above,df_cp_straight_yacht_above, df_cp_z_as_girths_all_above, df_names_all_above ]
+    list_of_df = [df_inviscid_flow_above, df_inlet_conditions_above,df_cp_straight_yacht_above, df_cp_z_as_girths_all_above, df_names_all_above ]
 
     df_inviscid_flow_integral = inviscid_flow_results.to_df_integral()
     df_inlet_conditions_integral = myvlm.inlet_conditions.winds.to_df_integral(sail_set.sails[0].csys_transformations)
     
-    df_merged = save_to_excel(output_dir, list_of_df_my, "res_my.xlsx", df_inviscid_flow_integral, df_inlet_conditions_integral)
+    file_name = file_name + '.xlsx'
+    df_merged = save_to_excel(output_dir, list_of_df, file_name, df_inviscid_flow_integral, df_inlet_conditions_integral)
    
-
     return df_merged, df_inviscid_flow_integral, df_inlet_conditions_integral
     
 
@@ -100,7 +93,6 @@ def save_to_excel(output_dir : str, list_of_df : List[pd.DataFrame], output_file
             column_len = max(column_len, len(col)) + 2  # + padding
 
             worksheet.set_column(i, i, column_len, cell_format=format_general)
-            
             
             if "COG" in col:
                 # workaround because set_column finction do not allow to do range cell formatting

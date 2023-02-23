@@ -115,7 +115,7 @@ def get_cp_z_as_girths_all_above(cp_z_as_girths_all : np.ndarray, sail_set : Sai
     # [::2] gets every second element from array z_splitted
     cp_z_as_girths_all_above = np.asarray(z_splitted[::2]).flatten()
     # cp_z_as_girths_all_above size
-    repeat = int(cp_z_as_girths_all_above.shape[0] / 2)
+    repeat = int(cp_z_as_girths_all_above.shape[0] / len(sail_set.sails))
     names = np.array([])
     
     for sail in sail_set.sails:
