@@ -56,12 +56,12 @@ def check_input_variables():
         assert_array_input(jib_girths, jib_chords, 'jib_girths', 'job_chords')
         assert_array_input(jib_girths, jib_centerline_twist_deg, 'jib_girths', 'jib_centerline_twist_deg')
         assert_array_input(jib_girths, jib_sail_camber, 'jib_girths', 'jib_sail_camber')
-        assert_array_input(jib_girths, jib_sail_camber_distance_from_LE, 'jib_girths', 'jib_sail_camber_distance_from_LE')
+        assert_array_input(jib_girths, jib_sail_camber_distance_from_luff, 'jib_girths', 'jib_sail_camber_distance_from_luff')
         
         assert_array_input(main_sail_girths, main_sail_chords, 'main_sail_girths', 'main_sail_chords')
         assert_array_input(main_sail_girths, main_sail_centerline_twist_deg, 'main_sail_girths', 'main_sail_centerline_twist_deg')
         assert_array_input(main_sail_girths, main_sail_camber, 'main_sail_girths', 'main_sail_camber')
-        assert_array_input(main_sail_girths, main_sail_camber_distance_from_LE, 'main_sail_girths', 'main_sail_camber_distance_from_LE')
+        assert_array_input(main_sail_girths, main_sail_camber_distance_from_luff, 'main_sail_girths', 'main_sail_camber_distance_from_luff')
         
         check_var(sails_def, ['jib', 'main', 'jib_and_main'], 'sails_def')
         check_var(interpolation_type, ['spline', 'linear'], 'interpolation_type')
@@ -104,7 +104,7 @@ def generate_sail_set(csys_transformations : CSYS_transformations) -> SailSet:
             mast_LOA=mast_LOA,
             LLT_twist=LLT_twist, 
             interpolated_camber=interpolator.interpolate_girths(jib_girths, jib_sail_camber, n_spanwise + 1),
-            interpolated_distance_from_LE=interpolator.interpolate_girths(jib_girths, jib_sail_camber_distance_from_LE, n_spanwise + 1)
+            interpolated_distance_from_luff=interpolator.interpolate_girths(jib_girths, jib_sail_camber_distance_from_luff, n_spanwise + 1)
             )
         geoms.append(jib_geometry)
         
@@ -116,7 +116,7 @@ def generate_sail_set(csys_transformations : CSYS_transformations) -> SailSet:
             sail_twist_deg=interpolator.interpolate_girths(main_sail_girths, main_sail_centerline_twist_deg, n_spanwise + 1),
             LLT_twist=LLT_twist,
             interpolated_camber=interpolator.interpolate_girths(main_sail_girths, main_sail_camber, n_spanwise + 1),
-            interpolated_distance_from_LE=interpolator.interpolate_girths(main_sail_girths, main_sail_camber_distance_from_LE, n_spanwise + 1)
+            interpolated_distance_from_luff=interpolator.interpolate_girths(main_sail_girths, main_sail_camber_distance_from_luff, n_spanwise + 1)
             )
         geoms.append(main_sail_geometry)
 

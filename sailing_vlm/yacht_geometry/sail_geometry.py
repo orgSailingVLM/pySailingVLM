@@ -23,7 +23,7 @@ class SailGeometry(BaseGeometry, ABC):
     def __init__(self, head_mounting: np.array, tack_mounting: np.array,
                  csys_transformations: CSYS_transformations,
                  n_spanwise=10, n_chordwise=1, chords=None,
-                 initial_sail_twist_deg=None, name=None, LLT_twist=None,  interpolated_camber=None, interpolated_distance_from_LE=None
+                 initial_sail_twist_deg=None, name=None, LLT_twist=None,  interpolated_camber=None, interpolated_distance_from_luff=None
                  ):
 
         self.__n_spanwise = n_spanwise  # number of panels (span-wise) - above the water
@@ -80,10 +80,10 @@ class SailGeometry(BaseGeometry, ABC):
         fchords_vec = np.flip(chords_vec, axis=0)
         
         #### state "zero"
-        mesh = make_airfoil_mesh([le_SW, le_NW],[self.__n_chordwise, self.__n_spanwise],chords_vec, interpolated_distance_from_LE, interpolated_camber)
+        mesh = make_airfoil_mesh([le_SW, le_NW],[self.__n_chordwise, self.__n_spanwise],chords_vec, interpolated_distance_from_luff, interpolated_camber)
         sh0, sh1, sh2 = mesh.shape
         mesh = mesh.reshape(sh0*sh1, sh2)
-        mesh_underwater = make_airfoil_mesh([le_SW_underwater, le_NW_underwater],[self.__n_chordwise, self.__n_spanwise],fchords_vec, interpolated_distance_from_LE, interpolated_camber).reshape(sh0*sh1, sh2)
+        mesh_underwater = make_airfoil_mesh([le_SW_underwater, le_NW_underwater],[self.__n_chordwise, self.__n_spanwise],fchords_vec, interpolated_distance_from_luff, interpolated_camber).reshape(sh0*sh1, sh2)
         mesh_underwater = mesh_underwater.reshape(sh0*sh1, sh2)
 
         # rotation

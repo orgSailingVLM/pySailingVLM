@@ -105,7 +105,7 @@ def calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(p
         ns[idx] = n
     return ns, ctr_p, cp, rings, span_vectors, leading_mid_points, trailing_edge_mid_points
 
-def calculaye_vlm_variables(panels: np.ndarray, trailing_edge_info : np.ndarray, gamma_orientation : float, n_chordwise : int, n_spanwise: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def calculate_vlm_variables(panels: np.ndarray, trailing_edge_info : np.ndarray, gamma_orientation : float, n_chordwise : int, n_spanwise: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     calculaye_vlm_variables calculate normals, control points, center of pressure, rings, span vectors, leading mid points, trailing edge mid points
 

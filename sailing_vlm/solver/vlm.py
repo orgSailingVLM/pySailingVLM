@@ -60,7 +60,7 @@ class Vlm:
         # N = chordwise, linia laczaca leading i trailing
         self.areas = panels.get_panels_area(self.panels)
         #self.normals, self.ctr_p, self.cp, self.rings, self.span_vectors, self.leading_mid_points, self.trailing_mid_points = coefs.calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(self.panels, self.gamma_orientation)
-        self.normals, self.ctr_p, self.cp, self.rings, self.span_vectors, self.leading_mid_points, self.trailing_mid_points = coefs.calculate_stuff(self.panels, self.trailing_edge_info, self.gamma_orientation, self.n_chordwise, self.n_spanwise)
+        self.normals, self.ctr_p, self.cp, self.rings, self.span_vectors, self.leading_mid_points, self.trailing_mid_points = coefs.calculate_vlm_variables(self.panels, self.trailing_edge_info, self.gamma_orientation, self.n_chordwise, self.n_spanwise)
         self.inlet_conditions = InletConditions(self.wind, self.rho, self.cp)
         self.coeff, self.v_ind_coeff = coefs.calc_velocity_coefs(self.inlet_conditions.V_app_infs, self.ctr_p, self.rings, self.normals, self.trailing_edge_info, self.gamma_orientation)
         self.RHS = coefs.calculate_RHS(self.inlet_conditions.V_app_infs, self.normals)
