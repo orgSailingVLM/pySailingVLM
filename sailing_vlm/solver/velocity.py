@@ -109,6 +109,35 @@ def vortex_horseshoe(p: np.array, B: np.array, C: np.array, V_app_infw: np.ndarr
     return q_ind
 
 # @numba.jit(nopython=True, cache=True) daje ten sam wynik co:
+@numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True, cache=True) 
+def vortex_horseshoe_v2(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array, V_app_infw : np.ndarray,
+                gamma: float = 1.0) -> np.array:
+    """
+    vortex_ring vortex ring
+
+    :param np.array p: point form which calculation is done
+    :param np.array A: point A
+    :param np.array B: point B
+    :param np.array C: point C
+    :param np.array D: point D
+    :param np.ndarray V_app_infw: apparent wind velocity for infinite sail
+    :param float gamma: gamma orientation, defaults to 1.0
+    :return np.array: velocity component
+    """
+    sub1 = vortex_line(p, A, B, gamma)
+    sub2 = vortex_line(p, B, C, gamma)
+    sub3 = vortex_line(p, C, D, gamma)
+    #sub4 = vortex_line(p, D, A, gamma)
+    # wczesniej od C teraz od D
+    inf_line_1 = vortex_infinite_line(p, D, V_app_infw, gamma)
+    # wczesniej od B teraz od A
+    inf_line_2 = vortex_infinite_line(p, A, V_app_infw, -1.0 * gamma)
+    
+    q_ind = sub1 + sub2 + sub3 + inf_line_1 + inf_line_2
+    return q_ind
+
+
+# @numba.jit(nopython=True, cache=True) daje ten sam wynik co:
 @numba.jit(numba.float64[::1](numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.float64[::1], numba.optional(numba.float64)), nopython=True, debug = True, cache=True) 
 def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
                 gamma: float = 1.0) -> np.array:
@@ -123,9 +152,7 @@ def vortex_ring(p: np.array, A: np.array, B: np.array, C: np.array, D: np.array,
     :param float gamma: gamma orientation, defaults to 1.0
     :return np.array: velocity component
     """
-
     sub1 = vortex_line(p, A, B, gamma)
-    #assert not vortex_line.nopython_signatures
     sub2 = vortex_line(p, B, C, gamma)
     sub3 = vortex_line(p, C, D, gamma)
     sub4 = vortex_line(p, D, A, gamma)
