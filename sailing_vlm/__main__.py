@@ -14,7 +14,7 @@ from sailing_vlm.results.save_utils import save_results_to_file
 from sailing_vlm.solver.panels_plotter import display_panels_xyz_and_winds, display_panels_or_rings
 
 
-from sailing_vlm.results.inviscid_flow import prepare_inviscid_flow_results_vlm
+from sailing_vlm.results.inviscid_flow import InviscidFlowResults
 
 from sailing_vlm.examples.input_data.jib_and_main_sail_vlm_case import *
 from sailing_vlm.solver.vlm import Vlm
@@ -25,8 +25,7 @@ import numpy as np
 import cProfile
 import time
 import sys, os
-from pstats import SortKey
-from contextlib import redirect_stdout
+
 
 
 def check_var(var: str, allowed_vars : list, var_name : str):
@@ -135,8 +134,8 @@ def main():
     hull = HullGeometry(sheer_above_waterline, foretriangle_base, csys_transformations, center_of_lateral_resistance_upright)
     myvlm = Vlm(sail_set.panels, n_chordwise, n_spanwise, rho, wind, sail_set.trailing_edge_info, sail_set.leading_edge_info)
 
-
-    inviscid_flow_results = prepare_inviscid_flow_results_vlm(sail_set, csys_transformations, myvlm)
+    inviscid_flow_results = InviscidFlowResults(sail_set, csys_transformations, myvlm)
+    
     inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
 
 

@@ -1,12 +1,12 @@
 import timeit
 import numpy as np
-from unittest import TestCase
+
 
 from sailing_vlm.rotations.geometry_calc import rotation_matrix
 from sailing_vlm.solver.panels import make_panels_from_le_te_points, get_panels_area
 from sailing_vlm.solver.coefs import get_CL_CD_free_wing, get_vlm_CL_CD_free_wing
 from sailing_vlm.solver.coefs import calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points, \
-    get_influence_coefficients_spanwise, solve_eq
+                                solve_eq, calculate_RHS, calc_velocity_coefs
 
 from sailing_vlm.solver.velocity import calculate_app_fs 
 from sailing_vlm.solver.forces import is_no_flux_BC_satisfied, calc_force_wrapper
@@ -81,10 +81,11 @@ CL_expected, CD_expected = get_CL_CD_free_wing(AR, AoA_deg)
 areas = get_panels_area(panels) 
 normals, collocation_points, center_of_pressure, rings, span_vectors, _, _ = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(panels, gamma_orientation)
 
-coefs, RHS, wind_coefs = get_influence_coefficients_spanwise(collocation_points, rings, normals, V_app_infw, trailing_edge_info, gamma_orientation)
+coefs, v_ind_coeff = calc_velocity_coefs(V_app_infw, collocation_points, rings, normals, trailing_edge_info, gamma_orientation)
+RHS = calculate_RHS(V_app_infw, normals)
 gamma_magnitude = solve_eq(coefs, RHS)
 
-_,  V_app_fs_at_ctrl_p = calculate_app_fs(V_app_infw,  wind_coefs,  gamma_magnitude)
+_,  V_app_fs_at_ctrl_p = calculate_app_fs(V_app_infw,  v_ind_coeff,  gamma_magnitude)
 assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, panels, areas, normals)
 
 force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, gamma_orientation)

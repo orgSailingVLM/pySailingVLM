@@ -11,15 +11,6 @@ from sailing_vlm.solver.additional_functions import extract_above_water_quantiti
 from sailing_vlm.solver.vlm import Vlm
 
 
-def prepare_inviscid_flow_results_vlm(
-                                      sail_set: SailSet,
-                                      csys_transformations: CSYS_transformations, myvlm : Vlm):
-
-    inviscid_flow_results = InviscidFlowResults(sail_set, csys_transformations, myvlm)
-    
-    return inviscid_flow_results
-
-
 class InviscidFlowResults:
     def __init__(self,
                  sail_set: SailSet,
