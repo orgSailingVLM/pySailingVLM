@@ -4,7 +4,7 @@ import numpy as np
 
 from sailing_vlm.rotations.geometry_calc import rotation_matrix
 from sailing_vlm.solver.panels import make_panels_from_le_te_points, get_panels_area
-from sailing_vlm.solver.coefs import get_CL_CD_free_wing, get_vlm_CL_CD_free_wing
+from sailing_vlm.solver.coefs import get_CL_CD_free_wing, get_vlm_CL_CD_free_wing, get_vlm_CL_CD_free_wing_v2
 from sailing_vlm.solver.coefs import calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points, \
                                 solve_eq, calculate_RHS, calc_velocity_coefs
 
@@ -35,7 +35,7 @@ class Aircraft:
 
         te_NE = np.array([self.chord_length, self.half_wing_span, 0.])   # trailing edge North - East coordinate
         te_SE = np.array([self.chord_length, -self.half_wing_span, 0.])  # trailing edge South - East coordinate
-
+        
         Ry = rotation_matrix([0, 1, 0], np.deg2rad(self.AoA_deg))
        
         panels, trailing_edge_info, leading_edge_info = make_panels_from_le_te_points([np.dot(Ry, le_SW),
@@ -69,6 +69,9 @@ class Aircraft:
         print(f"CL_expected {self.__CL_theoretical:.6f} \t CD_ind_expected {self.__CD_theoretical:.6f}")
         print(f"CL_vlm      {self.__CL:.6f}  \t CD_vlm          {self.__CD:.6f}")
         print(f"\n\ntotal_F {str(np.sum(self.__force, axis=0))}")
+
+    def get_Cxyz(self):
+        return get_vlm_CL_CD_free_wing_v2(self.__force, self.V, self.rho, self.__S)
 
     @property
     def CL_theoretical(self):

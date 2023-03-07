@@ -229,6 +229,13 @@ def get_vlm_CL_CD_free_wing(F: np.ndarray, V: np.array, rho : float, S : float) 
     
     return CL_vlm, CD_vlm
 
+def get_vlm_CL_CD_free_wing_v2(F: np.ndarray, V: np.array, rho : float, S : float) -> Tuple[float, float]:
+    
+    total_F = np.sum(F, axis=0)
+    q = 0.5 * rho * (np.linalg.norm(V) ** 2) * S
+    Cx_vlm, Cy_vlm, Cz_vlm = total_F / q
+    
+    return Cx_vlm, Cy_vlm, Cz_vlm, total_F, V, S, q
 
 def get_CL_CD_free_wing(AR, AoA_deg):
     #  TODO allow tapered wings in book coeff_formulas

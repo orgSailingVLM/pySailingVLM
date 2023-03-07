@@ -11,26 +11,26 @@ output_dir_name = os.path.join("results_example_jib_and_mainsail_vlm", time_stam
 file_name = 'my_fancy_results' # name of xlsx excel file
 
 # SOLVER SETTINGS
-n_spanwise = 5  # No of control points (above the water) per sail, recommended: 50
-n_chordwise = 5 # No of control points (above the water) per sail, recommended: 50
+n_spanwise = 16  # No of control points (above the water) per sail, recommended: 50
+n_chordwise = 8 # No of control points (above the water) per sail, recommended: 50
 interpolation_type = "linear"  # either "spline" or "linear"
 LLT_twist = "real_twist"  # defines how the Lifting Line discretize the sail twist.
 # It can be "sheeting_angle_const" or "average_const" or "real_twist"
 
 # SAILING CONDITIONS
-leeway_deg = 0*5.    # [deg]
-heel_deg = 0*10.     # [deg]
-SOG_yacht = 4.63   # [m/s] yacht speed - speed over ground (leeway is a separate variable)
-tws_ref = 4.63     # [m/s] true wind speed
-alpha_true_wind_deg = 50.   # [deg] true wind angle (with reference to course over ground) => Course Wind Angle to the boat track = true wind angle to centerline + Leeway
-reference_water_level_for_wind_profile = -0.  # [m] this is an attempt to mimick the deck effect
+leeway_deg = 0.    # [deg]
+heel_deg = 0.     # [deg]
+SOG_yacht = 0.   # [m/s] yacht speed - speed over ground (leeway is a separate variable)
+tws_ref = 1.     # [m/s] true wind speed
+alpha_true_wind_deg = 10.   # [deg] true wind angle (with reference to course over ground) => Course Wind Angle to the boat track = true wind angle to centerline + Leeway
+reference_water_level_for_wind_profile = 0.  # [m] this is an attempt to mimick the deck effect
 # by lowering the sheer_above_waterline
 # while keeping the wind profile as in original geometry
 # this shall be negative (H = sail_ctrl_point - water_level)
-wind_exp_coeff = 0.1428  # [-] coefficient to determine the exponential wind profile
+wind_exp_coeff = 0.  # [-] coefficient to determine the exponential wind profile
 wind_reference_measurment_height = 10.  # [m] reference height for exponential wind profile
 rho = 1.225  # air density [kg/m3]
-wind_profile = 'exponential' # allowed: 'exponential' or 'flat' or 'logarithmic'
+wind_profile = 'flat' # allowed: 'exponential' or 'flat' or 'logarithmic'
 roughness = 0.05 # for logarithmic profile only
 
 # GEOMETRY OF THE RIG
@@ -38,22 +38,22 @@ main_sail_luff = 10. # 12.4  # [m]
 jib_luff = 10.0  # [m]
 foretriangle_height = 11.50  # [m]
 foretriangle_base = 3.90  # [m]
-sheer_above_waterline = 1.20  # [m]
-boom_above_sheer = 1.0#1.3  # [m]
-rake_deg = 90.  # rake angle [deg]
-mast_LOA = 0.15  # [m]
+sheer_above_waterline = 0.  # [m]
+boom_above_sheer = 0. #1.3  # [m]
+rake_deg = 45+90.  # rake angle [deg]
+mast_LOA = 0.0  # [m]
 
 # INPUT - GEOMETRY OF THE SAIL
 sails_def = 'main' # definition of sail set, possible: 'jib' or 'main' or 'jib_and_main'
 main_sail_girths = np.array([0.00, 1./8, 1./4, 1./2, 3./4, 7./8, 1.00])
-main_sail_chords = np.array([4.00]* len(main_sail_girths)) # np.array([4.00, 3.82, 3.64, 3.20, 2.64, 2.32, 2.00])
-main_sail_centerline_twist_deg = 0*10 + 0* 12. * main_sail_girths # 10 + 12. * main_sail_girths  #
+main_sail_chords = np.array([1.00]* len(main_sail_girths)) # np.array([4.00, 3.82, 3.64, 3.20, 2.64, 2.32, 2.00])
+main_sail_centerline_twist_deg = 0* main_sail_girths # 10 + 12. * main_sail_girths  #
 
 # First digit describing maximum camber as percentage of the chord.
 # Second digit describing the distance of maximum camber from the airfoil leading edge in tenths of the chord.
-jib_sail_camber= 0*15*np.array([0.01, 0.01, 0.01, 0.01, 0.01])
+jib_sail_camber= 0*np.array([0.01, 0.01, 0.01, 0.01, 0.01])
 jib_sail_camber_distance_from_luff = np.array([0.5, 0.5, 0.5, 0.5, 0.5]) # starting from leading edge
-main_sail_camber= 0*15*np.array([0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01])
+main_sail_camber= 0*np.array([0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01])
 main_sail_camber_distance_from_luff = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]) # starting from leading edge
 
 jib_girths = np.array([0.00, 1./4, 1./2, 3./4, 1.00])

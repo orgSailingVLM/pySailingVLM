@@ -1,8 +1,6 @@
 import timeit
 import shutil
 
-from varname import nameof
-
 from sailing_vlm.yacht_geometry.sail_factory import SailFactory
 from sailing_vlm.yacht_geometry.sail_geometry import SailSet
 from sailing_vlm.rotations.csys_transformations import CSYS_transformations
@@ -16,8 +14,10 @@ from sailing_vlm.solver.panels_plotter import display_panels_xyz_and_winds, disp
 
 from sailing_vlm.results.inviscid_flow import InviscidFlowResults
 
-from sailing_vlm.examples.input_data.jib_and_main_sail_vlm_case import *
+from sailing_vlm.examples.input_data.prostokat import *
+from sailing_vlm.solver.coefs import get_vlm_CL_CD_free_wing, get_vlm_CL_CD_free_wing_v2
 from sailing_vlm.solver.vlm import Vlm
+
 
 
 import pstats
@@ -155,8 +155,24 @@ def main():
 
     print(df_integrals)
 
+    ##### 
     
     
+    AR = 2 * main_sail_luff / main_sail_chords[0]
+    S = 2*main_sail_luff * main_sail_chords[0]
+    # prawdopodobnie jest zle układ
+    # import numpy as np
+    # >>> import sailing_vlm.runner.aircraft as ac
+    # >>> a = ac.Aircraft(1.0, 5.0, 10.0, 32, 8, np.array([1.0, .0, .0]))
+    # >>> a.get_Cxyz()
+    # (0.023472780216173314, 0.0, 0.8546846987984326)
+
+    # # Cx_vlm, Cy_vlm, Cz_vlm, total_F, V, S, q
+    # (0.023472780216173314, 0.0, 0.8546846987984326, array([0.14377078, 0.        , 5.23494378]), array([1., 0., 0.]), 10.0, 6.125
+    # metoda ponizej
+    # 0.023472780216173342 -0.8546846987984335 6.996235308182204e-34 [ 1.43770779e-01 -5.23494378e+00  4.28519413e-33] [1. 0. 0.] 10.0 6.125
+    CLx_vlm, Cy_vlm, Cz_vlm, tot_F, V, S, q = get_vlm_CL_CD_free_wing_v2(myvlm.force, np.array(wind.get_true_wind_speed_at_h(1.0)), rho, S)
+    print(CLx_vlm, Cy_vlm, Cz_vlm, tot_F, V, S, q)
     
 if __name__ == "__main__":
     
