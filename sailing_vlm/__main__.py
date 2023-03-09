@@ -14,7 +14,7 @@ from sailing_vlm.solver.panels_plotter import display_panels_xyz_and_winds, disp
 
 from sailing_vlm.results.inviscid_flow import InviscidFlowResults
 
-from sailing_vlm.examples.input_data.prostokat import *
+from sailing_vlm.examples.input_data.sweep import *
 from sailing_vlm.solver.coefs import get_vlm_CL_CD_free_wing, get_vlm_CL_CD_free_wing_v2
 from sailing_vlm.solver.vlm import Vlm
 
@@ -172,8 +172,10 @@ def main():
     # metoda ponizej
     # 0.023472780216173342 -0.8546846987984335 6.996235308182204e-34 [ 1.43770779e-01 -5.23494378e+00  4.28519413e-33] [1. 0. 0.] 10.0 6.125
     CLx_vlm, Cy_vlm, Cz_vlm, tot_F, V, S, q = get_vlm_CL_CD_free_wing_v2(myvlm.force, np.array(wind.get_true_wind_speed_at_h(1.0)), rho, S)
-    print(CLx_vlm, Cy_vlm, Cz_vlm, tot_F, V, S, q)
-    
+    print(f"C:[{CLx_vlm}, {Cy_vlm}, {Cz_vlm}]\nF_tot={tot_F}\nV={V} S={S} q={q}")
+    print(f"AR: {AR}")
+    print(f"S: {S}")
+
 if __name__ == "__main__":
     
     start = time.time()

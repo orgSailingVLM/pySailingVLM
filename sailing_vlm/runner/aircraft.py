@@ -68,6 +68,9 @@ class Aircraft:
 
         self.__CL, self.__CD = get_vlm_CL_CD_free_wing(self.__force, self.V, self.rho, self.__S)
 
+        total_p = np.sum(self.__pressure, axis=0)
+        q = 0.5 * rho * (np.linalg.norm(self.V) ** 2) * self.__S
+        self.__Cp = total_p / q
 
     def get_info(self):
         print("gamma_magnitude: \n")
