@@ -30,18 +30,26 @@ class Aircraft:
         self.__CL_theoretical, self.__CD_theoretical = get_CL_CD_free_wing(self.__AR, self.AoA_deg)
 
         
-        le_NW = np.array([0., self.half_wing_span, 0.])      # leading edge North - West coordinate
-        le_SW = np.array([0., -self.half_wing_span, 0.])     # leading edge South - West coordinate
+        # le_NW = np.array([0., self.half_wing_span, 0.])      # leading edge North - West coordinate
+        # le_SW = np.array([0., -self.half_wing_span, 0.])     # leading edge South - West coordinate
 
-        te_NE = np.array([self.chord_length, self.half_wing_span, 0.])   # trailing edge North - East coordinate
-        te_SE = np.array([self.chord_length, -self.half_wing_span, 0.])  # trailing edge South - East coordinate
+        # te_NE = np.array([self.chord_length, self.half_wing_span, 0.])   # trailing edge North - East coordinate
+        # te_SE = np.array([self.chord_length, -self.half_wing_span, 0.])  # trailing edge South - East coordinate
         
-        Ry = rotation_matrix([0, 1, 0], np.deg2rad(self.AoA_deg))
-       
-        panels, trailing_edge_info, leading_edge_info = make_panels_from_le_te_points([np.dot(Ry, le_SW),
-                                                                                    np.dot(Ry, te_SE),
-                                                                                    np.dot(Ry, le_NW),
-                                                                                    np.dot(Ry, te_NE)],
+        # Ry = rotation_matrix([0, 1, 0], np.deg2rad(self.AoA_deg))
+        
+        le_NW = np.array([0., 0 , self.half_wing_span])      # leading edge North - West coordinate
+        le_SW = np.array([0., 0., -self.half_wing_span])     # leading edge South - West coordinate
+
+        te_NE = np.array([self.chord_length, 0., self.half_wing_span])   # trailing edge North - East coordinate
+        te_SE = np.array([self.chord_length, 0., -self.half_wing_span])  # trailing edge South - East coordinate
+        
+        Rz = rotation_matrix([0, 0, 1], np.deg2rad(-self.AoA_deg))
+
+        panels, trailing_edge_info, leading_edge_info = make_panels_from_le_te_points([np.dot(Rz, le_SW),
+                                                                                    np.dot(Rz, te_SE),
+                                                                                    np.dot(Rz, le_NW),
+                                                                                    np.dot(Rz, te_NE)],
                                                                                     [self.n_chordwise, self.n_spanwise])
         
         N = panels.shape[0]
