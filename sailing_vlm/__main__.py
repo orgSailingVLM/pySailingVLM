@@ -1,24 +1,23 @@
 import timeit
 import shutil
 
-from sailing_vlm.yacht_geometry.sail_factory import SailFactory
-from sailing_vlm.yacht_geometry.sail_geometry import SailSet
+
 from sailing_vlm.rotations.csys_transformations import CSYS_transformations
-from sailing_vlm.solver.interpolator import Interpolator
 from sailing_vlm.yacht_geometry.hull_geometry import HullGeometry
-from sailing_vlm.inlet.winds import ExpWindProfile, FlatWindProfile, LogWindProfile
+
 
 from sailing_vlm.results.save_utils import save_results_to_file
-from sailing_vlm.solver.panels_plotter import display_panels_xyz_and_winds, display_panels_or_rings
+from sailing_vlm.solver.panels_plotter import display_panels_xyz_and_winds
 
 
 from sailing_vlm.results.inviscid_flow import InviscidFlowResults
 
-from sailing_vlm.examples.input_data.prostokat import *
-from sailing_vlm.solver.coefs import get_vlm_CL_CD_free_wing, get_vlm_CL_CD_free_wing_v2
+#from sailing_vlm.examples.input_data.prostokat import *
+from sailing_vlm.examples.input_data.jib_and_main_sail_vlm_case import *
+from sailing_vlm.solver.coefs import get_vlm_CL_CD_free_wing, get_vlm_Cxyz
 from sailing_vlm.solver.vlm import Vlm
 
-from varname import varname
+from sailing_vlm.runner.sail import Wind, Sail
 
 
 import pstats
@@ -28,118 +27,24 @@ import time
 import sys, os
 
 
-def func():
-    return varname()
-
-def wrapped():
-    return func()
-
-def check_var(var: str, allowed_vars : list, var_name : str):
-    """
-    check_var check if variable is allowed
-
-    :param str var: variable to check
-    :param list allowed_vars: list with allowed variables
-    :raises ValueError: raises error message for user
-    """
-    if var not in allowed_vars:
-        raise ValueError(f'ERROR!: {var} not allowed as {var_name} variable!')
-
-def assert_array_input(arr1 : np.array, arr2 : np.array, name_arr1: str, name_arr2 : str):
-    """
-    assert_array_input check if arrays hase the same length and print error message
-
-    :param np.array arr1: arr1
-    :param np.array arr2: arr2
-    :param str name_arr1: name of arr1
-    :param str name_arr2: name of arr2
-    """
-    assert len(arr1) == len(arr2), f'ERROR!: {name_arr1} array must have same size as {name_arr2}!'
-
-def check_input_variables():
-    try:
-        
-        assert_array_input(jib_girths, jib_chords, 'jib_girths', 'job_chords')
-        assert_array_input(jib_girths, jib_centerline_twist_deg, 'jib_girths', 'jib_centerline_twist_deg')
-        assert_array_input(jib_girths, jib_sail_camber, 'jib_girths', 'jib_sail_camber')
-        assert_array_input(jib_girths, jib_sail_camber_distance_from_luff, 'jib_girths', 'jib_sail_camber_distance_from_luff')
-        
-        assert_array_input(main_sail_girths, main_sail_chords, 'main_sail_girths', 'main_sail_chords')
-        assert_array_input(main_sail_girths, main_sail_centerline_twist_deg, 'main_sail_girths', 'main_sail_centerline_twist_deg')
-        assert_array_input(main_sail_girths, main_sail_camber, 'main_sail_girths', 'main_sail_camber')
-        assert_array_input(main_sail_girths, main_sail_camber_distance_from_luff, 'main_sail_girths', 'main_sail_camber_distance_from_luff')
-        
-        check_var(sails_def, ['jib', 'main', 'jib_and_main'], 'sails_def')
-        check_var(interpolation_type, ['spline', 'linear'], 'interpolation_type')
-        check_var(LLT_twist, ['real_twist', 'sheeting_angle_const', 'average_const'], 'LLT_twist')
-        check_var(wind_profile, ['exponential', 'flat', 'logarithmic'], 'wind_profile')
-        
-    except (AssertionError, ValueError) as err:
-        print(err)
-        sys.exit()
-
-def set_wind():
-    if wind_profile == 'exponential':
-        wind = ExpWindProfile(
-            alpha_true_wind_deg, tws_ref, SOG_yacht,
-            exp_coeff=wind_exp_coeff,
-            reference_measurment_height=wind_reference_measurment_height,
-            reference_water_level_for_wind_profile=reference_water_level_for_wind_profile)
-    elif wind_profile == 'flat':
-        wind = FlatWindProfile(alpha_true_wind_deg, tws_ref, SOG_yacht)
-    else:
-        wind = LogWindProfile(
-            alpha_true_wind_deg, tws_ref, SOG_yacht,
-            roughness=roughness,
-            reference_measurment_height=wind_reference_measurment_height)
-    return wind
-
-def generate_sail_set(csys_transformations : CSYS_transformations) -> SailSet:
-    interpolator = Interpolator(interpolation_type)
-    factory = SailFactory(csys_transformations=csys_transformations, n_spanwise=n_spanwise, n_chordwise=n_chordwise,
-                            rake_deg=rake_deg, sheer_above_waterline=sheer_above_waterline)
-    
-    geoms = []
-    if sails_def == 'jib' or sails_def == 'jib_and_main':
-        jib_geometry = factory.make_jib(
-            jib_luff=jib_luff,
-            foretriangle_base=foretriangle_base,
-            foretriangle_height=foretriangle_height,
-            jib_chords=interpolator.interpolate_girths(jib_girths, jib_chords, n_spanwise + 1),
-            sail_twist_deg=interpolator.interpolate_girths(jib_girths, jib_centerline_twist_deg,n_spanwise + 1),
-            mast_LOA=mast_LOA,
-            LLT_twist=LLT_twist, 
-            interpolated_camber=interpolator.interpolate_girths(jib_girths, jib_sail_camber, n_spanwise + 1),
-            interpolated_distance_from_luff=interpolator.interpolate_girths(jib_girths, jib_sail_camber_distance_from_luff, n_spanwise + 1)
-            )
-        geoms.append(jib_geometry)
-        
-    if sails_def == 'main' or sails_def =='jib_and_main':
-        main_sail_geometry = factory.make_main_sail(
-            main_sail_luff=main_sail_luff,
-            boom_above_sheer=boom_above_sheer,
-            main_sail_chords=interpolator.interpolate_girths(main_sail_girths, main_sail_chords, n_spanwise + 1),
-            sail_twist_deg=interpolator.interpolate_girths(main_sail_girths, main_sail_centerline_twist_deg, n_spanwise + 1),
-            LLT_twist=LLT_twist,
-            interpolated_camber=interpolator.interpolate_girths(main_sail_girths, main_sail_camber, n_spanwise + 1),
-            interpolated_distance_from_luff=interpolator.interpolate_girths(main_sail_girths, main_sail_camber_distance_from_luff, n_spanwise + 1)
-            )
-        geoms.append(main_sail_geometry)
-
-    return SailSet(geoms)
-    
 def main():
     
-    check_input_variables()
-
     csys_transformations = CSYS_transformations(
         heel_deg, leeway_deg,
         v_from_original_xyz_2_reference_csys_xyz=reference_level_for_moments)
 
-    sail_set = generate_sail_set(csys_transformations)
-    wind = set_wind()
+    w = Wind(alpha_true_wind_deg, tws_ref,SOG_yacht, wind_exp_coeff, wind_reference_measurment_height, reference_water_level_for_wind_profile, roughness, wind_profile)
+    w_profile = w.profile
+
+    s = Sail(n_spanwise, n_chordwise, csys_transformations, sheer_above_waterline,
+             rake_deg, boom_above_sheer, mast_LOA,
+             main_sail_luff, main_sail_girths, main_sail_chords, main_sail_centerline_twist_deg, main_sail_camber,main_sail_camber_distance_from_luff,
+            foretriangle_base, foretriangle_height, 
+            jib_luff, jib_girths, jib_chords, jib_centerline_twist_deg, jib_sail_camber, jib_sail_camber_distance_from_luff,
+            sails_def, LLT_twist, interpolation_type)
+    sail_set = s.sail_set
     hull = HullGeometry(sheer_above_waterline, foretriangle_base, csys_transformations, center_of_lateral_resistance_upright)
-    myvlm = Vlm(sail_set.panels, n_chordwise, n_spanwise, rho, wind, sail_set.trailing_edge_info, sail_set.leading_edge_info)
+    myvlm = Vlm(sail_set.panels, n_chordwise, n_spanwise, rho, w_profile, sail_set.trailing_edge_info, sail_set.leading_edge_info)
 
     inviscid_flow_results = InviscidFlowResults(sail_set, csys_transformations, myvlm)
     
@@ -178,8 +83,8 @@ def main():
     # (0.023472780216173314, 0.0, 0.8546846987984326, array([0.14377078, 0.        , 5.23494378]), array([1., 0., 0.]), 10.0, 6.125
     # metoda ponizej
     # 0.023472780216173342 -0.8546846987984335 6.996235308182204e-34 [ 1.43770779e-01 -5.23494378e+00  4.28519413e-33] [1. 0. 0.] 10.0 6.125
-    CLx_vlm, Cy_vlm, Cz_vlm, tot_F, V, S, q = get_vlm_CL_CD_free_wing_v2(myvlm.force, np.array(wind.get_true_wind_speed_at_h(1.0)), rho, S)
-    print(f"C:[{CLx_vlm}, {Cy_vlm}, {Cz_vlm}]\nF_tot={tot_F}\nV={V} S={S} q={q}")
+    CLx_vlm, Cy_vlm, Cz_vlm= get_vlm_Cxyz(myvlm.force, np.array(w_profile.get_true_wind_speed_at_h(1.0)), rho, S)
+    print(f"C:[{CLx_vlm}, {Cy_vlm}, {Cz_vlm}]")#\nF_tot={tot_F}\nV={V} S={S} q={q}")
     print(f"AR: {AR}")
     print(f"S: {S}")
 

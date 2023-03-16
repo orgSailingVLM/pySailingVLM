@@ -4,7 +4,7 @@ import numpy as np
 
 from sailing_vlm.rotations.geometry_calc import rotation_matrix
 from sailing_vlm.solver.panels import make_panels_from_le_te_points, get_panels_area
-from sailing_vlm.solver.coefs import get_CL_CD_free_wing, get_vlm_CL_CD_free_wing, get_vlm_CL_CD_free_wing_v2
+from sailing_vlm.solver.coefs import get_CL_CD_free_wing, get_vlm_CL_CD_free_wing, get_vlm_Cxyz
 from sailing_vlm.solver.coefs import calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points, \
                                 solve_eq, calculate_RHS, calc_velocity_coefs
 
@@ -81,9 +81,13 @@ class Aircraft:
         print(f"CL_vlm      {self.__CL:.6f}  \t CD_vlm          {self.__CD:.6f}")
         print(f"\n\ntotal_F {str(np.sum(self.__force, axis=0))}")
 
-    def get_Cxyz(self):
-        return get_vlm_CL_CD_free_wing_v2(self.__force, self.V, self.rho, self.__S)
+    def __get_Cxyz(self):
+        return get_vlm_Cxyz(self.__force, self.V, self.rho, self.__S)
 
+    @property
+    def Cxyz(self):
+        return self.__get_Cxyz()
+    
     @property
     def CL_theoretical(self):
         return self.__CL_theoretical
