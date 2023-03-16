@@ -57,7 +57,7 @@ main_sail_camber= 0*np.array([0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01])
 main_sail_camber_distance_from_luff = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]) # starting from leading edge
 
 jib_girths = np.array([0.00, 1./4, 1./2, 3./4, 1.00])
-jib_chords = np.array([3.80, 2.98, 2.15, 1.33, 0.5]) - 0.4
+jib_chords = 1E-10*np.array([3.80, 2.98, 2.15, 1.33, 0.5]) - 0*0.4
 jib_centerline_twist_deg =  0*(10+5)  + 0*15. * jib_girths # (10+5)  + 15. * jib_girths # 
 
 # REFERENCE CSYS

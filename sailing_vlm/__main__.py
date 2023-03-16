@@ -14,10 +14,11 @@ from sailing_vlm.solver.panels_plotter import display_panels_xyz_and_winds, disp
 
 from sailing_vlm.results.inviscid_flow import InviscidFlowResults
 
-from sailing_vlm.examples.input_data.sweep import *
+from sailing_vlm.examples.input_data.prostokat import *
 from sailing_vlm.solver.coefs import get_vlm_CL_CD_free_wing, get_vlm_CL_CD_free_wing_v2
 from sailing_vlm.solver.vlm import Vlm
 
+from varname import varname
 
 
 import pstats
@@ -27,6 +28,11 @@ import time
 import sys, os
 
 
+def func():
+    return varname()
+
+def wrapped():
+    return func()
 
 def check_var(var: str, allowed_vars : list, var_name : str):
     """
@@ -52,6 +58,7 @@ def assert_array_input(arr1 : np.array, arr2 : np.array, name_arr1: str, name_ar
 
 def check_input_variables():
     try:
+        
         assert_array_input(jib_girths, jib_chords, 'jib_girths', 'job_chords')
         assert_array_input(jib_girths, jib_centerline_twist_deg, 'jib_girths', 'jib_centerline_twist_deg')
         assert_array_input(jib_girths, jib_sail_camber, 'jib_girths', 'jib_sail_camber')

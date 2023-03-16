@@ -45,9 +45,10 @@ mast_LOA = 0.0  # [m]
 
 # INPUT - GEOMETRY OF THE SAIL
 sails_def = 'main' # definition of sail set, possible: 'jib' or 'main' or 'jib_and_main'
+# sails_def = 'main'
 main_sail_girths = np.array([0.00, 1./8, 1./4, 1./2, 3./4, 7./8, 1.00])
 main_sail_chords = np.array([0.2]* len(main_sail_girths)) # np.array([4.00, 3.82, 3.64, 3.20, 2.64, 2.32, 2.00])
-main_sail_centerline_twist_deg = 2 + 0* main_sail_girths # 10 + 12. * main_sail_girths  #
+main_sail_centerline_twist_deg = -2 + 0* main_sail_girths # 10 + 12. * main_sail_girths  #
 
 # First digit describing maximum camber as percentage of the chord.
 # Second digit describing the distance of maximum camber from the airfoil leading edge in tenths of the chord.
@@ -57,7 +58,7 @@ main_sail_camber= 0*np.array([0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01])
 main_sail_camber_distance_from_luff = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]) # starting from leading edge
 
 jib_girths = np.array([0.00, 1./4, 1./2, 3./4, 1.00])
-jib_chords = np.array([3.80, 2.98, 2.15, 1.33, 0.5]) - 0.4
+jib_chords = 1E-12* np.array([3.80, 2.98, 2.15, 1.33, 0.5])
 jib_centerline_twist_deg =  0*(10+5)  + 0*15. * jib_girths # (10+5)  + 15. * jib_girths # 
 
 # REFERENCE CSYS
