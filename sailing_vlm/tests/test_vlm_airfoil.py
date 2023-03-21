@@ -32,19 +32,23 @@ class TestVlmAirfoil(TestCase):
         
         
         # test raise exception for bad input
-        # 0 <= m <= 9.5%
+        # 0 <= m <= 30%
         # 0 <= p <= 90%
         # 0 <= xx <= 40%
         bad_args = [[-0.01, 0.8, 0.0], 
-                    [0.1, 0.8, 0.0],
+                    [0.1, -0.8, 0.0],
                     [0.1, 0.95, 0.0],
-                    [0.1, 0.8, 0.5]]
-        foil_errors = ['Max camber must be between 0 and 9.5%!',
-                        'Max camber must be between 0 and 9.5%!'
+                    [0.1, 0.8, 0.5],
+                    [0.1, 0.2, 0.5]]
+        foil_errors = ['Max camber must be between 0 and 30%!',
+                        'Max camber must be between 0 and 30%!'
                         'Max camber position must be between 0 and 90%!',
+                        'Thickness must be between 0 and 40%!',
                         'Thickness must be between 0 and 40%!']
           
         for args, err in zip(bad_args, foil_errors):      
             with self.assertRaises(SystemExit) as context:
                 VlmAirfoil(*args)
-                self.assertEqual(context.exception.args[0], err)
+                print()
+            print()
+            self.assertEqual(context.exception.code, 1)

@@ -20,7 +20,7 @@ class BaseGeometry:
 
     
 class SailGeometry(BaseGeometry, ABC):
-    def __init__(self, head_mounting: np.array, tack_mounting: np.array,
+    def __init__(self, head_mounting: np.ndarray, tack_mounting: np.ndarray,
                  csys_transformations: CSYS_transformations,
                  n_spanwise=10, n_chordwise=1, chords=None,
                  initial_sail_twist_deg=None, name=None, LLT_twist=None,  interpolated_camber=None, interpolated_distance_from_luff=None

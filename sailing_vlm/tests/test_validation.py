@@ -73,14 +73,14 @@ class TestValidation(TestCase):
                 sails_def, LLT_twist, interpolation_type)
         sail_set = s.sail_set
         myvlm = Vlm(sail_set.panels, n_chordwise, n_spanwise, rho, w_profile, sail_set.trailing_edge_info, sail_set.leading_edge_info)
-        
+        2
         inviscid_flow_results = InviscidFlowResults(sail_set, csys_transformations, myvlm)
       
         A = rotation_matrix([0, 0, 1], np.deg2rad(-AoA_deg))
-        sail_mirror_multiplier = 2 #???
+        sail_mirror_multiplier = 2 # because inviscid_flow_results.F_xyz_total gets total only above water # it is the same as  total of myvlm.force
         F_xyz_total = sail_mirror_multiplier*inviscid_flow_results.F_xyz_total
         F = np.dot(A, F_xyz_total)  # By definition, the lift force is perpendicular to V_inf
-         
+
         S = 2 * half_wing_span * chord_length
         q = 0.5 * rho * (np.linalg.norm(tws_ref) ** 2) * S
         sail_Cxyz = F / q

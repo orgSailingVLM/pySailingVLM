@@ -52,7 +52,6 @@ class TestRotations(TestCase):
                         [10.29411765,  5.82352941,  0.59408853]])
         out = rotate_points_around_arbitrary_axis(ps, x1, x2, np.pi / 3)
         np.testing.assert_array_almost_equal(out, good)
-        rotate_points_around_basic_axis
         x1 = np.array([2, 0, 3/2])
         x2 = np.array([1, 1, 1])
         ps = np.array([[3, -1, 2]])
@@ -102,16 +101,20 @@ class TestRotations(TestCase):
         boom_above_sheer = 1.30
         rake_deg = 110  # rake angle [deg]
 
+
+        camber = np.array([0.]* len(main_sail_girths))
+        distance_from_luff=np.array([0.5]* len(main_sail_girths))
+
+
         sail_factory = SailFactory(self.csys_transformations, n_spanwise=n_spanwise,
                                    rake_deg=rake_deg,
                                    sheer_above_waterline=sheer_above_waterline)
 
         main_sail_geometry = sail_factory.make_main_sail(main_sail_luff=main_sail_luff,
                                                          boom_above_sheer=boom_above_sheer,
-                                                         main_sail_chords=self.interpolator.interpolate_girths(
-                                                             main_sail_girths,
-                                                             main_sail_chords,
-                                                             n_spanwise + 1))
+                                                         main_sail_chords=self.interpolator.interpolate_girths(main_sail_girths, main_sail_chords, n_spanwise + 1),
+                                                         interpolated_camber=self.interpolator.interpolate_girths(main_sail_girths, camber, n_spanwise + 1),
+                                                         interpolated_distance_from_luff=self.interpolator.interpolate_girths(main_sail_girths, distance_from_luff, n_spanwise + 1))
 
         point = np.array([10, 20, 30])
         rotated_point = main_sail_geometry.csys_transformations.rotate_point_with_mirror(point)
@@ -156,10 +159,13 @@ class TestRotations(TestCase):
         wind_reference_measurment_height = 10.  # [m] reference height for exponential wind profile
         rho = 1.225  # air density [kg/m3]
         
-
-        sail_factory = SailFactory(self.csys_transformations, n_spanwise=n_spanwise, n_chordwise=n_chordwise,
-                                   rake_deg=rake_deg,
-                                   sheer_above_waterline=sheer_above_waterline)
+        main_sail_camber = np.array([0.]* len(main_sail_girths))
+        main_sail_distance_from_luff=np.array([0.5]* len(main_sail_girths))
+        
+        jib_camber = np.array([0.]* len(jib_girths))
+        jib_distance_from_luff=np.array([0.5]* len(jib_girths))
+        
+        sail_factory = SailFactory(self.csys_transformations, n_spanwise=n_spanwise, n_chordwise=n_chordwise, rake_deg=rake_deg, sheer_above_waterline=sheer_above_waterline)
 
         
         main_sail_geometry = sail_factory.make_main_sail(
@@ -167,8 +173,11 @@ class TestRotations(TestCase):
             boom_above_sheer=boom_above_sheer,
             main_sail_chords=self.interpolator.interpolate_girths(main_sail_girths, main_sail_chords, n_spanwise + 1),
             sail_twist_deg=self.interpolator.interpolate_girths(main_sail_girths, main_sail_centerline_twist_deg,n_spanwise + 1),
-            LLT_twist=LLT_twist)
-
+            LLT_twist=LLT_twist,
+            interpolated_camber=self.interpolator.interpolate_girths(main_sail_girths, main_sail_camber,n_spanwise + 1),
+            interpolated_distance_from_luff=self.interpolator.interpolate_girths(main_sail_girths, main_sail_distance_from_luff,n_spanwise + 1)
+        )
+            
 
         jib_geometry = sail_factory.make_jib(
             jib_luff=jib_luff,
@@ -176,7 +185,10 @@ class TestRotations(TestCase):
             foretriangle_height=foretriangle_height,
             jib_chords=self.interpolator.interpolate_girths(jib_girths, jib_chords, n_spanwise + 1),
             sail_twist_deg=self.interpolator.interpolate_girths(jib_girths, jib_centerline_twist_deg, n_spanwise + 1),
-            LLT_twist=LLT_twist)
+            LLT_twist=LLT_twist,
+            interpolated_camber=self.interpolator.interpolate_girths(jib_girths, jib_camber, n_spanwise + 1),
+            interpolated_distance_from_luff=self.interpolator.interpolate_girths(jib_girths, jib_distance_from_luff, n_spanwise + 1))
+
 
         sail_set = SailSet([jib_geometry, main_sail_geometry])
         wind = ExpWindProfile(
@@ -185,7 +197,7 @@ class TestRotations(TestCase):
             reference_measurment_height=wind_reference_measurment_height,
             reference_water_level_for_wind_profile=reference_water_level_for_wind_profile)
         
-   
+
         return sail_set, wind, rho
 
     def test_sail_set_rotations(self):
@@ -364,8 +376,8 @@ class TestRotations(TestCase):
             [  4.66466159,   2.31104037,  -2.53904877]])
                 
         assert_almost_equal(myvlm.leading_mid_points, le_mid_points_desired)
-        assert_almost_equal(myvlm.center_of_pressure, cp_points_desired)
-        assert_almost_equal(myvlm.collocation_points, ctr_points_desired)
+        assert_almost_equal(myvlm.cp, cp_points_desired)
+        assert_almost_equal(myvlm.ctr_p, ctr_points_desired)
         assert_almost_equal(myvlm.trailing_mid_points, te_mid_points_desired)
 
     def test_sail_set_rotations_with_initial_sail_twist(self):
@@ -417,8 +429,8 @@ class TestRotations(TestCase):
             [  2.040661  ,   2.46034622,  -3.53669623],
             [  1.76216332,   1.80621491,  -2.53511682]])
 
-        assert_almost_equal(myvlm.center_of_pressure, cp_points_desired)
-        chunks = np.array_split(myvlm.center_of_pressure, 4)
+        assert_almost_equal(myvlm.cp, cp_points_desired)
+        chunks = np.array_split(myvlm.cp, 4)
         
         assert_almost_equal(chunks[0][9][2], -chunks[2][0][2])
         assert_almost_equal(chunks[1][9][2], -chunks[3][0][2])

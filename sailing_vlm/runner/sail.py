@@ -2,7 +2,6 @@ import sys
 import numpy as np
 from dataclasses import dataclass
 
-from varname import varname
 from typing import Literal, Optional
 from sailing_vlm.inlet.winds import ExpWindProfile, FlatWindProfile, LogWindProfile
 from sailing_vlm.rotations.csys_transformations import CSYS_transformations

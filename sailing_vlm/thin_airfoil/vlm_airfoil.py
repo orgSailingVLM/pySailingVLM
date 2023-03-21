@@ -36,7 +36,7 @@ class VlmAirfoil:
                 raise ValueError('Thickness must be between 0 and 40%!')
         except ValueError as err:
             print(err.args[0])
-            sys.exit()
+            sys.exit(1)
     
     def __get_y_camber(self, x):
         # 0 <= x <= p

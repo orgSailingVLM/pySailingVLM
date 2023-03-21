@@ -43,7 +43,7 @@ def make_panels_from_mesh_spanwise(mesh : np.ndarray) -> Tuple[np.ndarray, np.nd
             
     return  panels, trailing_edge_info, leading_edge_info
 
-
+# for aircraft
 def make_panels_from_le_te_points(points : np.ndarray, grid_size :List[int]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     make_panels_from_le_te_points make_panels_from_le_te_points make panels from leading end trailing edges points
@@ -63,30 +63,39 @@ def make_panels_from_le_te_points(points : np.ndarray, grid_size :List[int]) -> 
     panels, trailing_edge_info, leading_edge_info = make_panels_from_mesh_spanwise(mesh)
     return panels, trailing_edge_info, leading_edge_info
 
+# not used??
+# def make_panels_from_le_points_and_chords(le_points : List[np.ndarray], grid_size : List[int], chords: np.ndarray, interpolated_camber: np.ndarray, interpolated_distance_from_luff: np.ndarray, gamma_orientation : float) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+#     """
+#     make_panels_from_le_points_and_chords make panels from leading edges and chords
 
-def make_panels_from_le_points_and_chords(le_points : List[np.ndarray], grid_size : List[int], chords_vec : np.ndarray, interpolated_camber, interpolated_distance_from_LE, gamma_orientation : float) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """
-    make_panels_from_le_points_and_chords make panels from leading edges and chords
-
-    :param List[np.ndarray] le_points: leading edges points
-    :param List[int] grid_size: zise of grid
-    :param np.ndarray chords_vec: chords vectors
-    :param float gamma_orientation: gamma orientation
-    :return Tuple[np.ndarray, np.ndarray, np.ndarray]: panels, trailing_edge_info, leading_edge_info
-    """
+#     :param List[np.ndarray] le_points: leading edges points
+#     :param List[int] grid_size: zise of grid
+#     :param np.ndarray chords: chords 
+#     :param np.ndarray: interpolated_camber
+#     :param np.ndarray: interpolated_distance_from_luff
+#     :param float gamma_orientation: gamma orientation
+#     :return Tuple[np.ndarray, np.ndarray, np.ndarray]: panels, trailing_edge_info, leading_edge_info
+#     """
     
-    le_SW,  le_NW = le_points
-    n_chordwise, n_spanwise = grid_size
-    le_line = mesher.discrete_segment(le_SW, le_NW, n_spanwise)
-    te_line = np.copy(le_line)  # deep copy
-    te_line += chords_vec
+#     le_SW,  le_NW = le_points
+#     n_chordwise, n_spanwise = grid_size
+
+    
+#     chords_vec = np.array([chords, np.zeros(len(chords)), np.zeros(len(chords))])
+#     chords_vec = chords_vec.transpose()
+#     fchords_vec = np.flip(chords_vec, axis=0)
+#     mesh = mesher.make_airfoil_mesh([le_SW, le_NW], grid_size, chords_vec, interpolated_distance_from_luff, interpolated_camber)
+#     rmesh = np.array([self.csys_transformations.rotate_point_with_mirror(point) for point in mesh])
+        
+#     te_line = np.copy(le_line)  # deep copy
+#     te_line += chords_vec
   
-    mesh = mesher.make_point_mesh(le_line, te_line, n_chordwise)
+#     mesh = mesher.make_point_mesh(le_line, te_line, n_chordwise)
 
-    mesh = np.swapaxes(mesh, 0, 1)
-    panels, trailing_edge_info, leading_edge_info = make_panels_from_mesh_spanwise(mesh)
+#     mesh = np.swapaxes(mesh, 0, 1)
+#     panels, trailing_edge_info, leading_edge_info = make_panels_from_mesh_spanwise(mesh)
     
-    return panels, trailing_edge_info, leading_edge_info
+#     return panels, trailing_edge_info, leading_edge_info
 
 
 # no seppedup
