@@ -6,9 +6,9 @@ from sailing_vlm.rotations.csys_transformations import CSYS_transformations
 from sailing_vlm.solver.interpolator import Interpolator
 from sailing_vlm.yacht_geometry.hull_geometry import HullGeometry
 from sailing_vlm.inlet.winds import ExpWindProfile
+from sailing_vlm.results.inviscid_flow import InviscidFlowResults
 
 from sailing_vlm.results.save_utils import save_results_to_file
-from sailing_vlm.results.inviscid_flow import  prepare_inviscid_flow_results_vlm 
 
 from sailing_vlm.solver.vlm import Vlm
 import pandas as pd
@@ -48,20 +48,27 @@ class TestJibRunner(TestCase):
             jib_chords=self.interpolator.interpolate_girths(jib_girths, jib_chords, n_spanwise + 1),
             sail_twist_deg=self.interpolator.interpolate_girths(jib_girths, jib_centerline_twist_deg, n_spanwise + 1),
             mast_LOA=mast_LOA,
-            LLT_twist=LLT_twist)
+            LLT_twist=LLT_twist,
+            interpolated_camber=self.interpolator.interpolate_girths(jib_girths, jib_camber, n_spanwise + 1),
+            interpolated_distance_from_luff=self.interpolator.interpolate_girths(jib_girths, jib_distance_from_luff, n_spanwise + 1),
+            )
 
         main_sail_geometry = sail_factory.make_main_sail(
             main_sail_luff=main_sail_luff,
             boom_above_sheer=boom_above_sheer,
             main_sail_chords=self.interpolator.interpolate_girths(main_sail_girths, main_sail_chords, n_spanwise + 1),
             sail_twist_deg=self.interpolator.interpolate_girths(main_sail_girths, main_sail_centerline_twist_deg, n_spanwise + 1),
-            LLT_twist=LLT_twist)
+            LLT_twist=LLT_twist,
+            interpolated_camber=self.interpolator.interpolate_girths(main_sail_girths, main_sail_camber, n_spanwise + 1),
+            interpolated_distance_from_luff=self.interpolator.interpolate_girths(main_sail_girths, main_sail_distance_from_luff, n_spanwise + 1)
+            )
 
         sail_set = SailSet([jib_geometry, main_sail_geometry])
 
         myvlm = Vlm(sail_set.panels, n_chordwise, n_spanwise, rho, self.wind, sail_set.trailing_edge_info, sail_set.leading_edge_info)
 
-        return sail_set, myvlm
+        inviscid_flow_results = InviscidFlowResults(sail_set, self.csys_transformations, myvlm)
+        return sail_set, myvlm, inviscid_flow_results
 
     def _check_df_results(self, suffix, myvlm, csys_transformations, inviscid_flow_results, sail_set):
         inviscid_flow_results.estimate_heeling_moment_from_keel(self.hull.center_of_lateral_resistance)
@@ -93,15 +100,14 @@ class TestJibRunner(TestCase):
         suffix = 'vlm'
         n_chordwise = 3
 
-        sail_set, myvlm = self._prepare_sail_set(n_spanwise=2, n_chordwise=n_chordwise)
+        sail_set, myvlm, inviscid_flow_results = self._prepare_sail_set(n_spanwise=2, n_chordwise=n_chordwise)
 
         df_gamma = pd.DataFrame({'gamma_magnitute': myvlm.gamma_magnitude})
         df_gamma.to_csv(f'expected_gamma_magnitute_{suffix}.csv', index=False)
         expected_df_gamma = pd.read_csv(os.path.join(case_dir, f'expected_gamma_magnitute_{suffix}.csv'))
         np.testing.assert_almost_equal(df_gamma['gamma_magnitute'].to_numpy(), expected_df_gamma['gamma_magnitute'].to_numpy())
 
-        inviscid_flow_results_vlm = prepare_inviscid_flow_results_vlm(sail_set, self.csys_transformations, myvlm)
-        self._check_df_results(suffix, myvlm, self.csys_transformations, inviscid_flow_results_vlm, sail_set)
+        self._check_df_results(suffix, myvlm, self.csys_transformations, inviscid_flow_results, sail_set)
         
         # remove useless file after test
         os.remove(f'expected_gamma_magnitute_{suffix}.csv')

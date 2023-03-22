@@ -47,11 +47,14 @@ mast_LOA = 0.15  # [m]
 main_sail_girths = np.array([0.00, 1./8, 1./4, 1./2, 3./4, 7./8, 1.00])
 main_sail_chords = np.array([4.00, 3.82, 3.64, 3.20, 2.64, 2.32, 2.00])
 main_sail_centerline_twist_deg = 12. * main_sail_girths + 7
+main_sail_camber = np.array([0.] * len(main_sail_girths))
+main_sail_distance_from_luff = np.array([0.1] * len(main_sail_girths)) # cannot be zero, if camber is zero it do nothing
 
 jib_girths = np.array([0.00, 1./4, 1./2, 3./4, 1.00])
 jib_chords = np.array([3.80, 2.98, 2.15, 1.33, 0.5]) - 0.4
 jib_centerline_twist_deg = 15. * jib_girths + 5
-
+jib_camber = np.array([0.] * len(jib_girths))
+jib_distance_from_luff = np.array([0.1] * len(jib_girths)) # cannot be zero, if camber is zero it do nothing
 # OPTIMIZATION CONSTRAINTS (INEQUALITY)
 # main_sail_CLmax = 1. * np.array([1.25, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25])
 # main_sail_CLmin = 0. * np.array([0.325, 0.58, 0.55, 0.4, 0.3, 0.2, 0.1])

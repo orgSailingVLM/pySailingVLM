@@ -29,8 +29,8 @@ def make_airfoil_mesh(le_points : List[np.ndarray], grid_size : List[int], chord
     """
     make_airfoil_mesh make airfoil mesh before any rotation/twist etc
 
-    :param List[np.ndarray] le_points: list with points on leading edge 
-    :param List[int] grid_size: size of grid
+    :param List[np.ndarray] le_points: list with points on leading edge like [le_SW,  le_NW]
+    :param List[int] grid_size: size of grid like [n_chordwise, n_spanwise]
     :param np.ndarray chords_vec: vector with chords
     :param _type_ interpolated_distance_from_LE: interpolated distance from leading edge
     :param _type_ interpolated_camber: interpolated camber

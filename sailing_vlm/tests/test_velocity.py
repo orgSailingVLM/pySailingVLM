@@ -13,8 +13,8 @@ import numba
 from numpy.testing import assert_almost_equal
 from sailing_vlm.solver.velocity import vortex_line, vortex_infinite_line, \
                                     vortex_horseshoe, vortex_ring, \
-                                    is_in_vortex_core, calc_induced_velocity
-from sailing_vlm.solver.coefs import get_influence_coefficients_spanwise, solve_eq
+                                    is_in_vortex_core, calc_induced_velocity, vortex_horseshoe_v2
+from sailing_vlm.solver.coefs import calc_velocity_coefs, solve_eq, calculate_RHS
 
 
 class TestVelocity(TestCase):
@@ -29,7 +29,7 @@ class TestVelocity(TestCase):
                                     [  10, 10, 0]]])
         self.gamma_orientation = 1.0
         self.normals = np.array([[0.0, 0.0, 1.0]])
-        self.collocations = np.array([[7.5, 5.0, 0.0]])
+        self.ctr_p = np.array([[7.5, 5.0, 0.0]])
         self.cps = np.array([[2.5, 5.0, 0.0]])
         self.rings = np.array([[[12.5, 0.0, 0.0 ],
                                 [2.5, 0.0, 0.0  ],
@@ -75,21 +75,31 @@ class TestVelocity(TestCase):
         assert_almost_equal(calculated_vel1, expected_vel1)
 
     def test_vortex_horseshoe(self):
+        # test if underwater part gives same results
+        
+        # C ----- D
+        # |       |  
+        # |       |
+        # B ----- A
         V = [1, 0, 0]
 
         ### i,j = 0,1
         ctr_point_01 = np.array([1.5, -5., 0.])
-        a_01 = np.array([0.5, 0., 0.])
-        b_01 = np.array([0.5, 10., 0.])
-
+    
+        b_01 = np.array([0.5, 0., 0.])
+        c_01 = np.array([0.5, 10., 0.])
+        a_01 = np.array([1., 0., 0.])
+        d_01 = np.array([1., 10., 0.])
         ### i,j = 1,0
         ctr_point_10 = np.array([1.5, 5., 0.])
-        a_10 = np.array([0.5, -10., 0.])
-        b_10 = np.array([0.5, 0., 0.])
+       
+        b_10 = np.array([0.5, -10., 0.])
+        c_10 = np.array([0.5, 0., 0.])
+        d_10 = np.array([1., 0., 0.])
+        a_10 = np.array([1., -10., 0.])
 
-        v01 = vortex_horseshoe(ctr_point_01, a_01, b_01, V)
-        v10 = vortex_horseshoe(ctr_point_10, a_10, b_10, V)
-
+        v01 = vortex_horseshoe_v2(ctr_point_01, a_01, b_01, c_01, d_01, V)
+        v10 = vortex_horseshoe_v2(ctr_point_10, a_10, b_10, c_10, d_10, V)
         assert np.allclose(v01, v10)
 
     def test_is_in_vortex_core(self):
@@ -105,7 +115,7 @@ class TestVelocity(TestCase):
 
     def test_vortex_ring(self):
         ring = self.rings[0]
-        v_ind = vortex_ring(self.collocations[0], ring[0], ring[1], ring[2], ring[3])
+        v_ind = vortex_ring(self.ctr_p[0], ring[0], ring[1], ring[2], ring[3])
         v_ind_expected = [0, 0, -0.09003163161571061]
 
         assert_almost_equal(v_ind, v_ind_expected)
@@ -114,13 +124,15 @@ class TestVelocity(TestCase):
         V = 1 * np.array([10.0, 0.0, -1])  # [m/s] wind speed
         V_free_stream = np.array([V for i in range(self.ns * self.nc)])
 
-        coefs, RHS, wind_coefs = get_influence_coefficients_spanwise(self.collocations, self.rings, self.normals, V_free_stream, self.trailing_edge_info, self.gamma_orientation)
+        coefs, v_ind_coeff = calc_velocity_coefs(V_free_stream, self.ctr_p, self.rings, self.normals, self.trailing_edge_info, self.gamma_orientation)
+        RHS = calculate_RHS(V_free_stream, self.normals)
+        #coefs, RHS, wind_coefs = get_influence_coefficients_spanwise(self.collocations, self.rings, self.normals, V_free_stream, self.trailing_edge_info, self.gamma_orientation)
         gamma_magnitude = solve_eq(coefs, RHS)
         gamma_expected = [-13.168814113460344]
         np.testing.assert_almost_equal(gamma_magnitude, gamma_expected)
 
         V_induced_expected = np.array([[0.07035975, 0., 1.]])
-        V_induced = calc_induced_velocity(wind_coefs, gamma_magnitude)
+        V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
         np.testing.assert_almost_equal(V_induced, V_induced_expected)
 
     

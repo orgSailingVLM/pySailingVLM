@@ -7,11 +7,8 @@ import numba
 from numpy.testing import assert_almost_equal
 
 
-from sailing_vlm.solver.coefs import calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points
-from sailing_vlm.solver.coefs import get_influence_coefficients_spanwise
-from sailing_vlm.solver.coefs import solve_eq
-from sailing_vlm.solver.coefs import get_vlm_CL_CD_free_wing
-from sailing_vlm.solver.coefs import get_CL_CD_free_wing
+from sailing_vlm.solver.coefs import calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points, \
+    calc_velocity_coefs, solve_eq, get_vlm_CL_CD_free_wing, get_CL_CD_free_wing, calculate_RHS
 from sailing_vlm.solver.panels import get_panels_area, make_panels_from_le_te_points
 from sailing_vlm.solver.forces import is_no_flux_BC_satisfied 
 from sailing_vlm.rotations.geometry_calc import rotation_matrix
@@ -29,8 +26,8 @@ class TestCoefs(TestCase):
                                     [  0, 10, 0 ],
                                     [  10, 10, 0]]])
         self.gamma_orientation = 1.0
-        self.normals = np.array([[0.0, 0.0, 1.0]])
-        self.collocations = np.array([[7.5, 5.0, 0.0]])
+        self.normals = np.array([[0.0, 0.0, -1.0]])
+        self.ctr_p = np.array([[7.5, 5.0, 0.0]])
         self.cps = np.array([[2.5, 5.0, 0.0]])
         self.rings = np.array([[[12.5, 0.0, 0.0 ],
                                 [2.5, 0.0, 0.0  ],
@@ -43,11 +40,11 @@ class TestCoefs(TestCase):
         self.leading_mid_points = np.array([[0., 5., 0.]])
         self.trailing_mid_points = np.array([[10.,  5.,  0.]])
     def test_calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(self):
-        normals, collocation_points, center_of_pressure, rings, span_vectors, leading_mid_points, trailing_mid_points = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(self.panels, self.gamma_orientation)
+        normals, ctr_p, cp, rings, span_vectors, leading_mid_points, trailing_mid_points = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(self.panels, self.gamma_orientation)
     
         assert_almost_equal(normals, self.normals)
-        assert_almost_equal(collocation_points, self.collocations)
-        assert_almost_equal(center_of_pressure, self.cps)
+        assert_almost_equal(ctr_p, self.ctr_p)
+        assert_almost_equal(cp, self.cps)
         assert_almost_equal(rings, self.rings)
         assert_almost_equal(span_vectors, self.spans)
         assert_almost_equal(leading_mid_points, self.leading_mid_points)
@@ -71,22 +68,21 @@ class TestCoefs(TestCase):
                             [  2.,  10.        ,   0.]]])
 
         trailing_edge_info = np.array([True, True, True])
-        normals, collocation_points, center_of_pressure, rings, _, _, _ = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(panels, self.gamma_orientation)
+        normals, ctr_p, cp, rings, _, _, _ = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(panels, self.gamma_orientation)
     
         M = 3  # number of panels (spanwise)
         N = 1
         V = 1 * np.array([10.0, 0.0, -1])  # [m/s] wind speed
         V_free_stream = np.array([V for i in range(N * M)])
 
-        
-        coefs, RHS, wind_coefs = get_influence_coefficients_spanwise(collocation_points, rings, normals, V_free_stream, trailing_edge_info, self.gamma_orientation)
-        gamma_magnitude = solve_eq(coefs, RHS)
+        coeff, v_ind_coeff = calc_velocity_coefs(V_free_stream, ctr_p, rings, normals, trailing_edge_info, self.gamma_orientation)
+        RHS = calculate_RHS(V_free_stream, normals)
+        gamma_magnitude = solve_eq(coeff, RHS)
         areas = get_panels_area(panels)
+        gamma_expected = [-5.26057, -5.61231, -5.26057]
+        assert_almost_equal(gamma_magnitude, gamma_expected, decimal=5)
 
-        gamma_expected = [-5.26437093, -5.61425005, -5.26437093]
-        assert_almost_equal(gamma_magnitude, gamma_expected)
-
-        V_induced, V_app_fs = calculate_app_fs(V_free_stream, wind_coefs, gamma_magnitude)
+        V_induced, V_app_fs = calculate_app_fs(V_free_stream, v_ind_coeff, gamma_magnitude)
         assert is_no_flux_BC_satisfied(V_app_fs, panels, areas, normals)
 
         with self.assertRaises(ValueError) as context:
@@ -135,17 +131,17 @@ class TestCoefs(TestCase):
         S = 2 * half_wing_span * chord
         CL_expected, CD_expected = get_CL_CD_free_wing(AR, AoA_deg)
         
-         
         areas = get_panels_area(panels) 
-        normals, collocation_points, center_of_pressure, rings, span_vectors, _, _ = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(panels, gamma_orientation)
+        normals, ctr_p, cp, rings, span_vectors, _, _ = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(panels, gamma_orientation)
 
-        coefs, RHS, wind_coefs = get_influence_coefficients_spanwise(collocation_points, rings, normals, V_app_infw, trailing_edge_info, gamma_orientation)
-        gamma_magnitude = solve_eq(coefs, RHS)
+        coeff, v_ind_coeff = calc_velocity_coefs(V_app_infw, ctr_p, rings, normals, trailing_edge_info, self.gamma_orientation)
+        RHS = calculate_RHS(V_app_infw, normals)
+        gamma_magnitude = solve_eq(coeff, RHS)
 
-        _,  V_app_fs_at_ctrl_p = calculate_app_fs(V_app_infw,  wind_coefs,  gamma_magnitude)
+        _,  V_app_fs_at_ctrl_p = calculate_app_fs(V_app_infw,  v_ind_coeff,  gamma_magnitude)
         assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, panels, areas, normals)
 
-        force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, rho, center_of_pressure, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, gamma_orientation)
+        force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, rho, cp, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, gamma_orientation)
 
         CL_vlm, CD_vlm = get_vlm_CL_CD_free_wing(force, V, rho, S)
         

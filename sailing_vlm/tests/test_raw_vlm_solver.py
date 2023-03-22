@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from sailing_vlm.solver.panels import make_panels_from_le_te_points, get_panels_area
 from sailing_vlm.solver.coefs import calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points, \
-    get_influence_coefficients_spanwise
+    calc_velocity_coefs
 
 class TestRawSolver(TestCase):
     def setUp(self):
@@ -29,7 +29,7 @@ class TestRawSolver(TestCase):
         self.N = ns * nc
         self.gamma_orientation = 1
         self.areas = get_panels_area(self.panels) 
-        self.normals, self.collocation_points, _, self.rings, _, _, _ = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(self.panels, self.gamma_orientation)
+        self.normals, self.ctr_p, _, self.rings, _, _, _ = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(self.panels, self.gamma_orientation)
 
 
     def test_matrix_symmetry(self):
@@ -39,6 +39,6 @@ class TestRawSolver(TestCase):
             V = [random.uniform(-10, 10), 0, random.uniform(-10, 10)]
             V_free_stream = np.array([V for i in range(self.N)])
 
-            coefs, _, _ = get_influence_coefficients_spanwise(self.collocation_points, self.rings, self.normals, V_free_stream, self.trailing_edge_info, self.gamma_orientation)
+            coefs, _ = calc_velocity_coefs(V_free_stream, self.ctr_p, self.rings, self.normals, self.trailing_edge_info, self.gamma_orientation)
             is_mat_symmeric = np.allclose(coefs, coefs.T, atol=1e-8)
             assert is_mat_symmeric
