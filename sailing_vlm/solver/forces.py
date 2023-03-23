@@ -96,3 +96,16 @@ def is_no_flux_BC_satisfied(V_app_fw, panels, areas, normals):
 
     return True
 
+def calc_pressure_coeff(pressure: np.ndarray, rho: float, V: np.ndarray) -> np.ndarray:
+    """
+    calc_pressure_coeff calculate pressure coeffs
+
+    :param np.ndarray pressure: array with pressure
+    :param float rho: liquid density
+    :param np.ndarray V: free stream speed
+    :return np.ndarray: pressure coeffs
+    """
+    # 
+    p_coeffs = np.array([ p / (0.5 * rho * np.dot(V[i], V[i])) for i, p in enumerate(pressure)])
+    return p_coeffs
+    

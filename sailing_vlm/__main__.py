@@ -12,8 +12,8 @@ from sailing_vlm.solver.panels_plotter import display_panels_xyz_and_winds
 
 from sailing_vlm.results.inviscid_flow import InviscidFlowResults
 
-#from sailing_vlm.examples.input_data.prostokat import *
-from sailing_vlm.examples.input_data.jib_and_main_sail_vlm_case import *
+from sailing_vlm.examples.input_data.prostokat import *
+#from sailing_vlm.examples.input_data.jib_and_main_sail_vlm_case import *
 from sailing_vlm.solver.coefs import get_vlm_CL_CD_free_wing, get_vlm_Cxyz
 from sailing_vlm.solver.vlm import Vlm
 
@@ -87,7 +87,7 @@ def main():
     print(f"C:[{CLx_vlm}, {Cy_vlm}, {Cz_vlm}]")#\nF_tot={tot_F}\nV={V} S={S} q={q}")
     print(f"AR: {AR}")
     print(f"S: {S}")
-
+    print(myvlm.p_coeffs)
 if __name__ == "__main__":
     
     start = time.time()

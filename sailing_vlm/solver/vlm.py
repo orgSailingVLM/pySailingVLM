@@ -72,6 +72,7 @@ class Vlm:
         self.force, self.V_app_fs_at_cp, self.V_induced_at_cp = forces.calc_force_wrapper(self.inlet_conditions.V_app_infs, self.gamma_magnitude, self.rho, self.cp, self.rings, self.n_spanwise, self.normals, self.span_vectors, self.trailing_edge_info, self.leading_edge_info, self.gamma_orientation)
         self.pressure = forces.calc_pressure(self.force, self.normals, self.areas)
 
+        self.p_coeffs = forces.calc_pressure_coeff(self.pressure, self.rho, self.inlet_conditions.V_app_infs)
         # tutaj sa porownywane wszystkie cisnienia, nawet te pod woda
         # czy porownywac dla kazdego zagla z osobna?
         # np oddzielnie dla jiba, oddzielnie dla maina, oddzielnie pod woda?
