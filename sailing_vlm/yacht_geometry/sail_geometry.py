@@ -86,7 +86,7 @@ class SailGeometry(BaseGeometry, ABC):
         mesh_underwater = make_airfoil_mesh([le_SW_underwater, le_NW_underwater],[self.__n_chordwise, self.__n_spanwise],fchords_vec, interpolated_distance_from_luff, interpolated_camber).reshape(sh0*sh1, sh2)
         mesh_underwater = mesh_underwater.reshape(sh0*sh1, sh2)
 
-        # rotation
+        # rotation # for heel
         #mesh:  le NW p1 p2 ... te
         #       le p1 p2 ... te
         #       le p1 p2 ... te

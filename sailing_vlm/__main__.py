@@ -88,6 +88,11 @@ def main():
     print(f"AR: {AR}")
     print(f"S: {S}")
     print(myvlm.p_coeffs)
+    
+        
+    with open('test2.npy', 'wb') as f:
+        np.save(f, myvlm.p_coeffs)
+    
 if __name__ == "__main__":
     
     start = time.time()
