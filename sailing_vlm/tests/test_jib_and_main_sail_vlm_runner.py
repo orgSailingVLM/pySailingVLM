@@ -70,45 +70,27 @@ class TestJibRunner(TestCase):
         inviscid_flow_results = InviscidFlowResults(sail_set, self.csys_transformations, myvlm)
         return sail_set, myvlm, inviscid_flow_results
 
-    def _check_df_results(self, suffix, myvlm, csys_transformations, inviscid_flow_results, sail_set):
-        inviscid_flow_results.estimate_heeling_moment_from_keel(self.hull.center_of_lateral_resistance)
-                  
-        df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, 
-            csys_transformations, inviscid_flow_results, sail_set, output_dir_name)
-        shutil.copy(os.path.join(case_dir, case_name), os.path.join(output_dir_name, case_name))
-
-
-        df_components.to_csv(f'expected_df_components_{suffix}.csv')
-        df_integrals.to_csv(f'expected_df_integrals_{suffix}.csv', index=False)
-        df_inlet_IC.to_csv(f'expected_df_inlet_IC_{suffix}.csv')
-
-        expected_df_integrals = pd.read_csv(os.path.join(case_dir, f'expected_df_integrals_{suffix}.csv'))
-        assert_frame_equal(df_integrals, expected_df_integrals)
-
-        expected_df_inlet_ic = pd.read_csv(os.path.join(case_dir, f'expected_df_inlet_IC_{suffix}.csv'))
-        assert_frame_equal(df_inlet_IC, expected_df_inlet_ic)
-
-        expected_df_components = pd.read_csv(os.path.join(case_dir, f'expected_df_components_{suffix}.csv'))
-        assert_frame_equal(df_components, expected_df_components)
-        
-        # remove files after tests
-        os.remove(f'expected_df_components_{suffix}.csv')
-        os.remove(f'expected_df_integrals_{suffix}.csv')
-        os.remove(f'expected_df_inlet_IC_{suffix}.csv')
-
+   
     def test_calc_forces_and_moments_vlm(self):
-        suffix = 'vlm'
-        nc = 8
-        ns = 16 # underwater part is albo 16-> gives 32
+        nc = 2
+        ns = 4
 
         sail_set, myvlm, inviscid_flow_results = self._prepare_sail_set(n_spanwise=ns, n_chordwise=nc)
 
+        res_dir = 'dummy_file'
+        df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, 
+            self.csys_transformations, inviscid_flow_results, sail_set, res_dir)
+        ##
         df_gamma = pd.DataFrame({'gamma_magnitute': myvlm.gamma_magnitude})
-        df_gamma.to_csv(f'expected_gamma_magnitute_{suffix}.csv', index=False)
-        expected_df_gamma = pd.read_csv(os.path.join(case_dir, f'expected_gamma_magnitute_{suffix}.csv'))
-        np.testing.assert_almost_equal(df_gamma['gamma_magnitute'].to_numpy(), expected_df_gamma['gamma_magnitute'].to_numpy())
 
-        self._check_df_results(suffix, myvlm, self.csys_transformations, inviscid_flow_results, sail_set)
+        expected_df_gamma = pd.read_csv(os.path.join(case_dir, 'expected_gamma_magnitute_vlm.csv'))
+        df_components_expected = pd.read_csv(os.path.join(case_dir, 'expected_components_vlm.csv'), index_col=0)
+        df_inlet_IC_expected = pd.read_csv(os.path.join(case_dir, 'expected_inlet_IC_vlm.csv'), index_col=0)
+        df_integrals_expected = pd.read_csv(os.path.join(case_dir, 'expected_integrals_vlm.csv'), index_col=0)
         
-        # remove useless file after test
-        os.remove(f'expected_gamma_magnitute_{suffix}.csv')
+        pd.util.testing.assert_frame_equal(df_components, df_components_expected)
+        pd.util.testing.assert_frame_equal(df_integrals, df_integrals_expected)
+        pd.util.testing.assert_frame_equal(df_inlet_IC, df_inlet_IC_expected)
+
+        pd.util.testing.assert_frame_equal(df_gamma, expected_df_gamma)
+        shutil.rmtree(res_dir)

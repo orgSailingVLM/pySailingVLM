@@ -9,6 +9,7 @@ from sailing_vlm.solver.vlm import Vlm
 from sailing_vlm.results.inviscid_flow import InviscidFlowResults
 from sailing_vlm.solver.coefs import get_vlm_Cxyz
 from sailing_vlm.rotations.geometry_calc import rotation_matrix
+from sailing_vlm.results.inviscid_flow import InviscidFlowResults
 
 
 class TestValidation(TestCase):
@@ -84,8 +85,10 @@ class TestValidation(TestCase):
         S = 2 * half_wing_span * chord_length
         q = 0.5 * rho * (np.linalg.norm(tws_ref) ** 2) * S
         sail_Cxyz = F / q
-    
-        return sail_Cxyz, F, myvlm
+
+        inviscid_flow_results = InviscidFlowResults(sail_set, csys_transformations, myvlm)
+        
+        return sail_Cxyz, F, myvlm, inviscid_flow_results
 
     def test_sweep_wing(self):
         # page 365, Example 7.2 Aerodynamics for engineers, John J.Bertin
@@ -101,7 +104,7 @@ class TestValidation(TestCase):
         n_spanwise = 4  # No of control points (above the water) per sail, recommended: 50
         n_chordwise = 1 # No of control points (above the water) per sail, recommended: 50
         
-        sail_Cxyz, F, myvlm = self.calculate_main_sail(rho, tws_ref, chord_length, half_wing_span, AoA_deg, sweep_angle_deg, n_spanwise, n_chordwise)
+        sail_Cxyz, F, myvlm, _ = self.calculate_main_sail(rho, tws_ref, chord_length, half_wing_span, AoA_deg, sweep_angle_deg, n_spanwise, n_chordwise)
         
         a_VLM = sail_Cxyz[1] / np.deg2rad(AoA_deg)
         np.testing.assert_almost_equal(myvlm.rings[3,1], np.array([0.425, 0., 0.375]), decimal=3)
@@ -133,8 +136,8 @@ class TestValidation(TestCase):
         np.testing.assert_almost_equal(a_ref, 3.443185, decimal=6)
     
     def test_flat_plate(self):
-        # page 365, Example 7.2 Aerodynamics for engineers, John J.Bertin
-        # https://airloads.net/Downloads/Textbooks/Aerodynamics-for-engineers-%20John%20J.Bertin.pdf
+        # comparison between theory (aircraft) and sailing vlm approach
+        # tested numerically with tornado in matlab
         
         chord_length = 1.0             
         half_wing_span = 5.0 
@@ -152,10 +155,18 @@ class TestValidation(TestCase):
         aircraft_Cxyz = a.Cxyz 
 
         # n_spanwise / 2 because SAIL has underwater part also
-        sail_Cxyz, F, myvlm = self.calculate_main_sail(rho, tws_ref, chord_length, half_wing_span, AoA_deg, sweep_angle_deg, int(n_spanwise / 2), n_chordwise)
+        sail_Cxyz, F, myvlm, inviscid_flow_results = self.calculate_main_sail(rho, tws_ref, chord_length, half_wing_span, AoA_deg, sweep_angle_deg, int(n_spanwise / 2), n_chordwise)
         
         np.testing.assert_almost_equal(aircraft_Cxyz[0], sail_Cxyz[0])
         np.testing.assert_almost_equal(aircraft_Cxyz[1], sail_Cxyz[1])
         np.testing.assert_almost_equal(aircraft_Cxyz[2], sail_Cxyz[2])
         
+        M_xyz_expected = np.array([ 7.16657636e-17, -2.77147486e-16,  1.26635518e+00])
         
+        np.testing.assert_almost_equal(inviscid_flow_results.M_xyz, inviscid_flow_results.M_centerline_csys)
+        np.testing.assert_almost_equal(np.sum(inviscid_flow_results.M_xyz, axis=0), M_xyz_expected)
+        np.testing.assert_almost_equal(inviscid_flow_results.F_xyz, inviscid_flow_results.F_centerline)
+        np.testing.assert_almost_equal(inviscid_flow_results.M_total_above_water_in_centerline_csys, np.sum(np.array_split(inviscid_flow_results.M_xyz, 2)[0], axis=0))
+        np.testing.assert_almost_equal(inviscid_flow_results.M_xyz, inviscid_flow_results.M_centerline_csys)
+
+    

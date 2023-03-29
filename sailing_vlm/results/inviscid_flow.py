@@ -30,7 +30,33 @@ class InviscidFlowResults:
         self.F_xyz_above_water, self.F_xyz_total = extract_above_water_quantities(self.F_xyz)
 
         r = calc_moment_arm_in_shifted_csys(myvlm.cp, csys_transformations.v_from_original_xyz_2_reference_csys_xyz)
-     
+        ####
+        # tests for flat plate
+        # remove it later
+        # m = np.cross(myvlm.cp, myvlm.force)
+        # m_xyz = np.sum(m, axis=0) 
+        # m_xyz:
+        # array([ 7.16657636e-17, -2.77147486e-16,  1.26635518e+00])
+        # matlab:
+        # 2.81892564846231e-15, -1.26030647391301, 1.90440111597079e-16
+        
+        # to jest to samo bo:
+        # normals:
+        # ...
+        # [ 0.,  1., -0.],
+        # [ 0.,  1., -0.],
+        # [ 0.,  1., -0.],
+        # [ 0.,  1., -0.],
+        # ...  
+        
+        # matlab:
+        # 0	0	-1
+        # 0	0	-1
+        # 0	0	-1
+        # 0	0	-1
+        
+        # czyli u nas xyz a w matlabie xzy 
+        ####
         dyn_dict = {}
         # for jib and main, quantities is always dividable by 2
         half = int(myvlm.force.shape[0] / 2)
@@ -58,7 +84,7 @@ class InviscidFlowResults:
 
         self.dyn_dict = dyn_dict
 
-        self.M_xyz = calc_moments(r, myvlm.force)
+        self.M_xyz = calc_moments(r, myvlm.force) 
         _, self.M_total_above_water_in_xyz_csys = extract_above_water_quantities(self.M_xyz)
 
         r_dot_F = np.array([np.dot(r[i], myvlm.force[i]) for i in range(len(myvlm.force))])
