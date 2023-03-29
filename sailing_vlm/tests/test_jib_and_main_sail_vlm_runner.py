@@ -98,9 +98,10 @@ class TestJibRunner(TestCase):
 
     def test_calc_forces_and_moments_vlm(self):
         suffix = 'vlm'
-        n_chordwise = 3
+        nc = 8
+        ns = 16 # underwater part is albo 16-> gives 32
 
-        sail_set, myvlm, inviscid_flow_results = self._prepare_sail_set(n_spanwise=2, n_chordwise=n_chordwise)
+        sail_set, myvlm, inviscid_flow_results = self._prepare_sail_set(n_spanwise=ns, n_chordwise=nc)
 
         df_gamma = pd.DataFrame({'gamma_magnitute': myvlm.gamma_magnitude})
         df_gamma.to_csv(f'expected_gamma_magnitute_{suffix}.csv', index=False)

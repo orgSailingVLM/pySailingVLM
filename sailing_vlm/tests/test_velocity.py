@@ -128,10 +128,10 @@ class TestVelocity(TestCase):
         RHS = calculate_RHS(V_free_stream, self.normals)
         #coefs, RHS, wind_coefs = get_influence_coefficients_spanwise(self.collocations, self.rings, self.normals, V_free_stream, self.trailing_edge_info, self.gamma_orientation)
         gamma_magnitude = solve_eq(coefs, RHS)
-        gamma_expected = [-13.168814113460344]
+        gamma_expected = [-13.017503524978553]
         np.testing.assert_almost_equal(gamma_magnitude, gamma_expected)
 
-        V_induced_expected = np.array([[0.07035975, 0., 1.]])
+        V_induced_expected = np.array([[0.01210097, 0., 1.]])
         V_induced = calc_induced_velocity(v_ind_coeff, gamma_magnitude)
         np.testing.assert_almost_equal(V_induced, V_induced_expected)
 

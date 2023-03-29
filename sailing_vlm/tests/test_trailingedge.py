@@ -29,7 +29,7 @@ class TestTrailingEdgePanel(TestCase):
         normals, ctr_p, _, rings, _, _, _ = calculate_normals_collocations_cps_rings_spans_leading_trailing_mid_points(panels, self.gamma_orientation)
 
         coeff, v_ind_coeff = calc_velocity_coefs(dummy_velocity, ctr_p, rings, normals, self.trailing_edge_info, self.gamma_orientation)
-        v_ind_expected = np.array([[0.0200998, -0.0093672, -0.022963]])
+        v_ind_expected = np.array([[ 0.01193901,  0.00379528, -0.07403358]])
 
         assert_almost_equal(v_ind_coeff[0], v_ind_expected)
    
