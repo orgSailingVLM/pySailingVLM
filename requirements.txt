@@ -3,7 +3,7 @@ numpy  # BSD 3-Clause
 scipy
 matplotlib==v3.4.3  # Python Software Foundation License (PSFL) -> BSD-style
 # matplotlib==3.5.0  # Python Software Foundation License (PSFL) -> BSD-style
-codecov  # APACHE 2.0 license
+codecov==2.1.12  # APACHE 2.0 license
 scipy  # BSD 3-Clause license
 pytest  # MIT license
 pandas  # BSD 3-Clause license
