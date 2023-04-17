@@ -46,7 +46,7 @@ def parse_cli():
 
 
 def main():
-
+    parse_cli()
     csys_transformations = CSYS_transformations(
         vr.heel_deg, vr.leeway_deg,
         v_from_original_xyz_2_reference_csys_xyz=vr.reference_level_for_moments)
@@ -110,23 +110,4 @@ def main():
         
     with open('test2.npy', 'wb') as f:
         np.save(f, myvlm.p_coeffs)
-    
-if __name__ == "__main__":
-    
-    #parse_cli(sys.argv)
-    parse_cli()
-    start = time.time()
-    cProfile.runctx('main()', {'main' : main}, {}, "output.dat")
-    
-    end = time.time()
-    print("Elapsed = %s" % (end - start))
-
-    with open("output_time.txt", "w") as f:
-        p = pstats.Stats("output.dat", stream=f)
-        p.sort_stats("time").print_stats()
-        
-    with open("output_calls.txt", "w") as f:
-        p = pstats.Stats("output.dat", stream=f)
-        p.sort_stats("calls").print_stats()
-        
-    
+  
