@@ -19,7 +19,7 @@ jobs:
     docker:
       # specify the version you desire here
       # use `-browsers` prefix for selenium tests_LLT_optimizer, e.g. `3.6.1-browsers`
-      - image: circleci/python:3.8
+      - image: circleci/python:3.10
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -38,7 +38,7 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}
+          - v1-dependencies-{{ checksum "setup.cfg" }}
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
@@ -48,21 +48,21 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install --upgrade pip
-            pip install -r requirements.txt
+            pip install -q -e .
             
 
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
+          key: v1-dependencies-{{ checksum "setup.cfg" }}
 
       # https://pytest.org
       - run:
-          name: run sailing_vlm/tests
+          name: run pySailingVLM/tests
           command: |
             . venv/bin/activate
             export NUMBA_DISABLE_JIT=1
-            coverage run -m unittest discover -v sailing_vlm/tests
+            coverage run -m unittest discover -v pySailingVLM/tests
             coverage report
             coverage html
 
