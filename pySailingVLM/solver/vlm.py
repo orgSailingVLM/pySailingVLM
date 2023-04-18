@@ -50,7 +50,7 @@ class Vlm:
     pressure : np.ndarray = field(init=False)
     V_app_fs_at_cp : np.ndarray = field(init=False)
     V_induced_at_cp : np.ndarray = field(init=False)
-
+    p_coeffs: np.ndarray = field(init=False)
     # as class var
     gamma_orientation : float = -1.0
 

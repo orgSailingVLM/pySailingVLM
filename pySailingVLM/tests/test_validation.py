@@ -1,5 +1,4 @@
 import numpy as np
-import math
 from unittest import TestCase
 
 import pySailingVLM.runner.aircraft as ac
@@ -11,10 +10,8 @@ from pySailingVLM.solver.coefs import get_vlm_Cxyz
 from pySailingVLM.rotations.geometry_calc import rotation_matrix
 from pySailingVLM.results.inviscid_flow import InviscidFlowResults
 
-
 class TestValidation(TestCase):
     def calculate_main_sail(self, rho: float, tws_ref: float, chord_length: float, half_wing_span:  float, AoA_deg: float, sweep_angle_deg : float, n_spanwise: int, n_chordwise: int ):
-
         interpolation_type = "linear"  # either "spline" or "linear"
         LLT_twist = "real_twist"  # defines how the Lifting Line discretize the sail twist.
         # It can be "sheeting_angle_const" or "average_const" or "real_twist"
@@ -74,7 +71,7 @@ class TestValidation(TestCase):
                 sails_def, LLT_twist, interpolation_type)
         sail_set = s.sail_set
         myvlm = Vlm(sail_set.panels, n_chordwise, n_spanwise, rho, w_profile, sail_set.trailing_edge_info, sail_set.leading_edge_info)
-        2
+        
         inviscid_flow_results = InviscidFlowResults(sail_set, csys_transformations, myvlm)
       
         A = rotation_matrix([0, 0, 1], np.deg2rad(-AoA_deg))
@@ -134,7 +131,7 @@ class TestValidation(TestCase):
         np.testing.assert_almost_equal(CL_ref, CL_ref2, decimal=6)
         np.testing.assert_almost_equal(CL_ref, 0.240379, decimal=6)
         np.testing.assert_almost_equal(a_ref, 3.443185, decimal=6)
-    
+
     def test_flat_plate(self):
         # comparison between theory (aircraft) and sailing vlm approach
         # tested numerically with tornado in matlab
@@ -169,4 +166,4 @@ class TestValidation(TestCase):
         np.testing.assert_almost_equal(inviscid_flow_results.M_total_above_water_in_centerline_csys, np.sum(np.array_split(inviscid_flow_results.M_xyz, 2)[0], axis=0))
         np.testing.assert_almost_equal(inviscid_flow_results.M_xyz, inviscid_flow_results.M_centerline_csys)
 
-    
+        
