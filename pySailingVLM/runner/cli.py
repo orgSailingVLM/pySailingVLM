@@ -1,7 +1,4 @@
-import pstats
 import numpy as np
-import cProfile
-import time
 import sys
 import os
 import argparse
@@ -16,7 +13,7 @@ from pySailingVLM.solver.coefs import get_vlm_Cxyz
 from pySailingVLM.solver.vlm import Vlm
 from pySailingVLM.runner.sail import Wind, Sail
 
-
+from pySailingVLM.solver.panels_plotter import plot_cp
 def load_variable_module(args):
     try:
         sys.path.append(args.dvars)
@@ -37,7 +34,7 @@ def parse_cli():
 
     # optional args
     # dir for storing output files
-    parser.add_argument('-d', '--dir', nargs='?', default=os.getcwd(), type=str, help="Alternative directory for for results, optional", required=False)
+    #parser.add_argument('-d', '--dir', nargs='?', default=os.getcwd(), type=str, help="Alternative directory for for results, optional", required=False)
     parser.add_argument('-dv', '--dvars', type=str, help="Directory containing input python file with variables, optional", default=os.getcwd(), required=False)   
     # check if dv contain module!
     args = parser.parse_args()
@@ -86,28 +83,11 @@ def main():
     print(df_integrals)
 
     ##### 
-    
-    
     AR = 2 * vr.main_sail_luff / vr.main_sail_chords[0]
     S = 2*vr.main_sail_luff * vr.main_sail_chords[0]
-    # prawdopodobnie jest zle układ
-    # import numpy as np
-    # >>> import pySailingVLM.runner.aircraft as ac
-    # >>> a = ac.Aircraft(1.0, 5.0, 10.0, 32, 8, np.array([1.0, .0, .0]))
-    # >>> a.get_Cxyz()
-    # (0.023472780216173314, 0.0, 0.8546846987984326)
-
-    # # Cx_vlm, Cy_vlm, Cz_vlm, total_F, V, S, q
-    # (0.023472780216173314, 0.0, 0.8546846987984326, array([0.14377078, 0.        , 5.23494378]), array([1., 0., 0.]), 10.0, 6.125
-    # metoda ponizej
-    # 0.023472780216173342 -0.8546846987984335 6.996235308182204e-34 [ 1.43770779e-01 -5.23494378e+00  4.28519413e-33] [1. 0. 0.] 10.0 6.125
-    CLx_vlm, Cy_vlm, Cz_vlm= get_vlm_Cxyz(myvlm.force, np.array(w_profile.get_true_wind_speed_at_h(1.0)), vr.rho, S)
-    print(f"C:[{CLx_vlm}, {Cy_vlm}, {Cz_vlm}]")#\nF_tot={tot_F}\nV={V} S={S} q={q}")
-    print(f"AR: {AR}")
-    print(f"S: {S}")
-    print(myvlm.p_coeffs)
     
-        
-    with open('test2.npy', 'wb') as f:
-        np.save(f, myvlm.p_coeffs)
-  
+    Cx_vlm, Cy_vlm, Cz_vlm= get_vlm_Cxyz(myvlm.force, np.array(w_profile.get_true_wind_speed_at_h(1.0)), vr.rho, S)
+    print(f"C:[{Cx_vlm}, {Cy_vlm}, {Cz_vlm}]")#\nF_tot={tot_F}\nV={V} S={S} q={q}")
+
+    plot_cp(sail_set.zero_mesh, myvlm.p_coeffs, vr.output_dir_name)
+    

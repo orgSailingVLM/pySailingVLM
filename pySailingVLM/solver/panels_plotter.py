@@ -22,6 +22,10 @@ import matplotlib as mpl
 
 from typing import Tuple
 
+import spatialpandas as sp
+import holoviews as hv
+from holoviews.streams import PlotSize
+
 class Arrow3D(FancyArrowPatch):
     def __init__(self, xs, ys, zs, *args, **kwargs):
         FancyArrowPatch.__init__(self, (0, 0), (0, 0), *args, **kwargs)
@@ -320,3 +324,21 @@ def display_panels_xyz_and_winds(vlm :Vlm, inviscid_flow_results: InviscidFlowRe
     if show_plot:
         plt.show()
 
+
+def plot_cp(mesh : np.ndarray, p_coeffs : np.ndarray, path_to_save : str):
+    
+    boundaries = sp.geometry.PolygonArray([[np.vstack([panel[:,[0,2]], panel[:,[0,2]][0]]).flatten()] for panel in mesh])
+
+    info = sp.GeoDataFrame({'boundary': boundaries,
+                               'p_coeffs': list(p_coeffs)}) 
+    PlotSize.scale=2 # Sharper plots on Retina displays
+    hv.extension("bokeh")
+
+    ropts = dict(tools=["hover"], height=380, width=330, colorbar=True, colorbar_position="right", color='p_coeffs')
+
+    hvpolys = hv.Polygons(info, vdims=['p_coeffs']).opts(**ropts)
+    try:
+        __IPYTHON__
+        hvpolys
+    except NameError:
+        hv.save(hvpolys, path_to_save + '/cp_plot.html', backend='bokeh')

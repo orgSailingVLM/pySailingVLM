@@ -81,11 +81,26 @@ class SailGeometry(BaseGeometry, ABC):
         
         #### state "zero"
         mesh = make_airfoil_mesh([le_SW, le_NW],[self.__n_chordwise, self.__n_spanwise],chords_vec, interpolated_distance_from_luff, interpolated_camber)
+        ###
+        zero_mesh = np.swapaxes(mesh, 0, 1)
+        panels_above_zero, _, _= make_panels_from_mesh_spanwise(zero_mesh)
+        ###
+        
         sh0, sh1, sh2 = mesh.shape
         mesh = mesh.reshape(sh0*sh1, sh2)
-        mesh_underwater = make_airfoil_mesh([le_SW_underwater, le_NW_underwater],[self.__n_chordwise, self.__n_spanwise],fchords_vec, interpolated_distance_from_luff, interpolated_camber).reshape(sh0*sh1, sh2)
+        
+        mesh_underwater = make_airfoil_mesh([le_SW_underwater, le_NW_underwater],[self.__n_chordwise, self.__n_spanwise],fchords_vec, interpolated_distance_from_luff, interpolated_camber)
+        ### zero mesh
+        zero_mesh_under = np.swapaxes(mesh_underwater, 0, 1)
+        panels_under_zero, _, _= make_panels_from_mesh_spanwise(zero_mesh_under)
+        ### 
         mesh_underwater = mesh_underwater.reshape(sh0*sh1, sh2)
+    
 
+        self.zero_mesh = np.concatenate([panels_above_zero, panels_under_zero])
+        ### end of zero mesh
+        
+        
         # rotation # for heel
         #mesh:  le NW p1 p2 ... te
         #       le p1 p2 ... te
@@ -210,6 +225,7 @@ class SailSet(BaseGeometry):
         leading_info_under = np.concatenate([sail.leading_edge_info for sail in self.sails])
         self.__leading_edge_info = np.concatenate([leading_info_above, leading_info_under])
 
+        self.zero_mesh = np.concatenate([sail.zero_mesh for sail in self.sails])
     @property
     def panels(self):
         return self.__panels
