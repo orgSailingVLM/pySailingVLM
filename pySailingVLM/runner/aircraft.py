@@ -107,7 +107,9 @@ class Aircraft:
     @property
     def CD(self):
         return self.__CD
-
+    @property
+    def Cp(self):
+        return self.__Cp
     @property
     def force(self):
         return self.__force
