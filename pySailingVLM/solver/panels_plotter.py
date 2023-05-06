@@ -326,19 +326,17 @@ def display_panels_xyz_and_winds(vlm :Vlm, inviscid_flow_results: InviscidFlowRe
 
 
 def plot_cp(mesh : np.ndarray, p_coeffs : np.ndarray, path_to_save : str):
-    
+    hv.renderer('bokeh')
     boundaries = sp.geometry.PolygonArray([[np.vstack([panel[:,[0,2]], panel[:,[0,2]][0]]).flatten()] for panel in mesh])
-
-    info = sp.GeoDataFrame({'boundary': boundaries,
-                               'p_coeffs': list(p_coeffs)}) 
-    PlotSize.scale=2 # Sharper plots on Retina displays
-    hv.extension("bokeh")
-
+    info = sp.GeoDataFrame({'boundary': boundaries, 'p_coeffs': list(p_coeffs)}) 
+    
     ropts = dict(tools=["hover"], height=380, width=330, colorbar=True, colorbar_position="right", color='p_coeffs')
-
     hvpolys = hv.Polygons(info, vdims=['p_coeffs']).opts(**ropts)
+    
     try:
         __IPYTHON__
-        hvpolys
+        from bokeh.io import show, output_notebook
+        output_notebook()
+        show(hv.render(hvpolys, backend='bokeh'))
     except NameError:
         hv.save(hvpolys, path_to_save + '/cp_plot.html', backend='bokeh')

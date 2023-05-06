@@ -225,6 +225,7 @@ class SailSet(BaseGeometry):
         leading_info_under = np.concatenate([sail.leading_edge_info for sail in self.sails])
         self.__leading_edge_info = np.concatenate([leading_info_above, leading_info_under])
 
+        # mesh without any rotation (in 2d, one cooridinate is 0)
         self.zero_mesh = np.concatenate([sail.zero_mesh for sail in self.sails])
     @property
     def panels(self):

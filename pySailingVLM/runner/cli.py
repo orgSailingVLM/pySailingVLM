@@ -19,7 +19,7 @@ def load_variable_module(args):
         sys.path.append(args.dvars)
         globals()['vr'] = __import__('variables')
     except ImportError as e:
-        print(f'No vartiable.py file found in {args.dvars}\n{e}')
+        print(f'No vartiables.py file found in {args.dvars}\n{e}')
         sys.exit(0)
     
 def parse_cli():
