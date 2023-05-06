@@ -32,8 +32,6 @@ class VlmAirfoil:
         
         self._yu = self._yc + self._yt * np.cos(self.__theta)
         self._yl = self._yc - self._yt * np.cos(self.__theta)
-        
-        print()
     
     @property
     def xc(self) -> list:

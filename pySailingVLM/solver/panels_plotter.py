@@ -307,7 +307,6 @@ def display_panels_xyz_and_winds(vlm :Vlm, inviscid_flow_results: InviscidFlowRe
     :param HullGeometry hull: hull object
     :param bool show_plot: decide if plot should be shown, defaults to True
     """
-
     ax, water_size = display_panels_xyz(vlm)
 
     ax.set_title('Panels colored by pressure \n'
