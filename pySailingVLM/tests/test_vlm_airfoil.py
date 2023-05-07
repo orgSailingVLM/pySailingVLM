@@ -14,23 +14,29 @@ class TestVlmAirfoil(TestCase):
         foil2 = VlmAirfoil(0.02, 0.4, 0.15)
         # 1800
         foil3 = VlmAirfoil(0.01, 0.8, 0.0)
+        # 1028
+        foil4 = VlmAirfoil(0.01, 0.0, 0.28) 
+        
         dirname = os.path.dirname(__file__)
         filename = os.path.join(dirname, 'input_files/airfoils_coordinates.xlsx')
 
-        e1 = pd.read_excel(open(filename, 'rb'), sheet_name='9501', usecols="A,B", header=None) 
-        e2 = pd.read_excel(open(filename, 'rb'), sheet_name='2415', usecols="A,B", header=None) 
-        e3 = pd.read_excel(open(filename, 'rb'), sheet_name='1800', usecols="A,B", header=None) 
+        e1 = pd.read_excel(open(filename, 'rb'), sheet_name='9501', usecols="A,B,C,D,E,F", header=None) 
+        e2 = pd.read_excel(open(filename, 'rb'), sheet_name='2415', usecols="A,B,C,D,E,F", header=None) 
+        e3 = pd.read_excel(open(filename, 'rb'), sheet_name='1800', usecols="A,B,C,D,E,F", header=None)
+        e4 = pd.read_excel(open(filename, 'rb'), sheet_name='1028', usecols="A,B,C,D,E,F", header=None) 
         
-        np.testing.assert_array_almost_equal(foil1.xc, np.array(e1[0]))
-        np.testing.assert_array_almost_equal(foil1.yc, np.array(e1[1]))
+        foils = [foil1, foil2, foil3, foil4]
+        es = [e1, e2, e3, e4]
         
-        np.testing.assert_array_almost_equal(foil2.xc, np.array(e2[0]))
-        np.testing.assert_array_almost_equal(foil2.yc, np.array(e2[1]))
+        for foil, e in zip(foils, es):
+            np.testing.assert_array_almost_equal(foil.xu, np.array(e[0]))
+            np.testing.assert_array_almost_equal(foil.yu, np.array(e[1]))
+            np.testing.assert_array_almost_equal(foil.xl, np.array(e[2]))
+            np.testing.assert_array_almost_equal(foil.yl, np.array(e[3]))
+            np.testing.assert_array_almost_equal(foil.xc, np.array(e[4]))
+            np.testing.assert_array_almost_equal(foil.yc, np.array(e[5]))
         
-        np.testing.assert_array_almost_equal(foil3.xc, np.array(e3[0]))
-        np.testing.assert_array_almost_equal(foil3.yc, np.array(e3[1]))
-        
-        
+
         # test raise exception for bad input
         # 0 <= m <= 30%
         # 0 <= p <= 90%

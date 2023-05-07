@@ -26,43 +26,48 @@ def check_input_arr_shapes(check_arr : list, sails_def: str):
 @dataclass
 class Wind:
     ## czy dataclass sprawdza type of input ???
+    conditions: dict
+    # alpha_true_wind_deg: float
+    # tws_ref: float
+    # SOG_yacht: float
     
-    alpha_true_wind_deg: float
-    tws_ref: float
-    SOG_yacht: float
-    
-    wind_exp_coeff: float  = None # expotentional
-    wind_reference_measurment_height: float = None# expotentional or logarithmic
-    reference_water_level_for_wind_profile: float = None# expotentional
-    roughness: float = None # logarithmic
-    wind_profile: Literal['exponential', 'flat', 'logarithmic'] = 'exponential'
+    # wind_exp_coeff: float  = None # expotentional
+    # wind_reference_measurment_height: float = None# expotentional or logarithmic
+    # reference_water_level_for_wind_profile: float = None# expotentional
+    # roughness: float = None # logarithmic
+    # wind_profile: Literal['exponential', 'flat', 'logarithmic'] = 'exponential'
     
     def __post_init__(self):
         try: 
-            if self.wind_profile == 'logarithmic' and None in [self.roughness, self.wind_reference_measurment_height]:
+            # check if all these params are inside dictionary
+            params = ['alpha_true_wind_deg', 'tws_ref', 'SOG_yacht', 'wind_exp_coeff', 'wind_reference_measurment_height', 'reference_water_level_for_wind_profile', 'roughness', 'wind_profile' ]
+            if not all(k in self.conditions for k in (params)):
+                raise ValueError(f"Not all keys are passes to conditions dict.\nIt should contain these keys {params}")
+                
+            if self.conditions['wind_profile'] == 'logarithmic' and None in [self.conditions['roughness'], self.conditions['wind_reference_measurment_height']]:
                 raise ValueError("ERROR in logarithmic mode!: Roughness or wind_reference_measurment_height badly defined!")
-            elif self.wind_profile == 'expotentional' and None in [self.wind_exp_coeff, self.wind_reference_measurment_height]:
+            elif self.conditions['wind_profile'] == 'expotentional' and None in [self.conditions['wind_exp_coeff'], self.conditions['wind_reference_measurment_height']]:
                 raise ValueError("ERROR in expotentional mode!: wind_exp_coeff or wind_reference_measurment_height badly defined!")
-            elif self.wind_profile == 'flat' and None in [self.wind_exp_coeff, self.wind_reference_measurment_height]:
+            elif self.conditions['wind_profile'] == 'flat' and None in [self.conditions['wind_exp_coeff'], self.conditions['wind_reference_measurment_height']]:
                 raise ValueError("ERROR in flat mode!: wind_exp_coeff or wind_reference_measurment_height badly defined!")
         except ValueError as err:
             print(err)
             sys.exit()
             
     def __get_profile(self):
-        if self.wind_profile == 'exponential':
+        if self.conditions['wind_profile'] == 'exponential':
             wind = ExpWindProfile(
-                self.alpha_true_wind_deg, self.tws_ref, self.SOG_yacht,
-                exp_coeff=self.wind_exp_coeff,
-                reference_measurment_height=self.wind_reference_measurment_height,
-                reference_water_level_for_wind_profile=self.reference_water_level_for_wind_profile)
-        elif self.wind_profile == 'flat':
-            wind = FlatWindProfile(self.alpha_true_wind_deg, self.tws_ref, self.SOG_yacht)
+                self.conditions['alpha_true_wind_deg'], self.conditions['tws_ref'], self.conditions['SOG_yacht'],
+                exp_coeff=self.conditions['wind_exp_coeff'],
+                reference_measurment_height=self.conditions['wind_reference_measurment_height'],
+                reference_water_level_for_wind_profile=self.conditions['reference_water_level_for_wind_profile'])
+        elif self.conditions['wind_profile'] == 'flat':
+            wind = FlatWindProfile(self.conditions['alpha_true_wind_deg'], self.conditions['tws_ref'], self.conditions['SOG_yacht'])
         else:
             wind = LogWindProfile(
-                self.alpha_true_wind_deg, self.tws_ref, self.SOG_yacht,
-                roughness=self.roughness,
-                reference_measurment_height=self.wind_reference_measurment_height)
+                self.conditions['alpha_true_wind_deg'], self.conditions['tws_ref'], self.conditions['SOG_yacht'],
+                roughness=self.conditions['roughness'],
+                reference_measurment_height=self.conditions['wind_reference_measurment_height'])
         return wind
 
     @property
@@ -72,89 +77,83 @@ class Wind:
 @dataclass
 class Sail:
     
-    
-    n_spanwise: int
-    n_chordwise: int
+    solver: dict
+    rig: dict
+    main_sail: dict
+    jib_sail: dict
     csys_transformations: CSYS_transformations
-    
-    sheer_above_waterline: float
-    rake_deg: float
-    boom_above_sheer: float
-    mast_LOA: float
-    
-    main_sail_luff: float
-    main_sail_girths: np.ndarray
-    main_sail_chords: np.ndarray
-    main_sail_centerline_twist_deg: np.ndarray
-    main_sail_camber: np.ndarray
-    main_sail_camber_distance_from_luff: np.ndarray
-    
-    foretriangle_base: Optional[float] = None
-    foretriangle_height: Optional[float] = None
-    jib_luff: Optional[float] = None
-    jib_girths:  Optional[np.array] = None
-    jib_chords: Optional[np.array] = None
-    jib_centerline_twist_deg: Optional[np.array] = None
-    jib_sail_camber: Optional[np.ndarray] = None
-    jib_sail_camber_distance_from_luff: Optional[np.ndarray] = None
-    
-    
-    sails_def: Literal['jib', 'main', 'jib_and_main'] = 'main'
-    LLT_twist: Literal['real_twist', 'average_const', 'sheeting_angle_const'] = 'main'
-    interpolation_type: Literal['spline', 'linear'] = 'spline'
-    
+     
     def __post_init__(self):
-        jib_stuff = [self.foretriangle_base, self.foretriangle_height, self.jib_luff, self.jib_girths, self.jib_girths, self.jib_centerline_twist_deg, self.jib_sail_camber, self.jib_sail_camber_distance_from_luff]
-        main_stuff = [self.main_sail_luff, self.main_sail_girths, self.main_sail_girths, self.main_sail_centerline_twist_deg, self.main_sail_camber, self.main_sail_camber_distance_from_luff]
+
+        solver_params = ['n_spanwise',  'n_chordwise','interpolation_type', 'LLT_twist']
+        rig_params = ['main_sail_luff','jib_luff','foretriangle_height','foretriangle_base','sheer_above_waterline','boom_above_sheer','rake_deg','mast_LOA','sails_def','main_sail_girths','jib_girths']
+        main_sail_params = ['main_sail_chords','main_sail_centerline_twist_deg','main_sail_camber','main_sail_camber_distance_from_luff']
+        jib_sail_params = ['jib_sail_camber','jib_sail_camber_distance_from_luff','jib_chords','jib_centerline_twist_deg']
+        
         try:
-            if self.sails_def == 'jib' and check_list_for_none(jib_stuff): # if JIB and all vars are not NONE
+            if not all(k in self.solver for k in (solver_params)):
+                raise ValueError(f"Not all keys are passes to solver dict.\nIt should contain these keys {solver_params}")
+            
+            if not all(k in self.rig for k in (rig_params)):
+                raise ValueError(f"Not all keys are passes to rig dict.\nIt should contain these keys {rig_params}")
+            
+            if not all(k in self.main_sail for k in (main_sail_params)):
+                raise ValueError(f"Not all keys are passes to rig dict.\nIt should contain these keys {main_sail_params}")
+           
+            if not all(k in self.jib_sail for k in (jib_sail_params)):
+                raise ValueError(f"Not all keys are passes to rig dict.\nIt should contain these keys {jib_sail_params}")
+
+            jib_stuff = [self.rig['foretriangle_base'], self.rig['foretriangle_height'], self.rig['jib_luff'], self.rig['jib_girths'], self.rig['jib_girths'], self.jib_sail['jib_centerline_twist_deg'], self.jib_sail['jib_sail_camber'], self.jib_sail['jib_sail_camber_distance_from_luff']]
+            
+            main_stuff = [self.rig['main_sail_luff'], self.rig['main_sail_girths'], self.main_sail['main_sail_centerline_twist_deg'], self.main_sail['main_sail_camber'], self.main_sail['main_sail_camber_distance_from_luff']]
+            if self.rig['sails_def'] == 'jib' and check_list_for_none(jib_stuff): # if JIB and all vars are not NONE
                 raise ValueError('Not all JIB variables are speciified!')
-            elif self.sails_def == 'main' and check_list_for_none(main_stuff):
+            elif self.rig['sails_def'] == 'main' and check_list_for_none(main_stuff):
                 raise ValueError('Not all MAIN variables are speciified!') 
-            elif self.sails_def == 'jib_and_main' and check_list_for_none([*jib_stuff, *main_stuff]):
+            elif self.rig['sails_def'] == 'jib_and_main' and check_list_for_none([*jib_stuff, *main_stuff]):
                 raise ValueError('Not all JIB or MAIN variables are speciified!')
             
-            if self.sails_def == 'jib':
-                check_input_arr_shapes(jib_stuff[3:], self.sails_def)
-            elif self.sails_def =='main':
-                check_input_arr_shapes(main_stuff[1:], self.sails_def)
+            if self.rig['sails_def'] == 'jib':
+                check_input_arr_shapes(jib_stuff[3:], self.rig['sails_def'])
+            elif self.rig['sails_def'] =='main':
+                check_input_arr_shapes(main_stuff[1:], self.rig['sails_def'])
             else:
-                check_input_arr_shapes(jib_stuff[3:], self.sails_def)
-                check_input_arr_shapes(main_stuff[1:], self.sails_def)
+                check_input_arr_shapes(jib_stuff[3:], self.rig['sails_def'])
+                check_input_arr_shapes(main_stuff[1:], self.rig['sails_def'])
         except ValueError as e:
             print(e)
             sys.exit()
 
     def __get_sail_set(self):
         
-        interpolator = Interpolator(self.interpolation_type)
-        factory = SailFactory(csys_transformations=self.csys_transformations, n_spanwise=self.n_spanwise, n_chordwise=self.n_chordwise,
-                                rake_deg=self.rake_deg, sheer_above_waterline=self.sheer_above_waterline)
+        interpolator = Interpolator(self.solver['interpolation_type'])
+        factory = SailFactory(csys_transformations=self.csys_transformations, n_spanwise=self.solver['n_spanwise'], n_chordwise=self.solver['n_chordwise'],
+                                rake_deg=self.rig['rake_deg'], sheer_above_waterline=self.rig['sheer_above_waterline'])
         
         geoms = []
-        if self.sails_def == 'jib' or self.sails_def == 'jib_and_main':
+        if self.rig['sails_def'] == 'jib' or self.rig['sails_def'] == 'jib_and_main':
             jib_geometry = factory.make_jib(
-                jib_luff=self.jib_luff,
-                foretriangle_base=self.foretriangle_base,
-                foretriangle_height=self.foretriangle_height,
-                jib_chords=interpolator.interpolate_girths(self.jib_girths, self.jib_chords, self.n_spanwise + 1),
-                sail_twist_deg=interpolator.interpolate_girths(self.jib_girths, self.jib_centerline_twist_deg, self.n_spanwise + 1),
-                mast_LOA=self.mast_LOA,
-                LLT_twist=self.LLT_twist, 
-                interpolated_camber=interpolator.interpolate_girths(self.jib_girths, self.jib_sail_camber, self.n_spanwise + 1),
-                interpolated_distance_from_luff=interpolator.interpolate_girths(self.jib_girths, self.jib_sail_camber_distance_from_luff, self.n_spanwise + 1)
+                jib_luff=self.rig['jib_luff'],
+                foretriangle_base=self.rig['foretriangle_base'],
+                foretriangle_height=self.rig['foretriangle_height'],
+                jib_chords=interpolator.interpolate_girths(self.rig['jib_girths'], self.jib_sail['jib_chords'], self.solver['n_spanwise'] + 1),
+                sail_twist_deg=interpolator.interpolate_girths(self.rig['jib_girths'], self.jib_sail['jib_centerline_twist_deg'], self.solver['n_spanwise'] + 1),
+                mast_LOA=self.rig['mast_LOA'],
+                LLT_twist=self.solver['LLT_twist'], 
+                interpolated_camber=interpolator.interpolate_girths(self.rig['jib_girths'], self.jib_sail['jib_sail_camber'], self.solver['n_spanwise'] + 1),
+                interpolated_distance_from_luff=interpolator.interpolate_girths(self.rig['jib_girths'], self.jib_sail['jib_sail_camber_distance_from_luff'], self.solver['n_spanwise'] + 1)
                 )
             geoms.append(jib_geometry)
             
-        if self.sails_def == 'main' or self.sails_def =='jib_and_main':
+        if self.rig['sails_def'] == 'main' or self.rig['sails_def'] =='jib_and_main':
             main_sail_geometry = factory.make_main_sail(
-                main_sail_luff=self.main_sail_luff,
-                boom_above_sheer=self.boom_above_sheer,
-                main_sail_chords=interpolator.interpolate_girths(self.main_sail_girths, self.main_sail_chords, self.n_spanwise + 1),
-                sail_twist_deg=interpolator.interpolate_girths(self.main_sail_girths, self.main_sail_centerline_twist_deg, self.n_spanwise + 1),
-                LLT_twist=self.LLT_twist,
-                interpolated_camber=interpolator.interpolate_girths(self.main_sail_girths, self.main_sail_camber, self.n_spanwise + 1),
-                interpolated_distance_from_luff=interpolator.interpolate_girths(self.main_sail_girths, self.main_sail_camber_distance_from_luff, self.n_spanwise + 1)
+                main_sail_luff=self.rig['main_sail_luff'],
+                boom_above_sheer=self.rig['boom_above_sheer'],
+                main_sail_chords=interpolator.interpolate_girths(self.rig['main_sail_girths'], self.main_sail['main_sail_chords'], self.solver['n_spanwise'] + 1),
+                sail_twist_deg=interpolator.interpolate_girths(self.rig['main_sail_girths'], self.main_sail['main_sail_centerline_twist_deg'], self.solver['n_spanwise'] + 1),
+                LLT_twist=self.solver['LLT_twist'],
+                interpolated_camber=interpolator.interpolate_girths(self.rig['main_sail_girths'], self.main_sail['main_sail_camber'], self.solver['n_spanwise'] + 1),
+                interpolated_distance_from_luff=interpolator.interpolate_girths(self.rig['main_sail_girths'], self.main_sail['main_sail_camber_distance_from_luff'], self.solver['n_spanwise'] + 1)
                 )
             geoms.append(main_sail_geometry)
 

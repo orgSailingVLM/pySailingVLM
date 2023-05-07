@@ -45,33 +45,26 @@ def parse_cli():
 def main():
     parse_cli()
     csys_transformations = CSYS_transformations(
-        vr.heel_deg, vr.leeway_deg,
-        v_from_original_xyz_2_reference_csys_xyz=vr.reference_level_for_moments)
+        vr.conditions['heel_deg'], vr.conditions['leeway_deg'],
+        v_from_original_xyz_2_reference_csys_xyz=vr.csys['reference_level_for_moments'])
 
-    w = Wind(vr.alpha_true_wind_deg, vr.tws_ref, vr.SOG_yacht, vr.wind_exp_coeff, vr.wind_reference_measurment_height, vr.reference_water_level_for_wind_profile, vr.roughness, vr.wind_profile)
-    w_profile = w.profile
+    w = Wind(vr.conditions)
 
-    s = Sail(vr.n_spanwise, vr.n_chordwise, csys_transformations, vr.sheer_above_waterline,
-             vr.rake_deg, vr.boom_above_sheer, vr.mast_LOA,
-             vr.main_sail_luff, vr.main_sail_girths, vr.main_sail_chords, vr.main_sail_centerline_twist_deg, vr.main_sail_camber, vr.main_sail_camber_distance_from_luff,
-            vr.foretriangle_base, vr.foretriangle_height, 
-            vr.jib_luff, vr.jib_girths, vr.jib_chords, vr.jib_centerline_twist_deg, vr.jib_sail_camber, vr.jib_sail_camber_distance_from_luff,
-            vr.sails_def, vr.LLT_twist, vr.interpolation_type)
+    s = Sail(vr.solver, vr.rig, vr.main_sail, vr.jib_sail, csys_transformations)
     sail_set = s.sail_set
-    hull = HullGeometry(vr.sheer_above_waterline, vr.foretriangle_base, csys_transformations, vr.center_of_lateral_resistance_upright)
-    myvlm = Vlm(sail_set.panels, vr.n_chordwise, vr.n_spanwise, vr.rho, w_profile, sail_set.trailing_edge_info, sail_set.leading_edge_info)
+    hull = HullGeometry(vr.rig['sheer_above_waterline'], vr.rig['foretriangle_base'], csys_transformations, vr.keel['center_of_lateral_resistance_upright'])
+    myvlm = Vlm(sail_set.panels, vr.solver['n_chordwise'], vr.solver['n_spanwise'], vr.conditions['rho'], w.profile, sail_set.trailing_edge_info, sail_set.leading_edge_info)
 
     inviscid_flow_results = InviscidFlowResults(sail_set, csys_transformations, myvlm)
-    
     inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
 
 
     print("Preparing visualization.")   
     display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=True)
-    df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, sail_set, vr.output_dir_name, vr.file_name)
+    df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, sail_set, vr.output_dir['name'], vr.output_dir['file_name'])
 
     
-    shutil.copy(os.path.join(vr.case_dir, vr.case_name), os.path.join(vr.output_dir_name, vr.case_name))
+    shutil.copy(os.path.join(vr.output_dir['case_dir'], vr.output_dir['case_name']), os.path.join(vr.output_dir['name'], vr.output_dir['case_name']))
 
     print(f"-------------------------------------------------------------")
     print(f"Notice:\n"
@@ -83,11 +76,11 @@ def main():
     print(df_integrals)
 
     ##### 
-    AR = 2 * vr.main_sail_luff / vr.main_sail_chords[0]
-    S = 2*vr.main_sail_luff * vr.main_sail_chords[0]
+    AR = 2 * vr.rig['main_sail_luff'] / vr.main_sail['main_sail_chords'][0]
+    S = 2*vr.rig['main_sail_luff'] * vr.main_sail['main_sail_chords'][0]
     
-    Cx_vlm, Cy_vlm, Cz_vlm= get_vlm_Cxyz(myvlm.force, np.array(w_profile.get_true_wind_speed_at_h(1.0)), vr.rho, S)
+    Cx_vlm, Cy_vlm, Cz_vlm= get_vlm_Cxyz(myvlm.force, np.array(w.profile.get_true_wind_speed_at_h(1.0)), vr.conditions['rho'], S)
     print(f"C:[{Cx_vlm}, {Cy_vlm}, {Cz_vlm}]")#\nF_tot={tot_F}\nV={V} S={S} q={q}")
 
-    plot_cp(sail_set.zero_mesh, myvlm.p_coeffs, vr.output_dir_name)
+    plot_cp(sail_set.zero_mesh, myvlm.p_coeffs, vr.output_dir['name'])
     
