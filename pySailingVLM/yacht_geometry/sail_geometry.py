@@ -96,10 +96,9 @@ class SailGeometry(BaseGeometry, ABC):
         ### 
         mesh_underwater = mesh_underwater.reshape(sh0*sh1, sh2)
     
-
-        self.zero_mesh = np.concatenate([panels_above_zero, panels_under_zero])
+        self.panels_under_zero = panels_under_zero
+        self. panels_above_zero = panels_above_zero
         ### end of zero mesh
-        
         
         # rotation # for heel
         #mesh:  le NW p1 p2 ... te
@@ -226,7 +225,9 @@ class SailSet(BaseGeometry):
         self.__leading_edge_info = np.concatenate([leading_info_above, leading_info_under])
 
         # mesh without any rotation (in 2d, one cooridinate is 0)
-        self.zero_mesh = np.concatenate([sail.zero_mesh for sail in self.sails])
+        panels_above_zero = np.concatenate([sail.panels_above_zero for sail in self.sails])
+        panels_under_zero = np.concatenate([sail.panels_under_zero for sail in self.sails])
+        self.zero_mesh = np.concatenate([panels_above_zero, panels_under_zero])
     @property
     def panels(self):
         return self.__panels
