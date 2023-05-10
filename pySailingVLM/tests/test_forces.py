@@ -8,7 +8,7 @@ from pySailingVLM.solver.coefs import calculate_normals_collocations_cps_rings_s
 
 from pySailingVLM.solver.panels import get_panels_area, make_panels_from_le_te_points
 from pySailingVLM.solver.forces import determine_vector_from_its_dot_and_cross_product, \
-    calc_pressure, calc_moment_arm_in_shifted_csys
+    calc_pressure, calc_moment_arm_in_shifted_csys, calc_pressure_coeff
 from pySailingVLM.solver.velocity import calculate_app_fs
 from pySailingVLM.solver.forces import is_no_flux_BC_satisfied, calc_force_wrapper
 from pySailingVLM.rotations.geometry_calc import rotation_matrix
@@ -462,3 +462,68 @@ class TestForces(TestCase):
         force = np.array([[3., 2., 1.]])
         press = calc_pressure(force, normals, areas)
         np.testing.assert_almost_equal(press, 0.01)
+
+    def test_calc_pressure_coeff(self):
+        pressure = np.array([1.46261531, 1.80492034, 0.63827858, 0.85026758, 0.38026923,
+                0.51518485, 0.43584514, 1.47947775, 0.89155612, 1.19891383,
+                0.7914666 , 0.86002501, 1.80492034, 1.46261531, 0.85026758,
+                0.63827858, 0.51518485, 0.38026923, 1.47947775, 0.43584514,
+                1.19891383, 0.89155612, 0.86002501, 0.7914666 ])
+        rho = 1.225
+        ns = 2
+        nc = 3
+        # jib and main
+        V_app_infs = np.array([[7.18982793, 3.05068413, 0.        ],
+                                [7.51763273, 3.44134668, 0.        ],
+                                [7.1875193 , 3.04793282, 0.        ],
+                                [7.51691821, 3.44049515, 0.        ],
+                                [7.1851981 , 3.04516651, 0.        ],
+                                [7.51620263, 3.43964236, 0.        ],
+                                [7.36243728, 3.25639195, 0.        ],
+                                [7.66987791, 3.62278542, 0.        ],
+                                [7.35906125, 3.25236854, 0.        ],
+                                [7.66809063, 3.62065543, 0.        ],
+                                [7.35758392, 3.25060794, 0.        ],
+                                [7.66699707, 3.61935217, 0.        ],
+                                [7.51763273, 3.44134668, 0.        ],
+                                [7.18982793, 3.05068413, 0.        ],
+                                [7.51691821, 3.44049515, 0.        ],
+                                [7.1875193 , 3.04793282, 0.        ],
+                                [7.51620263, 3.43964236, 0.        ],
+                                [7.1851981 , 3.04516651, 0.        ],
+                                [7.66987791, 3.62278542, 0.        ],
+                                [7.36243728, 3.25639195, 0.        ],
+                                [7.66809063, 3.62065543, 0.        ],
+                                [7.35906125, 3.25236854, 0.        ],
+                                [7.66699707, 3.61935217, 0.        ],
+                                [7.35758392, 3.25060794, 0.        ]])
+        
+        p = calc_pressure_coeff(pressure, rho, V_app_infs)
+        # a - above, u - under water
+        a, u = np.split(p, 2) 
+        aj, am = np.split(a, 2) # jib and main
+        uj, um = np.split(u, 2) # jib and main
+        
+        np.testing.assert_almost_equal(np.flip(uj.reshape(nc, ns), axis=1), aj.reshape(nc, ns))
+        np.testing.assert_almost_equal(np.flip(um.reshape(nc, ns), axis=1), am.reshape(nc, ns))
+        ################## MAIN OR JIB ONLY ###########################
+        pressure = np.array([1.09253561, 0.85321971, 0.91300778, 0.88901149, 0.85321971,
+                            1.09253561, 0.88901149, 0.91300778])
+        rho = 1.225
+        ns = 2
+        nc = 2
+        # main
+        V_app_infs = np.array([[7.36213546, 3.25603225, 0.        ],
+                                    [7.66969834, 3.62257141, 0.        ],
+                                    [7.35813848, 3.25126884, 0.        ],
+                                    [7.66740744, 3.61984122, 0.        ],
+                                    [7.66969834, 3.62257141, 0.        ],
+                                    [7.36213546, 3.25603225, 0.        ],
+                                    [7.66740744, 3.61984122, 0.        ],
+                                    [7.35813848, 3.25126884, 0.        ]])
+        
+        p = calc_pressure_coeff(pressure, rho, V_app_infs)
+        # a - above, u - under water
+        a, u = np.split(p, 2) 
+        np.testing.assert_almost_equal(np.flip(u.reshape(nc, ns), axis=1), a.reshape(nc, ns))
+        
