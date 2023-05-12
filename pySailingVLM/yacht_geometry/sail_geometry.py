@@ -118,7 +118,7 @@ class SailGeometry(BaseGeometry, ABC):
             le_SW_underwater = self.csys_transformations.rotate_point_with_mirror(le_SW_underwater)
             le_NW_underwater = self.csys_transformations.rotate_point_with_mirror(le_NW_underwater)
         
-            print(f"Applying initial_sail_twist_deg to {self.name} -  Lifting Line, mode: {LLT_twist}")
+            # print(f"Applying initial_sail_twist_deg to {self.name} -  Lifting Line, mode: {LLT_twist}")
             twist_dict = {
                 'sheeting_angle_const': np.full(len(initial_sail_twist_deg), np.min(initial_sail_twist_deg)),
                 'average_const': np.full(len(initial_sail_twist_deg), np.average(initial_sail_twist_deg)),

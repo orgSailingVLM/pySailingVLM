@@ -73,19 +73,5 @@ class Vlm:
         self.pressure = forces.calc_pressure(self.force, self.normals, self.areas)
 
         self.p_coeffs = forces.calc_pressure_coeff(self.pressure, self.rho, self.inlet_conditions.V_app_infs)
-        # tutaj sa porownywane wszystkie cisnienia, nawet te pod woda
-        # czy porownywac dla kazdego zagla z osobna?
-        # np oddzielnie dla jiba, oddzielnie dla maina, oddzielnie pod woda?
-        # try:
-        #     pressure_signs = np.sign(self.pressure).astype(int)
-        #     result = np.all(pressure_signs == pressure_signs[0])
-        #     if not result:
-        #         raise ValueError('ERROR!: Pressure signs are not the same, check input data!\nKeep in mind that this program generates camber in one direction only.')
-        # except ValueError as err:
-        #     print(err)
-        #     sys.exit()
-
-        #display_panels_or_rings(self.rings, self.pressure, self.leading_mid_points, self.trailing_mid_points)
-        # comment this section if debugging camber
-        #plt.show()
+        
 
