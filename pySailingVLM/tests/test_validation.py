@@ -10,23 +10,24 @@ from pySailingVLM.solver.coefs import get_vlm_Cxyz
 from pySailingVLM.rotations.geometry_calc import rotation_matrix
 from pySailingVLM.results.inviscid_flow import InviscidFlowResults
 
+from pySailingVLM.examples.variables import Rig, Conditions, Solver, MainSail, JibSail
 class TestValidation(TestCase):
     def calculate_main_sail(self, rho: float, tws_ref: float, chord_length: float, half_wing_span:  float, AoA_deg: float, sweep_angle_deg : float, n_spanwise: int, n_chordwise: int):
         
-        solver = {
+        solver_args = {
             'n_spanwise':  n_spanwise,  # No of control points (above the water) per sail, recommended: 50
             'n_chordwise': n_chordwise, # No of control points (above the water) per sail, recommended: 50
             'interpolation_type': "linear",  # either "spline" or "linear"
             'LLT_twist': "real_twist",  # defines how the Lifting Line discretize the sail twist.
         }
-
-        conditions = {
+        
+        conditions_args = {
             'leeway_deg': 0.,    # [deg]
             'heel_deg': 0.,     # [deg]
             'SOG_yacht': 0.,   # [m/s] yacht speed - speed over ground (leeway is a separate variable)
             'tws_ref': tws_ref,     # [m/s] true wind speed
-            'alpha_true_wind_deg': AoA_deg,
-            'reference_water_level_for_wind_profile': 0.,  # [m] this is an attempt to mimick the deck effect
+            'alpha_true_wind_deg': AoA_deg,   # [deg] true wind angle (with reference to course over ground) => Course Wind Angle to the boat track = true wind angle to centerline + Leeway
+            'reference_water_level_for_wind_profile': -0.,  # [m] this is an attempt to mimick the deck effect
             # by lowering the sheer_above_waterline
             # while keeping the wind profile as in original geometry
             # this shall be negative (H = sail_ctrl_point - water_level)
@@ -37,42 +38,42 @@ class TestValidation(TestCase):
             'roughness': 0.05, # for logarithmic profile only 
         }
 
-        rig = {
-            'main_sail_luff': half_wing_span / np.cos(np.deg2rad(sweep_angle_deg)),
+        rig_args = {
+            'main_sail_luff': half_wing_span / np.cos(np.deg2rad(sweep_angle_deg)),  # [m]
             'jib_luff': 10.0,  # [m]
             'foretriangle_height': 11.50,  # [m]
             'foretriangle_base': 3.90,  # [m]
-            'sheer_above_waterline': 0.,  # [m]
-            'boom_above_sheer': 0., #1.3  # [m]
+            'sheer_above_waterline': 0.,#[m]
+            'boom_above_sheer': 0., # [m],
             'rake_deg': 90. + sweep_angle_deg,  # rake angle [deg]
-            'mast_LOA': 0.0,  # [m]
+            'mast_LOA': 0.,  # [m]
             'sails_def': 'main', # definition of sail set, possible: 'jib' or 'main' or 'jib_and_main'
-            'main_sail_girths': np.array([0.00, 1./8, 1./4, 1./2, 3./4, 7./8, 1.00]),
-            'jib_girths': np.array([0.00, 1./4, 1./2, 3./4, 1.00])
         }
 
-        main_sail = {
-            'main_sail_chords': np.array([chord_length]* len(rig['main_sail_girths'])),
-            'main_sail_centerline_twist_deg': 0* rig['main_sail_girths'],
-            'main_sail_camber': 0*np.array([0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]),
-            'main_sail_camber_distance_from_luff': np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+        mgirths =  np.array([0.00, 1./8, 1./4, 1./2, 3./4, 7./8, 1.00])
+        mchords = np.array([chord_length]* len(mgirths))
+
+  
+        main_args = {
+            'girths' : mgirths,
+            'chords': mchords,
+            'centerline_twist_deg': 0*mgirths,
+            'camber': 0*np.array([0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]),
+            'camber_distance_from_luff': np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]),
         }
 
+        solver =  Solver(**solver_args)
+        conditions = Conditions(**conditions_args) 
+        rig = Rig(**rig_args)
+        main = MainSail(**main_args)
 
-        jib_sail = {
-            'jib_sail_camber': 0*np.array([0.01, 0.01, 0.01, 0.01, 0.01]),
-            'jib_sail_camber_distance_from_luff': np.array([0.5, 0.5, 0.5, 0.5, 0.5]),
-            'jib_chords': 0*np.array([3.80, 2.98, 2.15, 1.33, 0.5]) - 0*0.4,
-            'jib_centerline_twist_deg': 0*rig['jib_girths']
-        }
-        
         reference_level_for_moments = np.array([0, 0, 0])
-        csys_transformations = CSYS_transformations(conditions['heel_deg'], conditions['leeway_deg'], v_from_original_xyz_2_reference_csys_xyz=reference_level_for_moments)
+        csys_transformations = CSYS_transformations(conditions.heel_deg, conditions.leeway_deg, v_from_original_xyz_2_reference_csys_xyz=reference_level_for_moments)
 
         w = Wind(conditions)
-        s = Sail(solver, rig, main_sail, jib_sail, csys_transformations)
+        s = Sail(solver, rig, main, None, csys_transformations)
         sail_set = s.sail_set
-        myvlm = Vlm(sail_set.panels, solver['n_chordwise'], solver['n_spanwise'], conditions['rho'], w.profile, sail_set.trailing_edge_info, sail_set.leading_edge_info)
+        myvlm = Vlm(sail_set.panels, solver.n_chordwise, solver.n_spanwise, conditions.rho, w.profile, sail_set.trailing_edge_info, sail_set.leading_edge_info)
 
         inviscid_flow_results = InviscidFlowResults(sail_set, csys_transformations, myvlm)
       
