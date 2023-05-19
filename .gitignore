@@ -151,8 +151,8 @@ results_example_jib_and_mainsail_vlm/
 
 cache/
 sailing_vlm/examples/input_data/jib_and_main_sail_vlm_case_exp*
-notatki.md
+/notatki.md
 datashader-examples/
-test.npy
-test2.npy
-variables.py
+/test.npy
+/test2.npy
+/variables.py

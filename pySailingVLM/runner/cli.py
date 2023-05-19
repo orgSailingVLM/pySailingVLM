@@ -84,12 +84,10 @@ def main():
 
     print(df_integrals)
 
-    ##### 
-    AR = 2 * rig.main_sail_luff / main.chords[0]
-    S = 2*rig.main_sail_luff * main.chords[0]
-    
-    Cx_vlm, Cy_vlm, Cz_vlm= get_vlm_Cxyz(myvlm.force, np.array(w.profile.get_true_wind_speed_at_h(1.0)), conditions.rho, S)
-    print(f"C:[{Cx_vlm}, {Cy_vlm}, {Cz_vlm}]")
+    sails_Cxyz = myvlm.get_Cxyz(w, 1.0)
+    print(f"Cxyz for {rig.sails_def}")
+    for idx, c in enumerate(sails_Cxyz):
+        print(f"C[{idx}]: {c}")
 
     plot_cp(sail_set.zero_mesh, myvlm.p_coeffs, out.name)
     
