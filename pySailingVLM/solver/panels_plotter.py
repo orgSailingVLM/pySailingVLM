@@ -177,7 +177,7 @@ def display_hull(ax: plt.Axes, hull: HullGeometry):
     ax.plot(hull.deck_starboard_line_underwater[:, 0], hull.deck_starboard_line_underwater[:, 1], hull.deck_starboard_line_underwater[:, 2], 'gray', alpha=0.25)
 
 
-def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inlet_condition: InletConditions, inviscid_flow_results :  InviscidFlowResults, n_spanwise : int, n_chordwise : int):
+def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inlet_condition: InletConditions, inviscid_flow_results :  InviscidFlowResults, n_spanwise : int, n_chordwise : int, show_apparent_induced_wind: bool = False):
     """
     display_winds displays winds on final plot
 
@@ -194,8 +194,12 @@ def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inle
     shift_x = (-0.925) * water_size * np.cos(np.deg2rad(mean_AWA))
     shift_y = (-0.925) * water_size * np.sin(np.deg2rad(mean_AWA))
 
-    V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs, inviscid_flow_results.V_app_fs_at_cp]
-    colors = ['green', 'blue', 'red']  # G: True wind, B: - Apparent wind, R: Apparent + Induced wind
+    V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs]
+    colors = ['green', 'blue']  # G: True wind, B: - Apparent wind, R: Apparent + Induced wind
+    if show_apparent_induced_wind:
+        V_winds.append( inviscid_flow_results.V_app_fs_at_cp)
+        colors.append('red')
+    
 
     #######
     # example:
@@ -296,7 +300,7 @@ def display_CE_CLR(ax : plt.Axes,
 def display_panels_xyz_and_winds(vlm :Vlm, inviscid_flow_results: InviscidFlowResults, 
                                  inlet_condition: InletConditions,
                                  hull: HullGeometry,
-                                 show_plot=True
+                                 show_plot: bool = True, show_apparent_induced_wind: bool = False
                                  ):
     """
     display_panels_xyz_and_winds plot whole yacht with winds and force
@@ -315,7 +319,7 @@ def display_panels_xyz_and_winds(vlm :Vlm, inviscid_flow_results: InviscidFlowRe
     
     display_hull(ax, hull)
 
-    display_winds(ax, vlm.cp, water_size, inlet_condition, inviscid_flow_results, vlm.n_spanwise, vlm.n_chordwise)
+    display_winds(ax, vlm.cp, water_size, inlet_condition, inviscid_flow_results, vlm.n_spanwise, vlm.n_chordwise, show_apparent_induced_wind)
 
     scale, clr, ce, F = display_CE_CLR(ax, inviscid_flow_results, hull)
     

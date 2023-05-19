@@ -69,7 +69,7 @@ def main():
 
 
     print("Preparing visualization.")   
-    display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=True)
+    display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=True, show_apparent_induced_wind=False)
     df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, sail_set, out.name, out.file_name)
 
     
