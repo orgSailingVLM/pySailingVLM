@@ -10,7 +10,7 @@ from pySailingVLM.solver.coefs import get_vlm_Cxyz
 from pySailingVLM.rotations.geometry_calc import rotation_matrix
 from pySailingVLM.results.inviscid_flow import InviscidFlowResults
 
-from pySailingVLM.examples.variables import Rig, Conditions, Solver, MainSail, JibSail
+from pySailingVLM.runner.container import Rig, Conditions, Solver, MainSail, JibSail
 class TestValidation(TestCase):
     def calculate_main_sail(self, rho: float, tws_ref: float, chord_length: float, half_wing_span:  float, AoA_deg: float, sweep_angle_deg : float, n_spanwise: int, n_chordwise: int):
         
