@@ -233,9 +233,9 @@ def get_vlm_Cxyz(F: np.ndarray, V: np.array, rho : float, S : float) -> Tuple[fl
     
     total_F = np.sum(F, axis=0)
     q = 0.5 * rho * (np.linalg.norm(V) ** 2) * S
-    Cx_vlm, Cy_vlm, Cz_vlm = total_F / q
+    #Cx_vlm, Cy_vlm, Cz_vlm = total_F / q
     
-    return Cx_vlm, Cy_vlm, Cz_vlm
+    return total_F / q #Cx_vlm, Cy_vlm, Cz_vlm
 
 def get_CL_CD_free_wing(AR, AoA_deg):
     #  TODO allow tapered wings in book coeff_formulas

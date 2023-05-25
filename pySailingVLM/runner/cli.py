@@ -85,6 +85,7 @@ def main():
     print(df_integrals)
 
     sails_Cxyz = myvlm.get_Cxyz(w, 1.0)
+
     print(f"Cxyz for {rig.sails_def}")
     for idx, Cxyz in enumerate(sails_Cxyz):
         print(f"C[{idx}]: {Cxyz}")

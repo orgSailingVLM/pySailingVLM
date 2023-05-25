@@ -74,7 +74,7 @@ class Vlm:
 
     def get_Cxyz(self, wind : Wind, height_measure : float):
         # k number of sails, 1 (jb or main), 2 (jib and main)
-        k = int(self.panels.shape[0] / (self.n_spanwise * self.n_chordwise * 2) ) # *2 in denominator bue to underwater part
+        k = int(self.panels.shape[0] / (self.n_spanwise * self.n_chordwise * 2) ) # *2 in denominator due to underwater part
         sail_forces = np.split(self.force, (2*k))
         sail_areas = np.split(self.areas, (2*k))
         sails_Cxyz = []
