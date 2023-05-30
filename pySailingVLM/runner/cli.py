@@ -3,6 +3,7 @@ import sys
 import os
 import argparse
 import shutil
+import timeit
 
 from pySailingVLM.rotations.csys_transformations import CSYS_transformations
 from pySailingVLM.yacht_geometry.hull_geometry import HullGeometry
@@ -43,6 +44,7 @@ def parse_cli():
 
 
 def main():
+    start = timeit.default_timer()
     parse_cli()
     out = Output(**vr.output_args)
     conditions = Conditions(**vr.conditions_args)
@@ -67,14 +69,7 @@ def main():
     inviscid_flow_results = InviscidFlowResults(sail_set, csys_transformations, myvlm)
     inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
 
-
-    print("Preparing visualization.")   
-    display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=True, show_apparent_induced_wind=False)
-    df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, sail_set, out.name, out.file_name)
-
     
-    shutil.copy(os.path.join(out.case_dir, out.case_name), os.path.join(out.name, out.case_name))
-
     print(f"-------------------------------------------------------------")
     print(f"Notice:\n"
           f"\tThe forces [N] and moments [Nm] are without profile drag.\n"
@@ -82,8 +77,16 @@ def main():
           f"\tThe the _COW_ CSYS is aligned along the centerline of the yacht (course over water).\n"
           f"\tNumber of panels (sail sail_set with mirror): {sail_set.panels.shape}")
 
-    print(df_integrals)
+    df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, sail_set, out.name, out.file_name)
+    shutil.copy(os.path.join(out.case_dir, out.case_name), os.path.join(out.name, out.case_name))
 
+    print(df_integrals)
+    print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
+    
+    print("Preparing visualization.")   
+    display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=True, show_apparent_induced_wind=False)
+    
+    
     sails_Cxyz = myvlm.get_Cxyz(w, 1.0)
 
     print(f"Cxyz for {rig.sails_def}")
