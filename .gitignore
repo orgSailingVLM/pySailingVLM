@@ -156,3 +156,4 @@ datashader-examples/
 /test.npy
 /test2.npy
 /variables.py
+pySailingVLM/examples/bertin_*
