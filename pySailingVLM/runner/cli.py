@@ -3,17 +3,18 @@ import sys
 import os
 import argparse
 import shutil
+import timeit
 
 from pySailingVLM.rotations.csys_transformations import CSYS_transformations
 from pySailingVLM.yacht_geometry.hull_geometry import HullGeometry
 from pySailingVLM.results.save_utils import save_results_to_file
 from pySailingVLM.solver.panels_plotter import display_panels_xyz_and_winds
 from pySailingVLM.results.inviscid_flow import InviscidFlowResults
-from pySailingVLM.solver.coefs import get_vlm_Cxyz
 from pySailingVLM.solver.vlm import Vlm
 from pySailingVLM.runner.sail import Wind, Sail
-
 from pySailingVLM.solver.panels_plotter import plot_cp
+from pySailingVLM.runner.container import Output, Rig, Conditions, Solver, MainSail, JibSail, Csys, Keel
+
 def load_variable_module(args):
     try:
         sys.path.append(args.dvars)
@@ -43,15 +44,16 @@ def parse_cli():
 
 
 def main():
+    #start = timeit.default_timer()
     parse_cli()
-    out = vr.Output()
-    conditions = vr.Conditions()
-    solver = vr.Solver()
-    main = vr.MainSail()
-    jib = vr.JibSail()
-    csys = vr.Csys()
-    keel = vr.Keel()
-    rig = vr.Rig()
+    out = Output(**vr.output_args)
+    conditions = Conditions(**vr.conditions_args)
+    solver = Solver(**vr.solver_args)
+    main = MainSail(**vr.main_sail_args)
+    jib = JibSail(**vr.jib_sail_args)
+    csys = Csys(**vr.csys_args)
+    keel = Keel(**vr.keel_args)
+    rig = Rig(**vr.rig_args)
     
     csys_transformations = CSYS_transformations(
         conditions.heel_deg, conditions.leeway_deg,
@@ -67,14 +69,7 @@ def main():
     inviscid_flow_results = InviscidFlowResults(sail_set, csys_transformations, myvlm)
     inviscid_flow_results.estimate_heeling_moment_from_keel(hull.center_of_lateral_resistance)
 
-
-    print("Preparing visualization.")   
-    display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=True)
-    df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, sail_set, out.name, out.file_name)
-
     
-    shutil.copy(os.path.join(out.case_dir, out.case_name), os.path.join(out.name, out.case_name))
-
     print(f"-------------------------------------------------------------")
     print(f"Notice:\n"
           f"\tThe forces [N] and moments [Nm] are without profile drag.\n"
@@ -82,14 +77,23 @@ def main():
           f"\tThe the _COW_ CSYS is aligned along the centerline of the yacht (course over water).\n"
           f"\tNumber of panels (sail sail_set with mirror): {sail_set.panels.shape}")
 
-    print(df_integrals)
+    df_components, df_integrals, df_inlet_IC = save_results_to_file(myvlm, csys_transformations, inviscid_flow_results, sail_set, out.name, out.file_name)
+    shutil.copy(os.path.join(out.case_dir, out.case_name), os.path.join(out.name, out.case_name))
 
-    ##### 
-    AR = 2 * rig.main_sail_luff / main.chords[0]
-    S = 2*rig.main_sail_luff * main.chords[0]
+    print(df_integrals)
+    #print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
     
-    Cx_vlm, Cy_vlm, Cz_vlm= get_vlm_Cxyz(myvlm.force, np.array(w.profile.get_true_wind_speed_at_h(1.0)), conditions.rho, S)
-    print(f"C:[{Cx_vlm}, {Cy_vlm}, {Cz_vlm}]")
+    print("Preparing visualization.")   
+    display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=True, show_apparent_induced_wind=False)
+    
+    
+    sails_Cxyz = myvlm.get_Cxyz(w, 1.0)
+
+    print(f"Cxyz for {rig.sails_def}")
+    for idx, Cxyz in enumerate(sails_Cxyz):
+        print(f"C[{idx}]: {Cxyz}")
+        a_vlm = Cxyz[1] / np.deg2rad(conditions.alpha_true_wind_deg)
+        print(f"a_vlm[{idx}]: {a_vlm}")
 
     plot_cp(sail_set.zero_mesh, myvlm.p_coeffs, out.name)
     

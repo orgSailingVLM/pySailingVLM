@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from pySailingVLM.examples.variables import Rig, JibSail, MainSail, Solver, Conditions
+    from pySailingVLM.runner.container import Rig, JibSail, MainSail, Solver, Conditions
 
 import sys
 import numpy as np

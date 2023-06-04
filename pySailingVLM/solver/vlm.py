@@ -1,26 +1,24 @@
-from dataclasses import dataclass, field
-import sys
+
+
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pySailingVLM.runner.sail import Wind
+    
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+from dataclasses import dataclass, field
 
 from pySailingVLM.inlet.inlet_conditions import InletConditions
 from pySailingVLM.solver import coefs
 from pySailingVLM.solver import forces
 from pySailingVLM.solver import velocity
 from pySailingVLM.solver import panels
-from typing import List
-from typing import ClassVar
-from pySailingVLM.solver.panels_plotter import display_panels_or_rings
 
-from mpl_toolkits.mplot3d import Axes3D
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection, Line3DCollection
-import matplotlib.pyplot as plt
 
 # sprawdzic typy !!!!
 @dataclass
 class Vlm:
-
 
     panels: np.ndarray
     n_chordwise : int
@@ -30,7 +28,6 @@ class Vlm:
     wind : np.ndarray
     trailing_edge_info : np.ndarray
     leading_edge_info : np.ndarray
-
 
     # post init atributes
     areas : np.ndarray = field(init=False)
@@ -75,3 +72,16 @@ class Vlm:
         self.p_coeffs = forces.calc_pressure_coeff(self.pressure, self.rho, self.inlet_conditions.V_app_infs)
         
 
+    def get_Cxyz(self, wind : Wind, height_measure : float):
+        # k number of sails, 1 (jb or main), 2 (jib and main)
+        k = int(self.panels.shape[0] / (self.n_spanwise * self.n_chordwise * 2) ) # *2 in denominator due to underwater part
+        sail_forces = np.split(self.force, (2*k))
+        sail_areas = np.split(self.areas, (2*k))
+        sails_Cxyz = []
+        for i in range(k):
+            Cxyz = coefs.get_vlm_Cxyz(sail_forces[i], np.array(wind.profile.get_true_wind_speed_at_h(height_measure)), self.rho, np.sum(sail_areas[i]))
+            sails_Cxyz.append(Cxyz)
+        return sails_Cxyz
+            
+        
+    

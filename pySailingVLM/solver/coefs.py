@@ -12,7 +12,6 @@ from pySailingVLM.solver.velocity import vortex_ring, vortex_horseshoe, vortex_h
 @numba.jit(numba.types.Tuple((numba.float64[:, ::1], numba.float64[:, :, ::1])) (numba.float64[:, ::1], numba.float64[:, ::1], numba.float64[:, :, ::1], numba.float64[:, ::1], numba.boolean[::1], numba.float64), nopython=True, debug = True, cache=True)
 # @numba.jit(numba.types.Tuple((numba.float64[:, ::1], numba.float64[:, ::1])) (numba.float64[:, ::1], numba.float64[:, ::1], numba.float64[:, :, ::1], numba.float64[:, ::1], numba.boolean[::1], numba.float64), nopython=True, debug = True, cache=True)
 def calc_velocity_coefs(V_app_infw, points_for_calculations, rings, normals, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
-
     m = points_for_calculations.shape[0]
 
     coefs = np.zeros((m,m)) # coefs calculated for normalized velocity
@@ -233,9 +232,9 @@ def get_vlm_Cxyz(F: np.ndarray, V: np.array, rho : float, S : float) -> Tuple[fl
     
     total_F = np.sum(F, axis=0)
     q = 0.5 * rho * (np.linalg.norm(V) ** 2) * S
-    Cx_vlm, Cy_vlm, Cz_vlm = total_F / q
+    #Cx_vlm, Cy_vlm, Cz_vlm = total_F / q
     
-    return Cx_vlm, Cy_vlm, Cz_vlm
+    return total_F / q #Cx_vlm, Cy_vlm, Cz_vlm
 
 def get_CL_CD_free_wing(AR, AoA_deg):
     #  TODO allow tapered wings in book coeff_formulas
