@@ -12,7 +12,6 @@ from pySailingVLM.solver.velocity import vortex_ring, vortex_horseshoe, vortex_h
 @numba.jit(numba.types.Tuple((numba.float64[:, ::1], numba.float64[:, :, ::1])) (numba.float64[:, ::1], numba.float64[:, ::1], numba.float64[:, :, ::1], numba.float64[:, ::1], numba.boolean[::1], numba.float64), nopython=True, debug = True, cache=True)
 # @numba.jit(numba.types.Tuple((numba.float64[:, ::1], numba.float64[:, ::1])) (numba.float64[:, ::1], numba.float64[:, ::1], numba.float64[:, :, ::1], numba.float64[:, ::1], numba.boolean[::1], numba.float64), nopython=True, debug = True, cache=True)
 def calc_velocity_coefs(V_app_infw, points_for_calculations, rings, normals, trailing_edge_info : np.ndarray, gamma_orientation : np.ndarray):
-
     m = points_for_calculations.shape[0]
 
     coefs = np.zeros((m,m)) # coefs calculated for normalized velocity

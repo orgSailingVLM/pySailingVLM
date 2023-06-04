@@ -44,7 +44,7 @@ def parse_cli():
 
 
 def main():
-    start = timeit.default_timer()
+    #start = timeit.default_timer()
     parse_cli()
     out = Output(**vr.output_args)
     conditions = Conditions(**vr.conditions_args)
@@ -81,7 +81,7 @@ def main():
     shutil.copy(os.path.join(out.case_dir, out.case_name), os.path.join(out.name, out.case_name))
 
     print(df_integrals)
-    print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
+    #print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
     
     print("Preparing visualization.")   
     display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=True, show_apparent_induced_wind=False)
