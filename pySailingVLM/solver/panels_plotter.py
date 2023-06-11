@@ -184,7 +184,7 @@ def display_hull(ax: plt.Axes, hull: HullGeometry):
     ax.plot(hull.deck_starboard_line_underwater[:, 0], hull.deck_starboard_line_underwater[:, 1], hull.deck_starboard_line_underwater[:, 2], 'gray', alpha=0.25)
 
 
-def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inlet_condition: InletConditions, inviscid_flow_results :  InviscidFlowResults, n_spanwise : int, n_chordwise : int, show_apparent_induced_wind: bool = False):
+def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inlet_condition: InletConditions, inviscid_flow_results :  InviscidFlowResults, n_spanwise : int, n_chordwise : int, show_induced_wind: bool = False):
     """
     display_winds displays winds on final plot
 
@@ -194,19 +194,11 @@ def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inle
     :param InletConditions inlet_condition: inlet conditions
     :param InviscidFlowResults inviscid_flow_results: flow results
     """
-    N = len(cp_points[:, 2])
-
-    
+    #N = len(cp_points[:, 2])
+     
     mean_AWA = np.mean(inlet_condition.AWA_infs_deg)
     shift_x = (-0.925) * water_size * np.cos(np.deg2rad(mean_AWA))
     shift_y = (-0.925) * water_size * np.sin(np.deg2rad(mean_AWA))
-
-    V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs]
-    colors = ['green', 'blue']  # G: True wind, B: - Apparent wind, R: Induced@CP
-    if show_apparent_induced_wind:
-        V_winds.append( inviscid_flow_results.V_induced_at_cp)
-        colors.append('red')
-    
 
     #######
     # example:
@@ -215,6 +207,43 @@ def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inle
     l = int(cp_points.shape[0] / (n_spanwise * n_chordwise))
     # if you have main and jib this list should have 4 elements
     # if only jib - 2 elements
+    
+    ###
+    #####
+    # get winds acting only on first spanwise section on each sail
+    tws_chunks = np.split(inlet_condition.tws_at_cp, n_chordwise*l)
+    tws_chunks = np.asarray(tws_chunks)
+    tws_chunks_at_first_spanwise_sections = tws_chunks[0::n_chordwise]
+    sh0, sh1, _ = tws_chunks_at_first_spanwise_sections.shape
+    tws_chunks_at_first_spanwise_sections = tws_chunks_at_first_spanwise_sections.reshape(sh0 * sh1 ,3)
+    
+    V_app_infs_chunks = np.split(inlet_condition.V_app_infs, n_chordwise*l)
+    V_app_infs_chunks = np.asarray(V_app_infs_chunks)
+    V_app_infs_at_first_spanwise_sections = V_app_infs_chunks[0::n_chordwise]
+    sh0, sh1, _ = V_app_infs_at_first_spanwise_sections.shape
+    V_app_infs_at_first_spanwise_sections = V_app_infs_at_first_spanwise_sections.reshape(sh0 * sh1 ,3)
+    
+    cp_points_chunks = np.split(inlet_condition.cp_points, n_chordwise*l)
+    cp_points_chunks = np.asarray(cp_points_chunks)
+    cp_points_at_first_spanwise_sections = cp_points_chunks[0::n_chordwise]
+    sh0, sh1, _ = cp_points_at_first_spanwise_sections.shape
+    cp_points_at_first_spanwise_sections = cp_points_at_first_spanwise_sections.reshape(sh0 * sh1 ,3)
+    
+    # assert
+    V_winds = [tws_chunks_at_first_spanwise_sections, V_app_infs_at_first_spanwise_sections]
+    colors = ['green', 'blue']  # G: True wind, B: - Apparent wind, R: Induced@CP
+    if show_induced_wind:
+        V_induced_at_cp_chunks = np.split(inviscid_flow_results.V_induced_at_cp, n_chordwise*l)
+        V_induced_at_cp_chunks = np.asarray(V_induced_at_cp_chunks)
+        V_induced_at_cp_chunks_at_first_spanwise_sections = V_induced_at_cp_chunks[0::n_chordwise]
+        sh0, sh1, _ = V_induced_at_cp_chunks_at_first_spanwise_sections.shape
+        V_induced_at_cp_chunks_at_first_spanwise_sections = V_induced_at_cp_chunks_at_first_spanwise_sections.reshape(sh0 * sh1 ,3)
+        V_winds.append(V_induced_at_cp_chunks_at_first_spanwise_sections)
+        colors.append('red')
+
+    for arr in V_winds:
+        assert arr.shape[0] == n_spanwise * l, 'Not proper array shape, check lines above!'
+
     app_induced_colors = ['peru', 'red', 'peru', 'red']
     if l == 2:
         app_induced_colors = ['peru', 'red']
@@ -222,55 +251,26 @@ def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inle
     assert (len(app_induced_colors) == l and len(app_induced_colors) % 2 == 0), "Bad length of app_induced_colors list"
     color_counter = 0
     for V_wind, color in zip(V_winds, colors):
-        # V_wind = V_winds[2]
-        # color = colors[2]
-        for i in range(N):
-            # vx = np.array([cp_points[i, 0], cp_points[i, 0] + V_wind[i, 0]])
-            # vy = np.array([cp_points[i, 1], cp_points[i, 1] + V_wind[i, 1]])
-
+        for i in range(n_spanwise*l):
+            # for chnaging colors for induced wind based on sail (jib above, main above, jib_underwater, main_underwater etc) 
             draw_color = color
             if color == 'red':
-                if i % (n_spanwise  * n_chordwise) == 0 and i !=0:
+                if i % n_spanwise == 0 and i !=0:
                     color_counter += 1
                 draw_color = app_induced_colors[color_counter]
                     
-                # shift_x = 1.2*shift_x0 + cp_points[i, 0]
-                # shift_y = 1.2*shift_y0 + cp_points[i, 1]
-
-                shift_x = cp_points[i, 0]
-                shift_y = cp_points[i, 1]
+                shift_x = cp_points_at_first_spanwise_sections[i, 0]
+                shift_y = cp_points_at_first_spanwise_sections[i, 1]
 
             vx = np.array([shift_x, shift_x+V_wind[i, 0]])
             vy = np.array([shift_y, shift_y+V_wind[i, 1]])
-            vz = np.array([cp_points[i, 2], cp_points[i, 2]])
+            vz = np.array([cp_points_at_first_spanwise_sections[i, 2], cp_points_at_first_spanwise_sections[i, 2]])
 
-            # ax.plot(vx, vy, vz,color='red', alpha=0.8, lw=1)  # old way
-            # arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>",  c=cp_points[:, 2], cmap='Greys')
-            if cp_points[i, 2] > 0:
+            if cp_points_at_first_spanwise_sections[i, 2] > 0:
                 arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=draw_color, alpha=0.75)
             else:
                 arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=draw_color, alpha=0.05)
             ax.add_artist(arrow)
-
-    # #######
-    # for V_wind, color in zip(V_winds, colors):
-    #     # V_wind = V_winds[2]
-    #     # color = colors[2]
-    #     for i in range(N):
-    #         # vx = np.array([cp_points[i, 0], cp_points[i, 0] + V_wind[i, 0]])
-    #         # vy = np.array([cp_points[i, 1], cp_points[i, 1] + V_wind[i, 1]])
-    #         vx = np.array([shift_x, shift_x+V_wind[i, 0]])
-    #         vy = np.array([shift_y, shift_y+V_wind[i, 1]])
-    #         vz = np.array([cp_points[i, 2], cp_points[i, 2]])
-
-    #         # ax.plot(vx, vy, vz,color='red', alpha=0.8, lw=1)  # old way
-    #         # arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>",  c=cp_points[:, 2], cmap='Greys')
-    #         if cp_points[i, 2] > 0:
-    #             arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.75)
-    #         else:
-    #             arrow = Arrow3D(vx, vy, vz, mutation_scale=10, lw=1, arrowstyle="-|>", color=color, alpha=0.15)
-    #         ax.add_artist(arrow)
-
 
 
 def display_CE_CLR(ax : plt.Axes,
@@ -307,7 +307,7 @@ def display_CE_CLR(ax : plt.Axes,
 def display_panels_xyz_and_winds(vlm :Vlm, inviscid_flow_results: InviscidFlowResults, 
                                  inlet_condition: InletConditions,
                                  hull: HullGeometry,
-                                 show_plot: bool = True, show_apparent_induced_wind: bool = False,
+                                 show_plot: bool = True, show_induced_wind: bool = False,
                                  is_sailopt_mode=False
                                  ):
     """
@@ -333,7 +333,7 @@ def display_panels_xyz_and_winds(vlm :Vlm, inviscid_flow_results: InviscidFlowRe
     ax, water_size = display_panels_xyz(vlm, color_panels_by)
 
     red_text = ''
-    if show_apparent_induced_wind:
+    if show_induced_wind:
         red_text = ', Induced@CP (red)' 
     
     ax.set_title(f'{title_mode}'
@@ -343,7 +343,7 @@ def display_panels_xyz_and_winds(vlm :Vlm, inviscid_flow_results: InviscidFlowRe
     
     display_hull(ax, hull)
 
-    display_winds(ax, vlm.cp, water_size, inlet_condition, inviscid_flow_results, vlm.n_spanwise, vlm.n_chordwise, show_apparent_induced_wind)
+    display_winds(ax, vlm.cp, water_size, inlet_condition, inviscid_flow_results, vlm.n_spanwise, vlm.n_chordwise, show_induced_wind)
 
     scale, clr, ce, F = display_CE_CLR(ax, inviscid_flow_results, hull)
     
