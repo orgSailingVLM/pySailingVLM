@@ -45,11 +45,12 @@ class Arrow3D(FancyArrowPatch):
         FancyArrowPatch.draw(self, renderer)
 
 
-def display_panels_xyz(vlm : Vlm) -> Tuple[plt.axes, int]:
+def display_panels_xyz(vlm : Vlm, color_panels_by : str) -> Tuple[plt.axes, int]:
     """
     display_panels_xyz display panels in 3 dimentions
 
     :param Vlm vlm: vlm class instance
+    :param color_panels_by: gamma_magnitude or p_coeffs string
     :return List[plt.axes, int]: list containing matplotlib plt ax and size of water (int)
     """
     fig = plt.figure(figsize=(12, 12))
@@ -82,14 +83,20 @@ def display_panels_xyz(vlm : Vlm) -> Tuple[plt.axes, int]:
 
         return max_range
 
-
-    norm = mpl.colors.Normalize(vmin=min(vlm.pressure), vmax=max(vlm.pressure))
+    data = None
+    if color_panels_by == 'gamma_magnitude':
+        data = vlm.pressure
+    elif color_panels_by == 'p_coeffs':
+        data = vlm.p_coeffs
+    else:
+        data = vlm.pressure
+    norm = mpl.colors.Normalize(vmin=min(data), vmax=max(data))
     cmap = cm.hot
     m = cm.ScalarMappable(norm=norm, cmap=cmap)
 
-    for vtx, p in zip(vlm.panels,vlm.pressure):
+    for vtx, d in zip(vlm.panels, data):
         tri = a3.art3d.Poly3DCollection([vtx])
-        tri.set_color(m.to_rgba(p))
+        tri.set_color(m.to_rgba(d))
         tri.set_edgecolor('k')
         ax.add_collection3d(tri)
 
@@ -195,9 +202,9 @@ def display_winds(ax : plt.Axes, cp_points : np.ndarray, water_size : int,  inle
     shift_y = (-0.925) * water_size * np.sin(np.deg2rad(mean_AWA))
 
     V_winds = [inlet_condition.tws_at_cp, inlet_condition.V_app_infs]
-    colors = ['green', 'blue']  # G: True wind, B: - Apparent wind, R: Apparent + Induced wind
+    colors = ['green', 'blue']  # G: True wind, B: - Apparent wind, R: Induced@CP
     if show_apparent_induced_wind:
-        V_winds.append( inviscid_flow_results.V_app_fs_at_cp)
+        V_winds.append( inviscid_flow_results.V_induced_at_cp)
         colors.append('red')
     
 
@@ -300,7 +307,8 @@ def display_CE_CLR(ax : plt.Axes,
 def display_panels_xyz_and_winds(vlm :Vlm, inviscid_flow_results: InviscidFlowResults, 
                                  inlet_condition: InletConditions,
                                  hull: HullGeometry,
-                                 show_plot: bool = True, show_apparent_induced_wind: bool = False
+                                 show_plot: bool = True, show_apparent_induced_wind: bool = False,
+                                 is_sailopt_mode=False
                                  ):
     """
     display_panels_xyz_and_winds plot whole yacht with winds and force
@@ -311,11 +319,27 @@ def display_panels_xyz_and_winds(vlm :Vlm, inviscid_flow_results: InviscidFlowRe
     :param HullGeometry hull: hull object
     :param bool show_plot: decide if plot should be shown, defaults to True
     """
-    ax, water_size = display_panels_xyz(vlm)
+    
+    color_panels_by = None
+    title_mode = None
+    if is_sailopt_mode:
+        color_panels_by = 'gamma_magnitude'
+        title_mode = 'SailOpt mode: Panels colored by optimal circulation \n'
+    else:
+        color_panels_by = 'p_coeffs'
+        title_mode = 'VLM mode: Panels colored by coefficient of pressure \n'
 
-    ax.set_title('Panels colored by pressure \n'
-                 'Winds: True (green), Apparent (blue), Apparent + Induced (red) \n'
+
+    ax, water_size = display_panels_xyz(vlm, color_panels_by)
+
+    red_text = ''
+    if show_apparent_induced_wind:
+        red_text = ', Induced@CP (red)' 
+    
+    ax.set_title(f'{title_mode}'
+                 f'Winds: True (green), Apparent (blue){red_text} \n'
                  'Centre of Effort & Center of Lateral Resistance (black)')
+    
     
     display_hull(ax, hull)
 

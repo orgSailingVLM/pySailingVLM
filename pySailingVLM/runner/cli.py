@@ -84,7 +84,7 @@ def main():
     #print(f"\nCPU time: {float(timeit.default_timer() - start):.2f} [s]")
     
     print("Preparing visualization.")   
-    display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=True, show_apparent_induced_wind=False)
+    display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=True, show_apparent_induced_wind=False, is_sailopt_mode=False)
     
     
     sails_Cxyz = myvlm.get_Cxyz(w, 1.0)
