@@ -1,5 +1,4 @@
-[![<ORG_NAME>](https://circleci.com/gh/orgSailingVLM/pySailingVLM.svg?style=shield)](https://app.circleci.com/pipelines/github/orgSailingVLM/pySailingVLM)
-
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/orgSailingVLM/pySailingVLM/main) [![orgSailingVLM](https://circleci.com/gh/orgSailingVLM/pySailingVLM.svg?style=shield)](https://app.circleci.com/pipelines/github/orgSailingVLM/pySailingVLM)
 # About package
 
 This is open source Python package which implements Vortex Lattice Method for initial aerodynamic analysis of upwind sails. Thanks to its light weight requirements, the software can be immediately installed and execuded locally or accessed by cloud environment such as Google Collab. Package users can define own sail geometries and use pySailingVLM inside custom scripts which makes creating a set of dynamics very convenient.
