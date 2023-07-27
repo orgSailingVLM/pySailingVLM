@@ -18,7 +18,6 @@ class TestValidation(TestCase):
             'n_spanwise':  n_spanwise,  # No of control points (above the water) per sail, recommended: 50
             'n_chordwise': n_chordwise, # No of control points (above the water) per sail, recommended: 50
             'interpolation_type': "linear",  # either "spline" or "linear"
-            'LLT_twist': "real_twist",  # defines how the Lifting Line discretize the sail twist.
         }
         
         conditions_args = {
