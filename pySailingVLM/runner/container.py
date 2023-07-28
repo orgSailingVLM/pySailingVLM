@@ -5,7 +5,7 @@ import os
 import numpy as np
 import time
 from dataclasses import dataclass, field
-
+from typing import ClassVar
 # OUTPUT DIR
 @dataclass
 class Output:
@@ -20,7 +20,7 @@ class Solver:
     n_spanwise: int  = 4  # No of control points (above the water) per sail, recommended: 50
     n_chordwise: int = 4 # No of control points (above the water) per sail, recommended: 50
     interpolation_type: str = "spline"  # either "spline" or "linear"
-    LLT_twist: str = "real_twist"  # defines how the Lifting Line discretize the sail twist.
+    LLT_twist: ClassVar[str] = 'real_twist' # defines how the Lifting Line discretize the sail twist.
     # It can be "sheeting_angle_const" or "average_const" or "real_twist"
 
 

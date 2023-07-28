@@ -17,7 +17,6 @@ solver_args = {
     'n_spanwise':  15,  # No of control points (above the water) per sail, recommended: 50
     'n_chordwise': 10, # No of control points (above the water) per sail, recommended: 50
     'interpolation_type': "spline",  # either "spline" or "linear"
-    'LLT_twist': "real_twist",  # defines how the Lifting Line discretize the sail twist.
 }
 
 conditions_args = {
