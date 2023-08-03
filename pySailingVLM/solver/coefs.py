@@ -248,3 +248,31 @@ def get_CL_CD_free_wing(AR, AoA_deg):
 
     return CL_expected_3d, CD_ind_expected_3d
 
+
+def get_C(panels: np.ndarray, areas: np.ndarray, force : np.ndarray, wind : np.ndarray, n_spanwise: int, n_chordwise: int, rho: float):
+    # k number of sails, 1 (jb or main), 2 (jib and main)
+    k = int(panels.shape[0] / (n_spanwise * n_chordwise * 2) ) # *2 in denominator due to underwater part
+    
+    sail_winds = np.split(wind, (2*k))
+    sail_forces = np.split(force, (2*k))
+    sail_areas = np.split(areas, (2*k))
+    sails_C = np.zeros((k, n_spanwise), dtype=float)
+    
+    # cl for every panel in all sails
+    
+    for i in range(k):
+        # c's per sail
+        c = np.linalg.norm(sail_forces[i]) / (0.5 * rho * np.linalg.norm(sail_winds[i]) ** 2 * sail_areas[i])
+    
+        section_c_list = np.zeros((n_spanwise,), dtype=float)
+        for j in range(n_spanwise):
+            section_cs = c.reshape(n_chordwise, n_spanwise)[:,j]
+            section_sail_areas = sail_areas[i].reshape(n_chordwise, n_spanwise)[:,j]
+            
+            section_c = np.sum(section_cs * section_sail_areas) / np.sum(section_sail_areas)
+            section_c_list[j]= section_c
+
+        sails_C[i] = section_c_list
+    return sails_C 
+        
+

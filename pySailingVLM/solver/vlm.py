@@ -66,12 +66,16 @@ class Vlm:
 
         # boundary condition calculated in collocation points (control points)
         assert forces.is_no_flux_BC_satisfied(self.V_app_fs_at_ctrl_p, self.panels, self.areas, self.normals)
-        self.force, self.V_app_fs_at_cp, self.V_induced_at_cp = forces.calc_force_wrapper(self.inlet_conditions.V_app_infs, self.gamma_magnitude, self.rho, self.cp, self.rings, self.n_spanwise, self.normals, self.span_vectors, self.trailing_edge_info, self.leading_edge_info, self.gamma_orientation)
+        self.force, self.V_app_fs_at_cp, self.V_induced_at_cp = forces.calc_force_wrapper(self.inlet_conditions.V_app_infs, self.gamma_magnitude, self.rho, self.cp, self.rings, self.n_spanwise, self.normals, self.span_vectors, self.trailing_edge_info, self.leading_edge_info, 'force_xyz', self.gamma_orientation)
         self.pressure = forces.calc_pressure(self.force, self.normals, self.areas)
 
         self.p_coeffs = forces.calc_pressure_coeff(self.pressure, self.rho, self.inlet_conditions.V_app_infs)
         
+        #### lift and drag ###
+        self.lift, _, _ = forces.calc_force_wrapper(self.inlet_conditions.V_app_infs, self.gamma_magnitude, self.rho, self.cp, self.rings, self.n_spanwise, self.normals, self.span_vectors, self.trailing_edge_info, self.leading_edge_info, 'lift', self.gamma_orientation)
+        self.drag, _, _ = forces.calc_force_wrapper(self.inlet_conditions.V_app_infs, self.gamma_magnitude, self.rho, self.cp, self.rings, self.n_spanwise, self.normals, self.span_vectors, self.trailing_edge_info, self.leading_edge_info, 'drag', self.gamma_orientation)
 
+    # zrobic z tego potem jedna funkcje!
     def get_Cxyz(self, wind : Wind, height_measure : float):
         # k number of sails, 1 (jb or main), 2 (jib and main)
         k = int(self.panels.shape[0] / (self.n_spanwise * self.n_chordwise * 2) ) # *2 in denominator due to underwater part
@@ -82,6 +86,5 @@ class Vlm:
             Cxyz = coefs.get_vlm_Cxyz(sail_forces[i], np.array(wind.profile.get_true_wind_speed_at_h(height_measure)), self.rho, np.sum(sail_areas[i]))
             sails_Cxyz.append(Cxyz)
         return sails_Cxyz
-            
-        
+
     

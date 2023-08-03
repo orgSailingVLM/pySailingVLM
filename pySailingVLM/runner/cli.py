@@ -14,6 +14,7 @@ from pySailingVLM.solver.vlm import Vlm
 from pySailingVLM.runner.sail import Wind, Sail
 from pySailingVLM.solver.panels_plotter import plot_cp
 from pySailingVLM.runner.container import Output, Rig, Conditions, Solver, MainSail, JibSail, Csys, Keel
+from pySailingVLM.solver.coefs import get_C
 
 def load_variable_module(args):
     try:
@@ -96,4 +97,8 @@ def main():
         print(f"a_vlm[{idx}]: {a_vlm}")
 
     plot_cp(sail_set.zero_mesh, myvlm.p_coeffs, out.name)
+    
+    ##### #####
+    cl = get_C(myvlm.panels, myvlm.areas, myvlm.lift, myvlm.inlet_conditions.V_app_infs, myvlm.n_spanwise, myvlm.n_chordwise, myvlm.rho)
+    # print()
     
