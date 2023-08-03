@@ -89,7 +89,7 @@ class SailGeometry(BaseGeometry, ABC):
         sh0, sh1, sh2 = mesh.shape
         mesh = mesh.reshape(sh0*sh1, sh2)
         
-        mesh_underwater = make_airfoil_mesh([le_SW_underwater, le_NW_underwater],[self.__n_chordwise, self.__n_spanwise],fchords_vec, interpolated_distance_from_luff, interpolated_camber)
+        mesh_underwater = make_airfoil_mesh([le_SW_underwater, le_NW_underwater],[self.__n_chordwise, self.__n_spanwise],fchords_vec, interpolated_distance_from_luff, np.flip(interpolated_camber))
         ### zero mesh
         zero_mesh_under = np.swapaxes(mesh_underwater, 0, 1)
         panels_under_zero, _, _= make_panels_from_mesh_spanwise(zero_mesh_under)
