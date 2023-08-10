@@ -262,7 +262,7 @@ def get_C(panels: np.ndarray, areas: np.ndarray, force : np.ndarray, wind : np.n
     
     for i in range(k):
         # c's per sail
-        c = np.linalg.norm(sail_forces[i]) / (0.5 * rho * np.linalg.norm(sail_winds[i]) ** 2 * sail_areas[i])
+        c = np.linalg.norm(sail_forces[i], axis=1) / (0.5 * rho * np.linalg.norm(sail_winds[i], axis=1) ** 2 * sail_areas[i])
     
         section_c_list = np.zeros((n_spanwise,), dtype=float)
         for j in range(n_spanwise):

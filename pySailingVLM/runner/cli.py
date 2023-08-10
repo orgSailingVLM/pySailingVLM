@@ -99,6 +99,7 @@ def main():
     plot_cp(sail_set.zero_mesh, myvlm.p_coeffs, out.name)
     
     ##### #####
-    cl = get_C(myvlm.panels, myvlm.areas, myvlm.lift, myvlm.inlet_conditions.V_app_infs, myvlm.n_spanwise, myvlm.n_chordwise, myvlm.rho)
-    # print()
+    #cl = get_C(myvlm.panels, myvlm.areas, myvlm.lift, myvlm.inlet_conditions.V_app_infs, myvlm.n_spanwise, myvlm.n_chordwise, myvlm.rho)
+    #cl2 = get_C(myvlm.panels, myvlm.areas, myvlm.lift2, myvlm.inlet_conditions.V_app_infs, myvlm.n_spanwise, myvlm.n_chordwise, myvlm.rho)
+    print()
     
