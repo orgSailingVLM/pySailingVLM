@@ -141,7 +141,7 @@ class TestCoefs(TestCase):
         _,  V_app_fs_at_ctrl_p = calculate_app_fs(V_app_infw,  v_ind_coeff,  gamma_magnitude)
         assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, panels, areas, normals)
 
-        force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, rho, cp, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, gamma_orientation)
+        force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, rho, cp, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, 'force_xyz', gamma_orientation)
 
         CL_vlm, CD_vlm = get_vlm_CL_CD_free_wing(force, V, rho, S)
         

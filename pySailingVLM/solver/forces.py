@@ -110,16 +110,6 @@ def calc_force_wrapper(V_app_infw: np.ndarray, gamma_magnitude: np.ndarray, rho:
         
     return force, V_at_cp, V_induced
 
-def calc_forces(force_xyz: np.ndarray, normals: np.ndarray, V_app_infw: np.ndarray):
-    # normalize V_app_infw
-    V_app_infw_normalized = V_app_infw / np.linalg.norm(V_app_infw)
-    drag = np.dot(force_xyz, V_app_infw_normalized.transpose())[:,0].reshape(V_app_infw_normalized.shape[0],1) * V_app_infw_normalized
-    l_tmp = force_xyz - drag
-    lift = np.dot(l_tmp, normals.transpose())[:,0].reshape(V_app_infw_normalized.shape[0],1) * normals
-    tangential = l_tmp - lift
-    
-    return drag, lift, tangential
-    
 
 def calc_pressure(forces, normals, areas):
     p = forces.dot(normals.transpose()).diagonal() /  areas

@@ -75,8 +75,6 @@ class Vlm:
         self.lift, _, _ = forces.calc_force_wrapper(self.inlet_conditions.V_app_infs, self.gamma_magnitude, self.rho, self.cp, self.rings, self.n_spanwise, self.normals, self.span_vectors, self.trailing_edge_info, self.leading_edge_info, 'lift', self.gamma_orientation)
         self.drag, _, _ = forces.calc_force_wrapper(self.inlet_conditions.V_app_infs, self.gamma_magnitude, self.rho, self.cp, self.rings, self.n_spanwise, self.normals, self.span_vectors, self.trailing_edge_info, self.leading_edge_info, 'drag', self.gamma_orientation)
 
-        self.drag2, self.lift2, self.tangential = forces.calc_forces(self.force, self.normals, self.inlet_conditions.V_app_infs)
-        #print()
     # zrobic z tego potem jedna funkcje!
     def get_Cxyz(self, wind : Wind, height_measure : float):
         # k number of sails, 1 (jb or main), 2 (jib and main)

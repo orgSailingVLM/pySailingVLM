@@ -29,8 +29,8 @@ def calc_velocity_coefs(V_app_infw, points_for_calculations, rings, normals, tra
             # poprawka na trailing edge
             # todo: zrobic to w drugim, oddzielnym ifie
             if trailing_edge_info[j]:
-                a = vortex_horseshoe(points_for_calculations[i], B, C, V_app_infw[j], gamma_orientation)
-                #a = vortex_horseshoe_v2(points_for_calculations[i], A, B, C, D,V_app_infw[j], gamma_orientation)
+                #a = vortex_horseshoe(points_for_calculations[i], B, C, V_app_infw[j], gamma_orientation)
+                a = vortex_horseshoe_v2(points_for_calculations[i], A, B, C, D,V_app_infw[j], gamma_orientation)
             coefs[i, j] = np.dot(a, normals[i].reshape(3, 1))[0]
             # this is faster than wind_coefs[i, j, :] = a around 0.1s (case 10x10)
             

@@ -63,7 +63,7 @@ class Aircraft:
         
         _,  V_app_fs_at_ctrl_p = calculate_app_fs(self.__V_app_infw,  v_ind_coeff,  self.__gamma_magnitude)
         assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, panels, areas, normals)
-        self.__force, _, _ = calc_force_wrapper(self.__V_app_infw, self.__gamma_magnitude, self.rho, cp, rings, self.n_spanwise, normals, span_vectors, trailing_edge_info, leading_edge_info, self.gamma_orientation)
+        self.__force, _, _ = calc_force_wrapper(self.__V_app_infw, self.__gamma_magnitude, self.rho, cp, rings, self.n_spanwise, normals, span_vectors, trailing_edge_info, leading_edge_info, 'force_xyz', self.gamma_orientation)
         self.__pressure = calc_pressure(self.__force, normals, areas)
 
         self.__CL, self.__CD = get_vlm_CL_CD_free_wing(self.__force, self.V, self.rho, self.__S)

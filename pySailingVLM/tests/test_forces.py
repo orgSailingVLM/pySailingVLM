@@ -76,7 +76,7 @@ class TestForces(TestCase):
         _,  V_app_fs_at_ctrl_p = calculate_app_fs(V_app_infw,  v_ind_coeff,  gamma_magnitude)
         assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, panels, areas, normals)
 
-        force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, self.rho, center_of_pressure, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, self.gamma_orientation)
+        force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, self.rho, center_of_pressure, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, 'force_xyz', self.gamma_orientation)
 
         CL_vlm, CD_vlm = get_vlm_CL_CD_free_wing(force, self.V, self.rho, self.S)
 
@@ -106,7 +106,7 @@ class TestForces(TestCase):
         _,  V_app_fs_at_ctrl_p = calculate_app_fs(V_app_infw,  v_ind_coeff,  gamma_magnitude)
         assert is_no_flux_BC_satisfied(V_app_fs_at_ctrl_p, panels, areas, normals)
 
-        force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, self.rho, center_of_pressure, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, self.gamma_orientation)
+        force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, self.rho, center_of_pressure, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, 'force_xyz', self.gamma_orientation)
 
         CL_vlm, CD_vlm = get_vlm_CL_CD_free_wing(force, self.V, self.rho, self.S)
 
@@ -452,7 +452,7 @@ class TestForces(TestCase):
                                 [  7.82150574,  -0.        , 198.21738467]])  
                           
 
-        force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, self.rho, cp, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, self.gamma_orientation)
+        force, _, _ = calc_force_wrapper(V_app_infw, gamma_magnitude, self.rho, cp, rings, ns, normals, span_vectors, trailing_edge_info, leading_edge_info, 'force_xyz', self.gamma_orientation)
         np.testing.assert_almost_equal(force, force_good, decimal=3)
 
     
