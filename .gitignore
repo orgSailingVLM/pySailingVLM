@@ -158,3 +158,5 @@ datashader-examples/
 /variables.py
 pySailingVLM/examples/bertin_*
 dummy_file/*
+
+pySailingVLM/examples/*.png

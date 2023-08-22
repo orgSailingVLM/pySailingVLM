@@ -74,17 +74,4 @@ class Vlm:
         #### lift and drag ###
         self.lift, _, _ = forces.calc_force_wrapper(self.inlet_conditions.V_app_infs, self.gamma_magnitude, self.rho, self.cp, self.rings, self.n_spanwise, self.normals, self.span_vectors, self.trailing_edge_info, self.leading_edge_info, 'lift', self.gamma_orientation)
         self.drag, _, _ = forces.calc_force_wrapper(self.inlet_conditions.V_app_infs, self.gamma_magnitude, self.rho, self.cp, self.rings, self.n_spanwise, self.normals, self.span_vectors, self.trailing_edge_info, self.leading_edge_info, 'drag', self.gamma_orientation)
-
-    # zrobic z tego potem jedna funkcje!
-    def get_Cxyz(self, wind : Wind, height_measure : float):
-        # k number of sails, 1 (jb or main), 2 (jib and main)
-        k = int(self.panels.shape[0] / (self.n_spanwise * self.n_chordwise * 2) ) # *2 in denominator due to underwater part
-        sail_forces = np.split(self.force, (2*k))
-        sail_areas = np.split(self.areas, (2*k))
-        sails_Cxyz = []
-        for i in range(k):
-            Cxyz = coefs.get_vlm_Cxyz(sail_forces[i], np.array(wind.profile.get_true_wind_speed_at_h(height_measure)), self.rho, np.sum(sail_areas[i]))
-            sails_Cxyz.append(Cxyz)
-        return sails_Cxyz
-
     

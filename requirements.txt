@@ -11,3 +11,4 @@ pySailingVLM==1.0.1
 scipy==1.10.1
 spatialpandas==0.4.8
 XlsxWriter==3.1.2
+SciencePlots==2.0.1
