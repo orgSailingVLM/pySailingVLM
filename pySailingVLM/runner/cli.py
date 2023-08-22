@@ -14,6 +14,7 @@ from pySailingVLM.solver.vlm import Vlm
 from pySailingVLM.runner.sail import Wind, Sail
 from pySailingVLM.solver.panels_plotter import plot_cp
 from pySailingVLM.runner.container import Output, Rig, Conditions, Solver, MainSail, JibSail, Csys, Keel
+from pySailingVLM.solver.coefs import get_C
 
 def load_variable_module(args):
     try:

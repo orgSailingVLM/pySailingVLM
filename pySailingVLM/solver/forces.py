@@ -1,5 +1,6 @@
 import numpy as np
-
+import sys
+from typing import Tuple
 from pySailingVLM.solver.coefs import calc_velocity_coefs
 from pySailingVLM.solver.velocity import calculate_app_fs
 
@@ -47,12 +48,46 @@ def determine_vector_from_its_dot_and_cross_product(F, r_dot_F, r_cross_F):
 # #@numba.jit(nopython=True, parallel=True)
 
 # cp - center of pressure
-def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, cp, rings, n_spanwise, normals, span_vectors, trailing_edge_info : np.ndarray, leading_edges_info : np.ndarray, gamma_orientation : float = 1.0):
+def calc_force_wrapper(V_app_infw: np.ndarray, gamma_magnitude: np.ndarray, rho: float, cp: np.ndarray, rings: np.ndarray, n_spanwise: int, normals: np.ndarray, span_vectors: np.ndarray, trailing_edge_info : np.ndarray, leading_edges_info : np.ndarray, force_name: str = 'force_xyz', gamma_orientation : float = 1.0) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    calc_force_wrapper calculate force
+
+    :param np.ndarray V_app_infw: apparent wind velocity for an infinite sail (without induced wind velocity)
+    :param np.ndarray gamma_magnitude: gamma magnitude
+    :param float rho: rho
+    :param np.ndarray cp: center of pressure
+    :param np.ndarray rings: _description_
+    :param int n_spanwise: _description_
+    :param np.ndarray normals: _description_
+    :param np.ndarray span_vectors: _description_
+    :param np.ndarray trailing_edge_info: _description_
+    :param np.ndarray leading_edges_info: _description_
+    :param str force_name: name of force to be calculated, defaults to 'force_xyz', possible 'lift', 'drag', 'force_xyz'
+    :param float gamma_orientation: ogrientation of gamma, defaults to 1.0
+    :return Tuple[np.ndarray, np.ndarray, np.ndarray]: return calculated force, V_at_cp and V_induced
+    """
+    
+    # check if force_name is allowed
+    try:
+        force_name_allowed = ('lift', 'drag', 'force_xyz')
+        if not force_name in force_name_allowed:
+            raise ValueError(f'Force name is not allowed. You can use one of these: {force_name_allowed}')
+    except ValueError as e:
+        print(e)
+        sys.exit()
+    
     # Katz and Plotkin, p. 346 Chapter 12 / Three-Dimensional Numerical Solution
     # f. Secondary Computations: Pressures, Loads, Velocities, Etc
     # Eq (12.25)
     _, v_ind_coeff = calc_velocity_coefs(V_app_infw, cp, rings, normals, trailing_edge_info, gamma_orientation)
     V_induced, V_at_cp = calculate_app_fs(V_app_infw, v_ind_coeff, gamma_magnitude)
+    
+    
+    V_for_calculations = V_at_cp    
+    if force_name == 'lift':
+        V_for_calculations = V_app_infw
+    elif force_name == 'drag':
+        V_for_calculations = V_induced
     
     # if case 1x1 leading_edges_info is False False False False
     # horseshoe_edge_info i True True True True
@@ -61,7 +96,7 @@ def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, cp, rings, n_spanwise, 
     case1x1 = np.logical_not(np.any(leading_edges_info)) 
     
     K = cp.shape[0]
-    force_xyz = np.zeros((K, 3))
+    force = np.zeros((K, 3))
     #numba.prange
     for i in range(K):
         # for spanwise only!
@@ -71,10 +106,9 @@ def calc_force_wrapper(V_app_infw, gamma_magnitude, rho, cp, rings, n_spanwise, 
             gamma = span_vectors[i] * gamma_magnitude[i]
         else:
             gamma = span_vectors[i] * (gamma_magnitude[i] - gamma_magnitude[i-n_spanwise])
-        force_xyz[i] = rho * np.cross(V_at_cp[i], gamma)
+        force[i] = rho * np.cross(V_for_calculations[i], gamma)
         
-    return force_xyz, V_at_cp, V_induced
-
+    return force, V_at_cp, V_induced
 
 
 def calc_pressure(forces, normals, areas):
