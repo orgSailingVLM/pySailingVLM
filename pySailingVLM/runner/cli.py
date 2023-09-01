@@ -3,7 +3,6 @@ import sys
 import os
 import argparse
 import shutil
-import timeit
 
 from pySailingVLM.rotations.csys_transformations import CSYS_transformations
 from pySailingVLM.yacht_geometry.hull_geometry import HullGeometry
@@ -12,9 +11,9 @@ from pySailingVLM.solver.panels_plotter import display_panels_xyz_and_winds
 from pySailingVLM.results.inviscid_flow import InviscidFlowResults
 from pySailingVLM.solver.vlm import Vlm
 from pySailingVLM.runner.sail import Wind, Sail
-from pySailingVLM.solver.panels_plotter import plot_cp
+from pySailingVLM.solver.panels_plotter import plot_cp, plot_section_coeff
 from pySailingVLM.runner.container import Output, Rig, Conditions, Solver, MainSail, JibSail, Csys, Keel
-from pySailingVLM.solver.coefs import get_C
+from pySailingVLM.solver.coefs import get_data_for_coeff_plot
 
 def load_variable_module(args):
     try:
@@ -87,14 +86,9 @@ def main():
     print("Preparing visualization.")   
     display_panels_xyz_and_winds(myvlm, inviscid_flow_results, myvlm.inlet_conditions, hull, show_plot=True, show_induced_wind=False, is_sailopt_mode=False)
     
-    
-    sails_Cxyz = myvlm.get_Cxyz(w, 1.0)
-
-    print(f"Cxyz for {rig.sails_def}")
-    for idx, Cxyz in enumerate(sails_Cxyz):
-        print(f"C[{idx}]: {Cxyz}")
-        a_vlm = Cxyz[1] / np.deg2rad(conditions.alpha_true_wind_deg)
-        print(f"a_vlm[{idx}]: {a_vlm}")
-
     plot_cp(sail_set.zero_mesh, myvlm.p_coeffs, out.name)
+    
+    mean_cp, cl_data, cd_data = get_data_for_coeff_plot(myvlm, solver)
+    plot_section_coeff(cd_data, mean_cp,  out.name,  'lift', ['blue', 'green'])
+    plot_section_coeff(cl_data, mean_cp, out.name,  'drag',  ['teal', 'purple'])
     
