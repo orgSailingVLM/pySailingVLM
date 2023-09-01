@@ -10,7 +10,8 @@ if TYPE_CHECKING:
     from pySailingVLM.yacht_geometry.hull_geometry import HullGeometry
 import numpy as np
 import math
-
+import sys
+import scienceplots
 import matplotlib.pyplot as plt
 
 from pySailingVLM.solver.additional_functions import normalize
@@ -367,3 +368,43 @@ def plot_cp(mesh : np.ndarray, p_coeffs : np.ndarray, path_to_save : str):
         show(hv.render(hvpolys, backend='bokeh'))
     except NameError:
         hv.save(hvpolys, path_to_save + '/cp_plot.html', backend='bokeh')
+        
+def plot_section_coeff(x_data : list, y_data: list, file_name: str, coeff_name: str, colors : list):
+    
+    allowed_names = ('lift', 'drag')
+    try:
+        if coeff_name not in allowed_names:
+            raise ValueError(f"Bad coeff_name value, allowed: {allowed_names}")
+    except ValueError as err:
+        print(err)
+        sys.exit(1)
+        
+    plt.style.use(['science', 'grid'])
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+    
+    l = len(y_data)
+    lbs = ['jib', 'main']
+    markers = ["o", "^"]
+    
+    c_name = 'cl'
+    str_latex = '$c_l$'
+    if coeff_name == 'drag':
+        c_name = 'cd'
+        str_latex = '$c_d$'
+        
+    for i in range(l):
+        ax1.scatter(x_data[i], y_data[i], label=lbs[i], s=5, marker=markers[i], color=colors[i])
+
+    plt.ylabel('Height [m]')
+    plt.xlabel(fr'Section {str_latex}')
+    plt.legend(loc='center left')
+    ax1.autoscale(tight=True)
+    
+    try:
+        __IPYTHON__
+        plt.savefig(f'section_{c_name}', dpi=300)
+        plt.show()
+    except NameError:
+        plt.savefig(file_name + '/' +  f'section_{c_name}', dpi=300)
+    

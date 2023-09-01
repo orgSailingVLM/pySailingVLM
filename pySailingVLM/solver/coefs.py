@@ -1,3 +1,10 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pySailingVLM.solver.vlm import Vlm
+    from pySailingVLM.runner.container import Solver
+    
 import numpy as np
 import os
 import pandas as pd
@@ -253,26 +260,71 @@ def get_C(panels: np.ndarray, areas: np.ndarray, force : np.ndarray, wind : np.n
     # k number of sails, 1 (jb or main), 2 (jib and main)
     k = int(panels.shape[0] / (n_spanwise * n_chordwise * 2) ) # *2 in denominator due to underwater part
     
+    # sail_forces - list of length = number of sails above water
+    # each item in list is an array with forces for all panels in sail
+    # winds, areas - same
     sail_winds = np.split(wind, (2*k))
     sail_forces = np.split(force, (2*k))
     sail_areas = np.split(areas, (2*k))
     sails_C = np.zeros((k, n_spanwise), dtype=float)
     
-    # cl for every panel in all sails
-    
+    # iterate through above water sails
     for i in range(k):
-        # c's per sail
+        # coefficient for all panels for specific sail
         c = np.linalg.norm(sail_forces[i], axis=1) / (0.5 * rho * np.linalg.norm(sail_winds[i], axis=1) ** 2 * sail_areas[i])
     
         section_c_list = np.zeros((n_spanwise,), dtype=float)
+        
+        # iterate through strips
         for j in range(n_spanwise):
+            # coefficients for strip
             section_cs = c.reshape(n_chordwise, n_spanwise)[:,j]
+            # areas for strip
             section_sail_areas = sail_areas[i].reshape(n_chordwise, n_spanwise)[:,j]
             
+            # total section coefficient per strip
             section_c = np.sum(section_cs * section_sail_areas) / np.sum(section_sail_areas)
             section_c_list[j]= section_c
 
         sails_C[i] = section_c_list
-    return sails_C 
-        
+    return sails_C
 
+
+def get_data_for_coeff_plot(myvlm : Vlm, solver : Solver) -> Tuple[np.ndarray, list, list]:
+    """
+    get_data_for_coeff_plot get x and y data for section lift and drag coefficient
+
+    :param Vlm myvlm: Vlm object
+    :param Solver solver: Solver object
+    :return Tuple[np.ndarray, list, list]: mean cp.z per sail section strip, y data for lift sails, y data for drag sails
+    """
+    cl = get_C(myvlm.panels, myvlm.areas, myvlm.lift, myvlm.inlet_conditions.V_app_infs, myvlm.n_spanwise, myvlm.n_chordwise, myvlm.rho)
+    cd = get_C(myvlm.panels, myvlm.areas, myvlm.drag, myvlm.inlet_conditions.V_app_infs, myvlm.n_spanwise, myvlm.n_chordwise, myvlm.rho)
+    
+    k = int(myvlm.panels.shape[0] / (solver.n_spanwise * solver.n_chordwise * 2) ) # *2 in denominator due to underwater part
+
+    sail_areas = np.split(myvlm.areas, (2*k))
+    section_areas = np.zeros((k, solver.n_spanwise), dtype=float) # reshaped in proper way array with areas
+    sail_cps = np.split(myvlm.cp, (2*k))
+    sail_section_mean_cp_z = np.zeros((k, solver.n_spanwise), dtype=float)
+    y1_data_list = []
+    y2_data_list = []
+    # cl for every panel in all sails
+    CLs = np.zeros((k, 1), dtype=float) # array with CL per sail
+    CDs = np.zeros((k, 1), dtype=float) # array with CL per sail
+    # iterating only above water
+    for i in range(k):
+        for j in range(solver.n_spanwise):   
+            section_sail_areas = sail_areas[i].reshape(solver.n_chordwise, solver.n_spanwise)[:,j]
+            section_areas[i, j] = np.sum(section_sail_areas)
+
+            arr = sail_cps[i][:, 2].reshape(solver.n_chordwise, solver.n_spanwise).transpose()
+            mean_section_cp_z = np.sum(arr, axis=1) / solver.n_chordwise
+            sail_section_mean_cp_z[i] = mean_section_cp_z
+
+        CLs[i] = np.sum(section_areas[i] * cl[i]) / np.sum(section_areas[i])
+        CDs[i] = np.sum(section_areas[i] * cd[i]) / np.sum(section_areas[i])
+        y1_data_list.append(cl[i] / CLs[i])
+        y2_data_list.append(cd[i] / CDs[i])
+        
+    return sail_section_mean_cp_z, y1_data_list, y2_data_list
