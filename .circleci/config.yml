@@ -1,75 +1,93 @@
-# Python CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-python/ for more details
-#
 version: 2.1
 jobs:
-  blaah:
-    executor: python/default
-    steps:
-      - checkout
-      - python/load-cache
-      - python/install-deps
-      - python/save-cache
-      - run:
-          command: ./manage.py test
-          name: Test
-
-  build-and-test:
+  test:
     docker:
-      # specify the version you desire here
-      # use `-browsers` prefix for selenium tests_LLT_optimizer, e.g. `3.6.1-browsers`
-      - image: circleci/python:3.10
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
-    working_directory: ~/repo
-
+      - image: cimg/python:3.10
     steps:
       - checkout
-
-      - run:
-          name: "What branch am I on?"
-          command: echo ${CIRCLE_BRANCH}
-
-      # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "setup.cfg" }}
+          - v1-dependencies-new-{{ checksum "setup.cfg" }}
           # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
-
+          #- v1-dependencies-new-
       - run:
-          name: install python dependencies
+          name: Make python virtualenv
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install --upgrade pip
-            pip install -q -e .
-            
+            virtualenv venv
+      - run:
+          name: Source env
+          command: source venv/bin/activate 
+      - run: 
+          name: Upgrade pip
+          command: pip install --upgrade pip
+      - run:
+          name: Install dependencies
+          command: |
+            pip install -e .
+            pip install coverage
 
       - save_cache:
           paths:
             - ./venv
           key: v1-dependencies-{{ checksum "setup.cfg" }}
-
-      # https://pytest.org
       - run:
-          name: run pySailingVLM/tests
+          name: Run tests
           command: |
-            . venv/bin/activate
             export NUMBA_DISABLE_JIT=1
-            coverage run -m unittest discover -v pySailingVLM/tests
+            coverage run -m unittest pySailingVLM/tests/test_*
+      - run:
+          name: Measure coverage
+          command: |
             coverage report
             coverage html
 
       - store_artifacts:
           path: htmlcov
 
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - .
+
+  build_and_deploy:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - attach_workspace:
+            at: ~/project
+      - run:
+          name: Test tag and PyPI version
+          command: |
+            pypi_version=$(cat setup.cfg | grep version | awk '{ print $3; }')
+            if [[ "${CIRCLE_BRANCH}" != "$pypi_version" ]]; then return 1
+      - run:
+          name: Install dependencies
+          command: |
+            which python  
+            pip install --upgrade build
+            pip install build
+            pip install twine
+      - run: 
+          name: Build package
+          command: python3 -m build
+
+      - run:
+          name: Publish on PyPI
+          command: | 
+            twine upload -u ${TWINE_USERNAME} -p ${TWINE_PASSWORD} dist/* --verbose
+
 workflows:
   main:
     jobs:
-      - build-and-test
+      - test: # it will be run on all barnches and all tags
+          filters:  # required since `build_and_deploy` has tag filters AND requires `test`
+            tags:
+              only: /.*/
+      - build_and_deploy:
+          requires:
+            - test
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
