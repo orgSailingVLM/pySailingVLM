@@ -11,6 +11,14 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           #- v1-dependencies-new-
       - run:
+          name: test me 
+          command: | 
+            pypi_version=$(cat setup.cfg | grep version | awk '{ print $3; }')
+            echo "${CIRCLE_BRANCH}"
+            echo "v$pypi_version"
+            echo "v${pypi_version}"
+            if [[ "${CIRCLE_BRANCH}" != "v$pypi_version" ]]; then circleci-agent step halt; fi
+      - run:
           name: Make python virtualenv
           command: |
             virtualenv venv
@@ -59,7 +67,7 @@ jobs:
           name: Test tag and PyPI version
           command: |
             pypi_version=$(cat setup.cfg | grep version | awk '{ print $3; }')
-            if [[ "${CIRCLE_BRANCH}" != "v$pypi_version" ]]; then return 1
+            if [[ "${CIRCLE_BRANCH}" != "v$pypi_version" ]]; then return 1; fi
       - run:
           name: Install dependencies
           command: |
@@ -74,7 +82,7 @@ jobs:
       - run:
           name: Publish on PyPI
           command: | 
-            twine upload -u ${TWINE_USERNAME} -p ${TWINE_PASSWORD} dist/* --verbose
+            twine upload --repository testpypi -u ${TWINE_USERNAME_2} -p ${TWINE_PASSWORD_2} dist/* --verbose
 
 workflows:
   main:
