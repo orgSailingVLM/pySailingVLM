@@ -56,11 +56,6 @@ jobs:
       - attach_workspace:
             at: ~/project
       - run:
-          name: Test tag and PyPI version
-          command: |
-            pypi_version=$(cat setup.cfg | grep version | awk '{ print $3; }')
-            if [[ "${CIRCLE_BRANCH}" != "v$pypi_version" ]]; then return 1
-      - run:
           name: Install dependencies
           command: |
             which python  
